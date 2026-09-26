@@ -1,0 +1,10 @@
+Generated with the built-in image_gen tool, transparent_background=true.
+
+Use case: stylized-concept
+Asset type: transparent UI chat launcher and chat avatar for a Vietnamese cybersecurity law lookup service, readable at 80px.
+Primary request: one original friendly premium 3D AI robot assistant bust, centered on a square canvas, white ceramic shell with deep burgundy details and restrained warm gold accent trim. Rounded compact head, dark burgundy faceplate, two simple subtle cyan eye lights with an approachable expression, clean chest and shoulders. Elegant trustworthy modern assistant.
+Scene/backdrop: truly transparent background with clean alpha edges, isolated subject.
+Composition/framing: front-facing bust, large head and clear silhouette, centered, complete head and shoulders within frame with generous safe margin for a circular avatar crop. Simple forms optimized for small launcher size.
+Lighting/mood: soft polished studio lighting, gentle highlights, friendly and calm.
+Materials/textures: satin white ceramic, burgundy inset panels, small brushed gold details.
+Constraints: only one robot bust; no text, numbers, letters, logo, badge, official insignia, uniform, police clothing, hat, national symbols, props, border, background scenery, or watermark. Output a square transparent PNG.

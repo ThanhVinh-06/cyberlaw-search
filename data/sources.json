@@ -1,0 +1,38 @@
+[
+  {
+    "id": "assignment",
+    "original_path": "D:\\SLIDE\\TRÍ TUỆ NHÂN TẠO\\k25\\ĐỒ ÁN\\2026, De tai mon TTNT - MKU.pdf",
+    "project_path": "docs/references/de-bai-ttnt-2026.pdf",
+    "sha256": "3604CB65BF8DB0D6B62936C8D7EFDB4747D732EABA0E1D5B017A2BE56E6DAD0B",
+    "review_status": "requirements_reviewed",
+    "origin": "user_supplied_local_file",
+    "copied_on": "2026-09-26"
+  },
+  {
+    "id": "law-2018",
+    "original_path": "D:\\SLIDE\\TRÍ TUỆ NHÂN TẠO\\k25\\ĐỒ ÁN\\tài liệu về luật an ninh mạng\\24-2018-qh14.pdf",
+    "project_path": "data/raw/laws/2018/24-2018-qh14.pdf",
+    "sha256": "7BA6B742325359B442B4E5A7A905DEFBA286EEDB39210F59A1D8983D3D916A4A",
+    "review_status": "historical_reference",
+    "origin": "user_supplied_local_file",
+    "copied_on": "2026-09-26"
+  },
+  {
+    "id": "law-2025-scan",
+    "original_path": "D:\\SLIDE\\TRÍ TUỆ NHÂN TẠO\\k25\\ĐỒ ÁN\\tài liệu về luật an ninh mạng\\luat116-2025.pdf",
+    "project_path": "data/raw/laws/2025/116-2025-qh15-scan.pdf",
+    "sha256": "EDED93A3E2820913C6D0801A24977B4588D65C7DA1838A952E43FAED9AF78B08",
+    "review_status": "needs_ocr_and_full_review",
+    "origin": "user_supplied_local_file",
+    "copied_on": "2026-09-26"
+  },
+  {
+    "id": "law-2025-web-export",
+    "original_path": "D:\\SLIDE\\TRÍ TUỆ NHÂN TẠO\\k25\\ĐỒ ÁN\\tài liệu về luật an ninh mạng\\Luật An ninh mạng 2025, số 116_2025_QH15.pdf",
+    "project_path": "data/raw/laws/2025/116-2025-qh15-web-export.pdf",
+    "sha256": "C0C35A59F610A16C42498A8D9D7C1E62D00C7E50D59483E502CBF8F9F2053264",
+    "review_status": "extracted_unreviewed",
+    "origin": "user_supplied_local_file",
+    "copied_on": "2026-09-26"
+  }
+]

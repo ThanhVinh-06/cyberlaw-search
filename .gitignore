@@ -1,0 +1,38 @@
+# Local agent tools
+.agent/
+
+# Local secrets
+.env
+.env.*
+!.env.example
+
+# Python
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Frontend dependencies and builds (when used)
+node_modules/
+frontend/dist/
+frontend/build/
+coverage/
+
+# Generated indexes and runtime data
+data/indexes/*
+!data/indexes/.gitkeep
+data/runtime/*
+!data/runtime/.gitkeep
+
+# Temporary outputs
+tmp/
+*.log
+*.tmp
+~$*
+.DS_Store
+Thumbs.db
+desktop.ini

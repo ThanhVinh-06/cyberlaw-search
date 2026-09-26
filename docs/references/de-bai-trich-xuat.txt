@@ -1,0 +1,162 @@
+--- PAGE 1 ---
+ĐỀ TÀI MÔN TRÍ TUỆ NHÂN TẠO 
+Mỗi nhóm đăng ký 01 đề tài, mỗi đề tài có không quá 3 nhóm đăng ký. 
+Ngày báo cáo: Buổi học lý thuyết cuối + 2 tuần. 
+Link đăng ký: 
+https://docs.google.com/spreadsheets/d/1FQNMCahJOIQcmZqJ9zJEg4fCPebIFEopmCyBmO8YkEA/edit?
+gid=0#gid=0 
+1. Hệ thống trắc nghiệm kiến thức môn học: 
+a) Tạo đề: 
+- Tạo đề theo chương - bài môn học. 
+- Tạo đề theo phân loại kiến thức: Khái niệm, định lý, tính chất, Dạng bài tập. 
+- Tạo đề theo các thông số: số câu hỏi, độ khó, thời gian làm bài,… 
+b) Đánh giá người học: 
+- Thông qua một bài kiểm tra: Nhận xét về kiến thức có trong bài kiểm tra đó. 
+- Thông qua nhiều bài kiểm tra: Nhận xét về một kiến thức có trong nhiều bài kiểm tra 
+Tham khảo: https://youtu.be/oiDNN4l8YiE?si=eo47rnqSkvuR45qc 
+                    
+2. Xây dựng hệ thống tra cứu kiến thức 01 môn học lập trình: Nhập môn lập trình, Cấu trúc dữ liệu, 
+hoặc OOP, AI….  
+- Tra cứu theo nội dung bài học. 
+- Tra cứu theo phân loại kiến thức: • Khái niệm                           
+                                                      • Tính chất  
+                                                      • Theo phân loại dạng bài tập + phương pháp giải 
+- Tra cứu theo kiến thức liên quan. 
+Tham khảo: https://visualgo.net/en 
+                    https://youtu.be/qWX0iNcOEAU 
+ 
+3. Xây dựng hệ thống minh họa thuật toán cho 01 môn học: Cấu trúc dữ liệu, hoặc Lý thuyết đồ thị  
+1. Cấu trúc dữ liệu và Giải thuật. 
++ Các thủ tục của cấu trúc danh sách liên kết: AddHead, AddTail, AddAfterQ, 
+Duyệt, DeleteHead. 
++ Các thủ tục của cấu trúc Cây nhị phân tìm kiếm 
+2. Lý thuyết đồ thị: Chọn 5 thuật toán trong đồ thị để thực hiện: DFS, BFS, Dijkstra, 
+Ford-Bellman, Floyd, Prim, Kruskal, …. 
+Tham khảo: https://visualgo.net/en 
+                    https://youtu.be/f6ruy5ObLPY 
+--- PAGE 2 ---
+4. Xây dựng hệ thống tra cứu kiến thức pháp luật (3 nhóm): 
+a) Yêu cầu: Chọn 1 trong các lĩnh vực và 01 văn bản pháp luật tương 
+ứng để thực hiện. 
+Lĩnh vực: Luật đất đai, Luật bảo hiểm xã hội, Luật bảo hiểm y tế, 
+Luật giao thông 
+- Xây dựng keyphrase trong lĩnh vực. 
+- Đặc tả: các thành phần về khái niệm, dạng luật trong các quy định. 
+- Thu thập các câu hỏi, truy vấn trong lĩnh vực luật đất đai + câu trả 
+lời. 
+- Thiết kế giải pháp để trả lời. 
+b) Bài toán: 
+- Tra cứu các quy định 
+- Tra cứu theo ngữ nghĩa đơn giản của câu truy vấn 
+Tham khảo: https://thuvienphapluat.vn/ 
+ 
+ 
+5. Xây dựng hệ thống dự báo giá nhà trong một khu vực dựa vào các mẩu tin rao vặt. 
+    a) Yêu cầu về Dữ liệu 
+• Thu thập: Sinh viên tự thu thập dữ liệu (crawl) từ các trang tin rao vặt bất động sản hoặc sử dụng 
+bộ dữ liệu có sẵn. Quy mô tối thiểu 5.000 mẫu tin. 
+• Tiền xử lý: Trích xuất các đặc trưng định lượng từ văn bản (diện tích, số phòng ngủ, số tầng, 
+chiều rộng mặt tiền). 
+o Xử lý dữ liệu nhiễu, dữ liệu thiếu và các giá trị ngoại lai (outliers). 
+o Chuẩn hóa địa chỉ thành tọa độ hoặc phân cấp hành chính (Quận/Huyện, Phường/Xã). 
+  b) Yêu cầu kỹ thuật 
+• Trích xuất đặc trưng: Áp dụng các kỹ thuật như TF-IDF hoặc Word Embedding để xử lý phần mô 
+tả chi tiết của tin rao. 
+• Mô hình hóa: Thử nghiệm ít nhất 3 thuật toán khác nhau (ví dụ: Linear Regression, Random 
+Forest, XGBoost hoặc LightGBM). 
+• Đánh giá: Sử dụng các chỉ số RMSE, MAE và R2 score để so sánh hiệu năng giữa các mô hình. 
+ 
+6. Xây dựng hệ thống dự báo tài chính doanh nghiệp dựa trên báo cáo tài chính. 
+    a) Yêu cầu về Dữ liệu 
+• Nguồn dữ liệu: Báo cáo tài chính (Bảng cân đối kế toán, Kết quả hoạt động kinh doanh) của các 
+công ty niêm yết trên sàn chứng khoán trong ít nhất 5 năm gần nhất. 
+• Chỉ số đặc trưng: Tính toán các nhóm chỉ số tài chính quan trọng: 
+o Nhóm thanh khoản (Current Ratio, Quick Ratio). 
+
+--- PAGE 3 ---
+o Nhóm hiệu quả hoạt động (Inventory Turnover, ROE, ROA). 
+o Nhóm đòn bẩy (Debt-to-Equity). 
+   b) Yêu cầu kỹ thuật 
+• Bài toán: Dự báo khả năng phá sản hoặc xếp hạng tín dụng (Credit Scoring) của doanh nghiệp 
+trong năm kế tiếp. 
+• Mô hình hóa: Sử dụng các mô hình phân loại như Support Vector Machine (SVM), Neural 
+Networks hoặc các mô hình Ensemble Learning. 
+• Xử lý mất cân bằng dữ liệu: Vì số lượng doanh nghiệp gặp rủi ro tài chính thường ít hơn doanh 
+nghiệp tốt, sinh viên cần áp dụng kỹ thuật như SMOTE hoặc điều chỉnh trọng số (class weights). 
+ 
+7. Hệ thống phát hiện giao dịch tài chính bất thường và nghi vấn gian lận (Financial Fraud 
+Detection) 
+a) Yêu cầu về Dữ liệu: 
+• Nguồn dữ liệu: Sử dụng bộ dữ liệu giao dịch công khai, như Credit Card Fraud Detection trên 
+Kaggle hoặc synthetic financial datasets, với tối thiểu 500 mẫu giao dịch. 
+• Tiền xử lý: 
+o Trích xuất các đặc trưng tài chính: số tiền giao dịch, tần suất giao dịch theo khung giờ, 
+khoảng cách địa lý giữa các lần giao dịch, loại hình dịch vụ. 
+o Xử lý dữ liệu ngoại lai và chuẩn hóa dữ liệu định lượng (StandardScaler/MinMaxScaler). 
+b) Yêu cầu kỹ thuật: 
+• Bài toán: Phân loại giao dịch hợp lệ vs. giao dịch bất thường. 
+• Mô hình hóa: Thử nghiệm ít nhất 2 thuật toán: Random Forest, XGBoost hoặc Autoencoder. 
+• Xử lý mất cân bằng dữ liệu: Sử dụng kỹ thuật SMOTE, ADASYN hoặc điều chỉnh trọng số mã 
+lớp (class weights) do tỷ lệ giao dịch gian lận thường rất thấp. 
+• Đánh giá: Bắt buộc sử dụng Precision, Recall, F1-Score, ROC-AUC, không dùng Accuracy đơn 
+thuần. 
+ 
+8. Hệ thống chấm điểm tín dụng cá nhân dựa trên dữ liệu (Alternative Credit Scoring) 
+a) Yêu cầu về Dữ liệu: 
+• Nguồn dữ liệu: Thu thập hoặc sử dụng dữ liệu hành vi tiêu dùng, lịch sử thanh toán hóa đơn 
+(điện, nước, internet), hoặc nhật ký giao dịch ví điện tử. 
+• Tiền xử lý: 
+o Tính toán các nhóm chỉ số: Mức độ ổn định dòng tiền hàng tháng, tỷ lệ chậm thanh toán hóa 
+đơn, chỉ số tiêu dùng xa xỉ. 
+o Mã hóa biến định tính (One-Hot Encoding, Label Encoding) và xử lý giá trị khuyết, thiếu. 
+--- PAGE 4 ---
+b) Yêu cầu kỹ thuật: 
+• Bài toán: Dự báo và phân hạng rủi ro tín dụng cá nhân (Rất tốt, Tốt, Trung bình, Rủi ro). 
+• Mô hình hóa: Áp dụng các thuật toán như Logistic Regression, Gradient Boosting, hoặc Multi-
+Layer Perceptron (MLP). 
+• Giải thích mô hình (Explainable AI): Áp dụng SHAP hoặc LIME để giải thích lý do mô hình đưa 
+ra mức điểm tín dụng cho từng cá nhân (tiêu chí nào làm tăng/giảm điểm). 
+• Đánh giá: Sử dụng chỉ số Gini Coefficient, KS-statistic, F1-Score. 
+ 
+9. Hệ thống phân tích lan truyền tin giả và thông tin độc hại trên mạng xã hội 
+a) Yêu cầu về Dữ liệu: 
+• Thu thập: Crawl bài viết/bình luận từ các nền tảng mạng xã hội (Facebook, Reddit, X/Twitter) 
+hoặc sử dụng bộ dữ liệu tiếng Việt/Anh có sẵn. Quy mô tối thiểu 1.000 mẫu. 
+• Tiền xử lý: Làm sạch văn bản (loại bỏ teen code, icon, stopwords, URL), tách từ tiếng Việt 
+(VnCoreNLP/underthesea) hoặc tokenize văn bản. 
+b) Yêu cầu kỹ thuật: 
+• Trích xuất đặc trưng: Áp dụng TF-IDF, Word2Vec, FastText hoặc tiền huấn luyện ngôn ngữ. 
+• Bài toán: Phân loại bài viết/bình luận theo: Tin thật vs. Tin giả; hoặc Độc hại vs. An toàn. 
+• Mô hình hóa: Thử nghiệm ít nhất 3 mô hình (Naive Bayes, SVM, Bi-LSTM, PhoBERT). 
+• Đánh giá: Đánh giá bằng Accuracy, Precision, Recall, F1-Score trên tập Test độc lập. 
+ 
+10. Hoặc các đề tài khác thì liên hệ với GV. 
+ 
+Yêu cầu chung: 
+* Bài nộp 
+- Chỉ cần một bạn trong nhóm nộp bài. 
+- Cấu trúc bài nộp: 
+ [Project AI-UIT] - Nhóm …….. 
+          +  Danh sách nhóm: 
+                      Excel: Họ tên – MSSV – Lớp 
+          +  Báo cáo 
+                       Word  
+--- PAGE 5 ---
+                       Power Point 
+           +  Chuong trinh 
+                       Code  
+                       Demo: hình ảnh hoặc clip (nếu có) 
+                       Hướng dẫn sử dụng (nếu có) 
+ 
+* Khuyến khích: Mỗi nhóm tạo trang github để upload đồ án: 
+- Report báo cáo đồ án (word) →Scientific report: Trình bày nội dung vấn đề cần giải 
+quyết, các giải thuật, phương pháp thực hiện. Kết quả thử nghiệm. 
+- Chương trình: code + Mô tả hoạt động các hàm trong code (word → Technical 
+report). 
+- Hướng dẫn sử dụng. 
+Tham khảo:  
+Hướng dẫn viết báo cáo Word: 
+Phần 1: https://www.youtube.com/watch?v=MSUiFIjBIxo 
+Phần 2: https://www.youtube.com/watch?v=98mhlizrh9M 
+ 
+ 

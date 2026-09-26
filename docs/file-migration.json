@@ -1,0 +1,97 @@
+[
+  {
+    "old_path": "E:\\cyberlaw-search\\prototype\\app.js",
+    "new_path": "E:\\cyberlaw-search\\frontend\\app.js",
+    "sha256": "24D5ACED711221DD38D0DC0AEBAD1388AC1DBBB7212D56B45B3532AEAEB97180"
+  },
+  {
+    "old_path": "E:\\cyberlaw-search\\prototype\\index.html",
+    "new_path": "E:\\cyberlaw-search\\frontend\\index.html",
+    "sha256": "B78F5AF8B154F312D189E604709C4BCF9500710CE9135D42AED1EFD52F5F93B8"
+  },
+  {
+    "old_path": "E:\\cyberlaw-search\\prototype\\README.md",
+    "new_path": "E:\\cyberlaw-search\\frontend\\README.md",
+    "sha256": "223C7ED9D8932D2BC0A3003ECAC15A11975EFBCCEA71893EE1CBEA1B6667EDA0"
+  },
+  {
+    "old_path": "E:\\cyberlaw-search\\prototype\\styles.css",
+    "new_path": "E:\\cyberlaw-search\\frontend\\styles.css",
+    "sha256": "37F2A038BFAD21FB91567CD83FDE7A400B9121611A08B392978D9FF27976D784"
+  },
+  {
+    "old_path": "E:\\cyberlaw-search\\prototype\\assets\\ai-assistant.png",
+    "new_path": "E:\\cyberlaw-search\\frontend\\assets\\ai-assistant.png",
+    "sha256": "26D035DD0FEC463B0C50CF376673386FC9898CC1C3D904A97969435DC5F8DA90"
+  },
+  {
+    "old_path": "E:\\cyberlaw-search\\docs\\01-phan-tich-yeu-cau.md",
+    "new_path": "E:\\cyberlaw-search\\docs\\requirements\\01-phan-tich-yeu-cau.md",
+    "sha256": "3F81360AAC5DD54041F00158E6713270C81E331A48DF568733B043EF87BEFFE3"
+  },
+  {
+    "old_path": "E:\\cyberlaw-search\\docs\\02-bo-prompt.md",
+    "new_path": "E:\\cyberlaw-search\\docs\\prompts\\02-bo-prompt.md",
+    "sha256": "8415C69E0F70CF24BA91699CB42A4997BC4B62F06551B192119C22EB4444BF11"
+  },
+  {
+    "old_path": "E:\\cyberlaw-search\\docs\\03-dac-ta-form.md",
+    "new_path": "E:\\cyberlaw-search\\docs\\design\\03-dac-ta-form.md",
+    "sha256": "06CA3E73FD12D623D76254BFEEFF6AD0614FF55347DAF2AB28C7652573D463F5"
+  },
+  {
+    "old_path": "E:\\cyberlaw-search\\docs\\04-prompt-stitch.md",
+    "new_path": "E:\\cyberlaw-search\\docs\\prompts\\04-prompt-stitch.md",
+    "sha256": "6F0F8284F9C650178163E21604DE7303FCB92EC5FA6DD36F2BD57AA062944940"
+  },
+  {
+    "old_path": "E:\\cyberlaw-search\\research\\source-0.txt",
+    "new_path": "E:\\cyberlaw-search\\docs\\references\\de-bai-trich-xuat.txt",
+    "sha256": "9B2A67A11ED93B421D1471267CB3D515B012E3277A04FD75CDEBE982CC53116A"
+  },
+  {
+    "old_path": "E:\\cyberlaw-search\\research\\source-1.txt",
+    "new_path": "E:\\cyberlaw-search\\data\\interim\\extracted\\luat-24-2018-qh14.txt",
+    "sha256": "7EFF1E215A693A2AEEEBEF7311FE4CBEF3C69F51CBAC2E3CFE64813424322CB1"
+  },
+  {
+    "old_path": "E:\\cyberlaw-search\\research\\source-2.txt",
+    "new_path": "E:\\cyberlaw-search\\data\\interim\\extracted\\luat-116-2025-scan-extraction.txt",
+    "sha256": "4324F24D0ABACC6D353C894C43C3664B48B56EC22AE265C77CC795F68A90FE23"
+  },
+  {
+    "old_path": "E:\\cyberlaw-search\\research\\source-3.txt",
+    "new_path": "E:\\cyberlaw-search\\data\\interim\\extracted\\luat-116-2025-web-export.txt",
+    "sha256": "0095D7E1E623D22ECFCC7399A5E3616B88D398756137515D1BFD4A66DEA5DB14"
+  },
+  {
+    "old_path": "E:\\cyberlaw-search\\research\\requirements.png",
+    "new_path": "E:\\cyberlaw-search\\docs\\references\\de-bai-doi-chieu.png",
+    "sha256": "62BCA1E2C91383AFAB8F81BE4D4A36D291F06091E61D990F9F5706C4999C3DA1"
+  },
+  {
+    "old_path": "E:\\cyberlaw-search\\research\\law-end.png",
+    "new_path": "E:\\cyberlaw-search\\data\\interim\\verification\\luat-116-2025-trang-36.png",
+    "sha256": "FCA19B9BFFF170B54156A94DA20702D44F35669A10EF9F73714A8415C40B96F0"
+  },
+  {
+    "old_path": "E:\\cyberlaw-search\\research\\cyberlaw-desktop-chat.png",
+    "new_path": "E:\\cyberlaw-search\\docs\\design\\screenshots\\cyberlaw-desktop-chat.png",
+    "sha256": "A18E6ED582CF4EFCEE23FECC693ABA42DAC8B22163B3AEF649E61DFD9D20F09F"
+  },
+  {
+    "old_path": "E:\\cyberlaw-search\\research\\ai-assistant-avatar.png",
+    "new_path": "E:\\cyberlaw-search\\docs\\design\\assets\\ai-assistant-original.png",
+    "sha256": "26D035DD0FEC463B0C50CF376673386FC9898CC1C3D904A97969435DC5F8DA90"
+  },
+  {
+    "old_path": "E:\\cyberlaw-search\\research\\ai-assistant-avatar.prompt.txt",
+    "new_path": "E:\\cyberlaw-search\\docs\\design\\assets\\ai-assistant.prompt.txt",
+    "sha256": "AEF2E73AD39E4ABC3893193E7F80C7729875E70B17848394DCE4B4B4157C56A4"
+  },
+  {
+    "old_path": "E:\\cyberlaw-search\\research\\mockup-check.js",
+    "new_path": "E:\\cyberlaw-search\\experiments\\archive\\mockup-check.js",
+    "sha256": "FF07C829BFA014CDF0E132D719C8BED03B21E471F53C8957AE4F61A425A9C38A"
+  }
+]
