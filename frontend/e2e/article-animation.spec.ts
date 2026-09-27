@@ -1,5 +1,56 @@
 import { test, expect } from "@playwright/test";
 
+test("page scrollbar stays hidden and opening articles does not shift the page", async ({
+  page,
+}) => {
+  await page.goto("/search");
+  await page.evaluate(() => document.fonts.ready);
+  await expect(page.locator("html")).toHaveCSS("scrollbar-width", "none");
+  await page.mouse.wheel(0, 240);
+  await expect.poll(() => page.evaluate(() => scrollY)).toBeGreaterThan(0);
+  const dimensions = () =>
+    page.locator(".cl-search-card").evaluate((element) => {
+      const box = element.getBoundingClientRect();
+      return {
+        x: box.x,
+        width: box.width,
+        viewport: document.documentElement.clientWidth,
+      };
+    });
+  const before = await dimensions();
+  for (let index = 0; index < 2; index++) {
+    await page
+      .getByRole("button", { name: "Xem điều khoản", exact: true })
+      .first()
+      .click();
+    await expect(
+      page.getByRole("dialog", { name: "Căn cứ pháp lý" }),
+    ).toBeVisible();
+    expect(await dimensions()).toEqual(before);
+    expect(
+      await page.evaluate(() => document.body.style.paddingRight),
+    ).not.toMatch(/^[1-9]/);
+    await page.keyboard.press("Escape");
+    await expect(
+      page.getByRole("dialog", { name: "Căn cứ pháp lý" }),
+    ).toHaveCount(0);
+    expect(await dimensions()).toEqual(before);
+  }
+  for (const route of ["/login", "/register", "/library", "/terms", "/help"]) {
+    await page.goto(route);
+    await expect(page.locator("html")).toHaveCSS("scrollbar-width", "none");
+    expect(
+      await page.evaluate(
+        () => innerWidth - document.documentElement.clientWidth,
+      ),
+    ).toBe(0);
+  }
+  await page.setViewportSize({ width: 390, height: 600 });
+  await page.goto("/register");
+  await page.mouse.wheel(0, 240);
+  await expect.poll(() => page.evaluate(() => scrollY)).toBeGreaterThan(0);
+});
+
 test("article expands, closes back to the result and restores focus", async ({
   page,
 }, testInfo) => {

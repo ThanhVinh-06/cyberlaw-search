@@ -12,6 +12,7 @@ import {
 import { articles, source } from "./lib/articles";
 import { ArticleDialog } from "./components/ArticleDialog";
 import { ChatPopover } from "./components/ChatPopover";
+import { ResultReveal } from "./components/ResultReveal";
 import { motion, AnimatePresence } from "motion/react";
 
 type Article = (typeof articles)[number];
@@ -78,6 +79,11 @@ export default function MainSite() {
     query: "an ninh mạng",
   });
   const [results, setResults] = useState(articles);
+  const [resultEntrance, setResultEntrance] = useState({
+    run: 0,
+    instant: true,
+  });
+  const searchInstantRef = useRef(false);
   const [error, setError] = useState("");
   const [libraryArticle, setLibraryArticle] = useState(articles[0]);
   const [selectedArticle, setSelectedArticle] = useState<{
@@ -128,6 +134,10 @@ export default function MainSite() {
       return;
     }
     setError("");
+    setResultEntrance((previous) => ({
+      run: previous.run + 1,
+      instant: searchInstantRef.current,
+    }));
     const q = normalize(next.query.trim());
     setResults(
       articles.filter((article) => {
@@ -317,6 +327,12 @@ export default function MainSite() {
             </div>
             <form
               className="cl-search-card"
+              onPointerDownCapture={() => {
+                searchInstantRef.current = false;
+              }}
+              onKeyDownCapture={() => {
+                searchInstantRef.current = true;
+              }}
               onSubmit={(event) => {
                 event.preventDefault();
                 search();
@@ -419,6 +435,10 @@ export default function MainSite() {
                       setFilters(emptyFilters);
                       setError("");
                       setResults(articles);
+                      setResultEntrance((previous) => ({
+                        run: previous.run + 1,
+                        instant: searchInstantRef.current,
+                      }));
                     }}
                   >
                     Đặt lại
@@ -442,42 +462,57 @@ export default function MainSite() {
               <span>Dữ liệu minh họa · 3 điều luật</span>
             </div>
             <div>
-              {results.map((article) => (
-                <motion.article
-                  layoutId={`article-card-${article.id}`}
-                  className="cl-result"
+              {results.map((article, index) => (
+                <ResultReveal
                   key={article.id}
-                  transition={{
-                    type: "spring",
-                    stiffness: 190,
-                    damping: 25,
-                    mass: 0.85,
-                  }}
+                  run={resultEntrance.run}
+                  instant={resultEntrance.instant}
+                  index={index}
                 >
-                  <div className="cl-result-icon">
-                    <FileText aria-hidden="true" />
-                  </div>
-                  <div className="cl-result-body">
-                    <div className="cl-result-top">
-                      <span className="cl-result-category">
-                        {article.label.toUpperCase()}
-                      </span>
-                      <span className="cl-result-doc">
-                        · &nbsp;116/2025/QH15
+                  <motion.article
+                    layoutId={`article-card-${article.id}`}
+                    // Measure for dialog transitions, not while the entrance wrapper moves.
+                    layoutDependency={
+                      selectedArticle?.article.id === article.id
+                    }
+                    className="cl-result"
+                    transition={{
+                      type: "spring",
+                      stiffness: 190,
+                      damping: 25,
+                      mass: 0.85,
+                    }}
+                  >
+                    <div className="cl-result-icon">
+                      <FileText aria-hidden="true" />
+                    </div>
+                    <div className="cl-result-body">
+                      <div className="cl-result-top">
+                        <span className="cl-result-category">
+                          {article.label.toUpperCase()}
+                        </span>
+                        <span className="cl-result-doc">
+                          · &nbsp;116/2025/QH15
+                        </span>
+                      </div>
+                      <motion.h3
+                        layoutId={`article-title-${article.id}`}
+                        layoutDependency={
+                          selectedArticle?.article.id === article.id
+                        }
+                      >
+                        {article.title}
+                      </motion.h3>
+                      <p>{article.summary}</p>
+                      <span className="cl-result-meta">
+                        Ban hành: 10/12/2025 &nbsp;·&nbsp; Quốc hội
                       </span>
                     </div>
-                    <motion.h3 layoutId={`article-title-${article.id}`}>
-                      {article.title}
-                    </motion.h3>
-                    <p>{article.summary}</p>
-                    <span className="cl-result-meta">
-                      Ban hành: 10/12/2025 &nbsp;·&nbsp; Quốc hội
-                    </span>
-                  </div>
-                  <div className="cl-result-bottom">
-                    {articleButton(article)}
-                  </div>
-                </motion.article>
+                    <div className="cl-result-bottom">
+                      {articleButton(article)}
+                    </div>
+                  </motion.article>
+                </ResultReveal>
               ))}
               {!results.length && (
                 <div className="cl-empty-state">

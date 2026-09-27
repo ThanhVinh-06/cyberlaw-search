@@ -37,6 +37,13 @@
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
 }
+/* Shared page policy for all current and future routes; scrolling stays enabled. */
+html {
+  scrollbar-width: none;
+}
+html::-webkit-scrollbar {
+  display: none;
+}
 * {
   box-sizing: border-box;
 }

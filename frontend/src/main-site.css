@@ -50,7 +50,7 @@
     --text: #262830;
     --muted: #71747e;
     --border: #e7e7ed;
-    --bg: #f7f8fa;
+    --bg: var(--background);
     --sidebar: 252px;
     font-family: "Be Vietnam Pro", "Segoe UI", sans-serif;
     color: var(--text);
@@ -588,6 +588,9 @@
   .cl-results-heading > span {
     font-size: 10px;
     color: #8c8e98;
+  }
+  .cl-result-reveal {
+    display: flow-root;
   }
   .cl-result {
     background: white;
