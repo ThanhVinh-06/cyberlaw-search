@@ -1,0 +1,57 @@
+{
+  "server_version": "8.0.44",
+  "database": "cyberlaw_search",
+  "naming": "Vietnamese without accents",
+  "tables": 9,
+  "columns": 79,
+  "foreign_keys": 9,
+  "check_constraints": 12,
+  "checks": [
+    {
+      "name": "All 9 table names and 79 column names match the Vietnamese schema",
+      "passed": true
+    },
+    {
+      "name": "All primary keys, unique keys, foreign keys and checks preserved",
+      "passed": true
+    },
+    {
+      "name": "Vietnamese accents remain distinct in keywords",
+      "passed": true
+    },
+    {
+      "name": "Duplicate email rejected",
+      "passed": true
+    },
+    {
+      "name": "Duplicate legal locator rejected",
+      "passed": true
+    },
+    {
+      "name": "Orphan conversation owner rejected",
+      "passed": true
+    },
+    {
+      "name": "Point without clause rejected",
+      "passed": true
+    },
+    {
+      "name": "Keyword variants must be a JSON array",
+      "passed": true
+    },
+    {
+      "name": "Structured knowledge relationships work after renaming",
+      "passed": true
+    },
+    {
+      "name": "Citation snapshot survives deletion of the source",
+      "passed": true
+    },
+    {
+      "name": "Deleting an owner cascades through the chat hierarchy",
+      "passed": true
+    }
+  ],
+  "all_tables_empty_after_checks": true,
+  "note": "Checks ran in transactions and were rolled back. AUTO_INCREMENT values reset to 1 on empty tables before export."
+}

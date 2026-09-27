@@ -1,0 +1,10 @@
+# Hướng dẫn cho agent làm việc trong CyberLaw Search
+
+- Đọc `HANDOFF.md` trước khi tiếp tục dự án, sau đó đọc tài liệu liên quan đến phần đang làm. Nếu trạng thái đã thay đổi, ưu tiên yêu cầu mới của người dùng và mã thực tế.
+- Trao đổi bằng tiếng Việt, xưng em/gọi anh. Giữ thiết kế đơn giản, phù hợp đồ án sinh viên.
+- Frontend đã chốt React + TypeScript + Vite + Tailwind CSS + shadcn/ui + Motion; bản hiện tại còn là HTML/CSS/JS. Giữ sidebar trái trên desktop và ảnh robot AI của dự án.
+- MySQL dùng tên bảng/cột tiếng Việt không dấu. Xem `database/schema.sql` và `docs/design/04-co-so-du-lieu.md`; không tự đổi về quy ước tên tiếng Anh.
+- Backend theo hướng PHP cho nghiệp vụ và Python cho AI; Laravel/FastAPI được đề xuất nhưng chưa triển khai. Không báo các chức năng dự kiến là đã chạy thật.
+- Kiểm tra `git status` và giữ các thay đổi hiện có. Không ghi mật khẩu, khóa API vào repository. Giữ nguyên PDF nguồn trong `data/raw/`.
+- Skills frontend được người dùng đặt tại `.agent/skills/skills/`; đọc SKILL.md phù hợp khi cần, không clone lại hoặc sửa repo skills nếu không có yêu cầu.
+- Cập nhật `HANDOFF.md` sau các thay đổi đáng kể để agent khác tiếp tục được.

@@ -19,7 +19,7 @@ evaluation → công cụ đánh giá → ../experiments/results
 - `processed/`: dự kiến chứa `provisions.jsonl`, `keyphrases.jsonl`, `concepts.jsonl`, `rules.jsonl` sau khi duyệt.
 - `evaluation/`: dự kiến chứa câu hỏi, đáp án chuẩn, căn cứ và nhóm phân chia tập. Không dùng tập kiểm thử để điều chỉnh mô hình/ngưỡng.
 - `indexes/`: chỉ mục TF-IDF, embedding; có thể tạo lại từ dữ liệu đã xử lý.
-- `runtime/`: SQLite và đầu ra phục vụ chạy ứng dụng; chưa có cơ sở dữ liệu.
+- `runtime/`: đầu ra tạm phục vụ chạy ứng dụng. Đã tạo database MySQL `cyberlaw_search` với 9 bảng rỗng; [schema và SQL dump](../database/README.md) nằm trong `database/`. Khi triển khai Laravel, cần tạo migrations tương ứng. Không đặt thư mục dữ liệu nội bộ của máy chủ MySQL vào Git.
 
 ## Kiểm kê nguồn
 

@@ -2,6 +2,8 @@
 
 Ngày lập: 26/09/2026. Tên sản phẩm đề xuất: CyberLaw Search.
 
+**Cập nhật ngày 27/09/2026:** Frontend đã chốt React + TypeScript + Vite + Tailwind CSS + shadcn/ui + Motion. Người dùng chọn MySQL và bổ sung đăng ký, đăng nhập, phân quyền. Xem [quyết định công nghệ](../technology-decisions.md) và [yêu cầu tài khoản](02-tai-khoan-phan-quyen.md); các đề xuất SQLite và mức ưu tiên đăng nhập trong bản phân tích ban đầu được thay bởi cập nhật này.
+
 ## 1. Kết luận về hướng thực hiện
 
 Xây dựng ứng dụng tra cứu tiếng Việt trên **một văn bản luật**, kết hợp bộ keyphrase, cơ sở tri thức có cấu trúc và tìm kiếm ngữ nghĩa. Người dùng nhập câu hỏi, hệ thống tìm điều khoản, trình bày câu trả lời và cho mở nguyên văn căn cứ. Mô hình sinh ngôn ngữ là phần mở rộng, không phải điều kiện để bản đầu hoạt động.
@@ -57,7 +59,7 @@ Nguồn chính thức: https://chinhphu.vn/?classid=1&docid=216499&orggroupid=1&
 - Trang quản trị nhập PDF, duyệt tri thức và xuất dữ liệu.
 - Lịch sử cá nhân, phản hồi câu trả lời, so sánh phiên bản luật.
 
-Đăng nhập, chatbot nhiều lượt, triển khai công khai và suy luận pháp lý phức tạp không phải ưu tiên của bản tối thiểu. Với giới hạn một luật, hệ thống không tự bổ sung mức phạt từ nghị định hay điều luật hình sự chưa được nhập.
+Đăng ký, đăng nhập và phân quyền đã được bổ sung vào phạm vi theo yêu cầu ngày 27/09/2026. Chatbot nhiều lượt, triển khai công khai và suy luận pháp lý phức tạp chưa phải ưu tiên của bản tối thiểu. Với giới hạn một luật, hệ thống không tự bổ sung mức phạt từ nghị định hay điều luật hình sự chưa được nhập.
 
 ## 5. Thiết kế thành phần AI
 

@@ -16,8 +16,12 @@ vào chỉ mục mặc định. Chủ đề cần được giảng viên chấp 
 Đáp ứng các yêu cầu: keyphrase; đặc tả khái niệm và dạng quy định; bộ QA có
 căn cứ; tra cứu quy định; tra cứu ngữ nghĩa đơn giản bằng tiếng Việt.
 
-Kiến trúc đề xuất: React + TypeScript, Python + FastAPI, SQLite, TF-IDF,
-embedding hỗ trợ tiếng Việt và cosine. Chọn phiên bản tương thích sau khi
+Frontend đã chốt: React + TypeScript + Vite + Tailwind CSS + shadcn/ui + Motion.
+Database đã chọn: MySQL. Kiến trúc backend đề xuất: PHP/Laravel cho nghiệp vụ,
+Python/FastAPI cho AI, TF-IDF, embedding hỗ trợ tiếng Việt và cosine.
+Đọc docs/technology-decisions.md và docs/requirements/02-tai-khoan-phan-quyen.md
+để áp dụng yêu cầu mới về đăng ký, đăng nhập và phân quyền.
+Chọn phiên bản tương thích sau khi
 kiểm tra môi trường và tài liệu chính thức. Bản đầu không phụ thuộc LLM.
 Nếu không có khóa API, mọi chức năng tra cứu chính vẫn hoạt động.
 

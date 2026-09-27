@@ -2,10 +2,22 @@
 
 Đồ án môn Trí tuệ nhân tạo: **Xây dựng hệ thống tra cứu kiến thức pháp luật về Luật An ninh mạng**.
 
+**Tiếp tục từ phiên/agent khác:** đọc [bàn giao dự án](HANDOFF.md) để nắm các quyết định, trạng thái mã, database và việc còn lại.
+
+## Quyết định công nghệ
+
+- **Frontend đã chốt ngày 27/09/2026:** React + TypeScript + Vite + Tailwind CSS + shadcn/ui + Motion for React.
+- **Backend đang đề xuất theo yêu cầu kết hợp PHP và Python:** Laravel làm API nghiệp vụ, FastAPI làm dịch vụ xử lý AI.
+- **Database theo lựa chọn của người dùng:** MySQL. Bổ sung yêu cầu đăng ký, đăng nhập, đăng xuất và phân quyền; thiết kế chi tiết trong [Tài khoản và phân quyền](docs/requirements/02-tai-khoan-phan-quyen.md).
+- Mã frontend hiện vẫn là bản HTML/CSS/JavaScript thuần; chưa thực hiện chuyển đổi framework. Cây thư mục bên dưới phản ánh các tệp hiện có.
+
+Chi tiết phân chia trách nhiệm và luồng kết nối: [Phương án công nghệ](docs/technology-decisions.md).
+
 ## Trạng thái hiện tại
 
 - **Đã có:** giao diện HTML/CSS/JavaScript, hình trợ lý AI, tìm kiếm trên ba bản ghi minh họa, khung chat phản hồi mẫu; phân tích yêu cầu, đặc tả form và prompt thiết kế.
 - **Đã lưu:** tài liệu đề bài, PDF luật và văn bản trích xuất ban đầu.
+- **Database:** đã tạo `cyberlaw_search` trên MySQL 8.0.44 với 9 bảng; tên bảng/cột bằng tiếng Việt không dấu, các bảng đang rỗng. Xem [thiết kế dữ liệu](docs/design/04-co-so-du-lieu.md) và [file SQL đã xuất](database/cyberlaw_search.sql).
 - **Chưa triển khai:** backend/API, cơ sở tri thức đã duyệt, tìm kiếm ngữ nghĩa, kết nối LLM và bộ đánh giá. Các thư mục tương ứng là khung chuẩn bị.
 
 ## Mở giao diện
@@ -46,8 +58,9 @@ cyberlaw-search/
 │   ├── processed/             # Điều khoản, keyphrase, quy định đã duyệt
 │   ├── evaluation/            # Bộ câu hỏi chuẩn và phân chia tập
 │   ├── indexes/               # Chỉ mục sinh tự động, không đưa vào Git
-│   ├── runtime/               # SQLite và dữ liệu chạy, không đưa vào Git
+│   ├── runtime/               # Đầu ra tạm khi chạy, không đưa vào Git
 │   └── sources.json           # Nguồn, đường dẫn, SHA-256, trạng thái duyệt
+├── database/                  # Schema, SQL dump và kết quả kiểm tra MySQL
 ├── docs/
 │   ├── requirements/          # Phân tích yêu cầu
 │   ├── design/                # Đặc tả form, ảnh thiết kế, ảnh robot gốc

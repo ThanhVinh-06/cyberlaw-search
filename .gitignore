@@ -36,3 +36,27 @@ tmp/
 .DS_Store
 Thumbs.db
 desktop.ini
+
+# Private configuration, credentials and backups
+*.pem
+*.key
+*.p12
+*.pfx
+.my.cnf
+.mylogin.cnf
+credentials.json
+secrets.json
+.auth/
+.codex/
+backups/
+*.sql
+!database/schema.sql
+*.sql.gz
+*.sql.zip
+*.bak
+*.sqlite
+*.sqlite3
+*.db
+backend/api/vendor/
+backend/api/storage/logs/
+backend/api/storage/framework/sessions/

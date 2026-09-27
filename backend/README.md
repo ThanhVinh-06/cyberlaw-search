@@ -1,6 +1,10 @@
 # Backend và AI — khung chuẩn bị
 
+**Cập nhật 27/09/2026:** Người dùng chọn MySQL và yêu cầu đăng ký/đăng nhập/phân quyền. Kiến trúc mới đang đề xuất Laravel cho API nghiệp vụ và FastAPI cho AI; xem [quyết định công nghệ](../docs/technology-decisions.md) và [yêu cầu tài khoản](../docs/requirements/02-tai-khoan-phan-quyen.md). Cấu trúc `app/` bên dưới vẫn là khung Python ban đầu, chưa thực hiện chuyển đổi.
+
 Chưa có API hoặc mô hình chạy trong thư mục này. Backend dự kiến dùng Python/FastAPI; chỉ thêm cấu hình dependency và lệnh chạy sau khi triển khai chức năng thật.
+
+Đã tạo database MySQL `cyberlaw_search` với 9 bảng rỗng. Xem [thiết kế cơ sở dữ liệu](../docs/design/04-co-so-du-lieu.md) và [SQL dump](../database/cyberlaw_search.sql). Database chưa được kết nối với backend; đăng ký, đăng nhập và phân quyền chưa được triển khai.
 
 | Thư mục | Trách nhiệm |
 |---|---|

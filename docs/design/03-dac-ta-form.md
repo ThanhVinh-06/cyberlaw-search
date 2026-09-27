@@ -1,5 +1,7 @@
 # Đặc tả form và giao diện
 
+**Bổ sung tài khoản ngày 27/09/2026:** Thêm màn hình đăng ký, đăng nhập, trạng thái tài khoản và giao diện theo vai trò. Xem [đặc tả tài khoản và phân quyền](../requirements/02-tai-khoan-phan-quyen.md). Chính sách đề xuất giữ tra cứu công khai, yêu cầu đăng nhập khi chat AI và truy cập lịch sử cá nhân.
+
 **Cập nhật hướng thiết kế:** Theo yêu cầu tiếp theo, bản giao diện mới dùng đỏ burgundy, vàng nhạt và menu trái luôn hiện trên desktop, tham khảo trang tìm kiếm Bộ Công an. Xem [prompt Stitch](../prompts/04-prompt-stitch.md) và [giao diện](../../frontend/index.html). Các màu navy/teal ở mục 8 bên dưới thuộc đề xuất ban đầu và được thay bằng hướng thiết kế mới.
 
 “Form thiết kế” được hiểu là các màn hình, trường nhập liệu, trạng thái và quy tắc tương tác. Tài liệu cũng có biểu mẫu đặc tả để dùng lại trong báo cáo. Mẫu trực quan đi kèm là mô phỏng giao diện; chưa nối cơ sở dữ liệu hoặc mô hình AI.
