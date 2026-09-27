@@ -1,5 +1,6 @@
 # Local agent tools
 .agent/
+.kilo/
 
 # Local secrets
 .env

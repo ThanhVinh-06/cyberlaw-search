@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, NavLink, useLocation } from "react-router-dom";
 import {
   ArrowRight,
@@ -8,9 +8,11 @@ import {
   MessageCircle,
   Search,
   Send,
-  X,
 } from "lucide-react";
 import { articles, source } from "./lib/articles";
+import { ArticleDialog } from "./components/ArticleDialog";
+import { ChatPopover } from "./components/ChatPopover";
+import { motion, AnimatePresence } from "motion/react";
 
 type Article = (typeof articles)[number];
 type Filters = {
@@ -40,13 +42,23 @@ const nav = [
   { path: "/terms", title: "Thuật ngữ pháp luật", icon: Grid2X2 },
 ];
 
-function ArticleContent({ article }: { article: Article }) {
+function ArticleContent({
+  article,
+  sharedTitle = false,
+}: {
+  article: Article;
+  sharedTitle?: boolean;
+}) {
   return (
     <>
       <p className="cl-document-meta">
         LUẬT SỐ 116/2025/QH15 · NGUYÊN VĂN TRÍCH ĐOẠN
       </p>
-      <h2>{article.title}</h2>
+      <motion.h2
+        layoutId={sharedTitle ? `article-title-${article.id}` : undefined}
+      >
+        {article.title}
+      </motion.h2>
       {article.text.split("\n\n").map((paragraph) => (
         <p key={paragraph}>{paragraph}</p>
       ))}
@@ -68,12 +80,17 @@ export default function MainSite() {
   const [results, setResults] = useState(articles);
   const [error, setError] = useState("");
   const [libraryArticle, setLibraryArticle] = useState(articles[0]);
-  const [selectedArticle, setSelectedArticle] = useState(articles[0]);
+  const [selectedArticle, setSelectedArticle] = useState<{
+    article: Article;
+    trigger: HTMLElement;
+    origin: HTMLElement;
+    instant: boolean;
+  } | null>(null);
+  const closeArticle = useCallback(() => setSelectedArticle(null), []);
   const [chatOpen, setChatOpen] = useState(false);
+  const [chatInstant, setChatInstant] = useState(false);
   const [question, setQuestion] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
-  const dialogRef = useRef<HTMLDialogElement>(null);
-  const articleTrigger = useRef<HTMLElement | null>(null);
   const launcherRef = useRef<HTMLButtonElement>(null);
   const chatInputRef = useRef<HTMLInputElement>(null);
   const logRef = useRef<HTMLDivElement>(null);
@@ -90,17 +107,20 @@ export default function MainSite() {
   }, [chatOpen]);
   useEffect(() => {
     if (logRef.current) logRef.current.scrollTop = logRef.current.scrollHeight;
-  }, [messages]);
+  }, [messages, chatOpen]);
   useEffect(() => {
     const escape = (event: KeyboardEvent) => {
-      if (event.key === "Escape" && !dialogRef.current?.open && chatOpen) {
+      if (event.key === "Escape" && !selectedArticle && chatOpen) {
+        setChatInstant(true);
         setChatOpen(false);
-        launcherRef.current?.focus();
+        requestAnimationFrame(() =>
+          launcherRef.current?.focus({ preventScroll: true }),
+        );
       }
     };
     window.addEventListener("keydown", escape);
     return () => window.removeEventListener("keydown", escape);
-  }, [chatOpen]);
+  }, [chatOpen, selectedArticle]);
 
   function search(next = filters) {
     if (next.from && next.to && next.from > next.to) {
@@ -143,14 +163,29 @@ export default function MainSite() {
     setFilters(next);
     search(next);
   }
-  function openArticle(article: Article, trigger: HTMLElement) {
-    articleTrigger.current = trigger;
-    setSelectedArticle(article);
-    dialogRef.current?.showModal();
+  function openArticle(
+    article: Article,
+    trigger: HTMLElement,
+    instant: boolean,
+  ) {
+    setSelectedArticle({
+      article,
+      trigger,
+      instant,
+      origin: trigger.closest<HTMLElement>(".cl-result") ?? trigger,
+    });
   }
-  function closeChat() {
+  const closeChat = useCallback((instant = false, restoreFocus = true) => {
+    setChatInstant(instant);
     setChatOpen(false);
-    launcherRef.current?.focus();
+    if (restoreFocus)
+      requestAnimationFrame(() =>
+        launcherRef.current?.focus({ preventScroll: true }),
+      );
+  }, []);
+  function openChat(instant = false) {
+    setChatInstant(instant);
+    setChatOpen(true);
   }
   function sendChat(value = question) {
     const text = value.trim();
@@ -179,7 +214,9 @@ export default function MainSite() {
   const articleButton = (article: Article, label = "Xem điều khoản") => (
     <button
       className="cl-link-button"
-      onClick={(event) => openArticle(article, event.currentTarget)}
+      onClick={(event) =>
+        openArticle(article, event.currentTarget, event.detail === 0)
+      }
     >
       {label}
       <ArrowRight aria-hidden="true" />
@@ -213,7 +250,10 @@ export default function MainSite() {
               {title}
             </NavLink>
           ))}
-          <button className="cl-nav-item" onClick={() => setChatOpen(true)}>
+          <button
+            className="cl-nav-item"
+            onClick={(event) => openChat(event.detail === 0)}
+          >
             <MessageCircle aria-hidden="true" />
             Hỏi đáp cùng AI<span className="cl-tiny-ai">AI</span>
           </button>
@@ -404,7 +444,17 @@ export default function MainSite() {
             </div>
             <div>
               {results.map((article) => (
-                <article className="cl-result" key={article.id}>
+                <motion.article
+                  layoutId={`article-card-${article.id}`}
+                  className="cl-result"
+                  key={article.id}
+                  transition={{
+                    type: "spring",
+                    stiffness: 190,
+                    damping: 25,
+                    mass: 0.85,
+                  }}
+                >
                   <div className="cl-result-icon">
                     <FileText aria-hidden="true" />
                   </div>
@@ -417,16 +467,18 @@ export default function MainSite() {
                         · &nbsp;116/2025/QH15
                       </span>
                     </div>
-                    <h3>{article.title}</h3>
+                    <motion.h3 layoutId={`article-title-${article.id}`}>
+                      {article.title}
+                    </motion.h3>
                     <p>{article.summary}</p>
-                    <div className="cl-result-bottom">
-                      <span className="cl-result-meta">
-                        Ban hành: 10/12/2025 &nbsp;·&nbsp; Quốc hội
-                      </span>
-                      {articleButton(article)}
-                    </div>
+                    <span className="cl-result-meta">
+                      Ban hành: 10/12/2025 &nbsp;·&nbsp; Quốc hội
+                    </span>
                   </div>
-                </article>
+                  <div className="cl-result-bottom">
+                    {articleButton(article)}
+                  </div>
+                </motion.article>
               ))}
               {!results.length && (
                 <div className="cl-empty-state">
@@ -528,44 +580,14 @@ export default function MainSite() {
           </footer>
         </main>
       </div>
-      <button
-        className="cl-chat-launcher"
-        ref={launcherRef}
-        aria-label="Mở trò chuyện với trợ lý AI"
-        aria-expanded={chatOpen}
-        aria-controls="cl-chat-panel"
-        onClick={() => (chatOpen ? closeChat() : setChatOpen(true))}
+      <ChatPopover
+        open={chatOpen}
+        instant={chatInstant}
+        articleOpen={!!selectedArticle}
+        launcherRef={launcherRef}
+        onOpen={openChat}
+        onClose={closeChat}
       >
-        <span className="cl-launcher-label">
-          Hỏi trợ lý AI <small>Tìm hiểu luật dễ dàng hơn</small>
-        </span>
-        <span className="cl-avatar-wrap">
-          <img src="/assets/ai-assistant.png" alt="" width="96" height="96" />
-        </span>
-      </button>
-      <section
-        id="cl-chat-panel"
-        className="cl-chat-panel"
-        role="dialog"
-        aria-label="Trò chuyện với trợ lý CyberLaw"
-        hidden={!chatOpen}
-      >
-        <header className="cl-chat-header">
-          <span className="cl-chat-avatar">
-            <img src="/assets/ai-assistant.png" alt="" width="51" height="51" />
-          </span>
-          <div>
-            <strong>Trợ lý CyberLaw</strong>
-            <span>Hỗ trợ tra cứu pháp luật</span>
-          </div>
-          <button
-            className="cl-icon-button"
-            aria-label="Đóng trò chuyện"
-            onClick={closeChat}
-          >
-            <X aria-hidden="true" />
-          </button>
-        </header>
         <div
           className="cl-chat-messages"
           ref={logRef}
@@ -626,28 +648,21 @@ export default function MainSite() {
         <div className="cl-chat-disclaimer">
           Bản xem thử giao diện · Phản hồi mẫu
         </div>
-      </section>
-      <dialog
-        id="cl-article-dialog"
-        ref={dialogRef}
-        aria-label="Căn cứ pháp lý"
-        onClose={() => articleTrigger.current?.focus()}
-        onCancel={(event) => event.stopPropagation()}
-      >
-        <header>
-          <span className="cl-eyebrow">CĂN CỨ PHÁP LÝ</span>
-          <button
-            className="cl-icon-button"
-            aria-label="Đóng căn cứ"
-            onClick={() => dialogRef.current?.close()}
+      </ChatPopover>
+      <AnimatePresence>
+        {selectedArticle && (
+          <ArticleDialog
+            key={selectedArticle.article.id}
+            article={selectedArticle.article}
+            trigger={selectedArticle.trigger}
+            origin={selectedArticle.origin}
+            instant={selectedArticle.instant}
+            onClose={closeArticle}
           >
-            <X aria-hidden="true" />
-          </button>
-        </header>
-        <article id="cl-article-content">
-          <ArticleContent article={selectedArticle} />
-        </article>
-      </dialog>
+            <ArticleContent article={selectedArticle.article} sharedTitle />
+          </ArticleDialog>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

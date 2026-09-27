@@ -97,6 +97,19 @@ test("public layout stays responsive and retains the original sidebar", async ({
       ).toBe(true);
     }
     await page.goto("/");
+    const centerOffsets = await page
+      .locator(".cl-result-bottom > .cl-link-button")
+      .evaluateAll((buttons) =>
+        buttons.map((button) => {
+          const link = button.getBoundingClientRect();
+          const card = button.closest(".cl-result")!.getBoundingClientRect();
+          return Math.abs(
+            link.left + link.width / 2 - card.left - card.width / 2,
+          );
+        }),
+      );
+    expect(centerOffsets).toHaveLength(3);
+    expect(Math.max(...centerOffsets)).toBeLessThan(1);
     if (width === 1440 || width === 390) {
       await page.screenshot({
         path: `../docs/design/screenshots/main-${width}.png`,
@@ -105,6 +118,20 @@ test("public layout stays responsive and retains the original sidebar", async ({
       await page
         .getByRole("button", { name: "Mở trò chuyện với trợ lý AI" })
         .click();
+      await expect
+        .poll(() =>
+          page
+            .locator("#cl-chat-panel")
+            .evaluate((element) => getComputedStyle(element).transform),
+        )
+        .toBe("none");
+      await expect
+        .poll(() =>
+          page
+            .locator(".cl-chat-content")
+            .evaluate((element) => getComputedStyle(element).opacity),
+        )
+        .toBe("1");
       await page.screenshot({
         path: `../docs/design/screenshots/main-chat-${width}.png`,
         fullPage: true,

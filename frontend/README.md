@@ -21,6 +21,8 @@ Mở http://127.0.0.1:5173/ cho trang chính; /login và /register cho tài kho�
 - CSS trang chính nằm riêng trong `src/main-site.css`, dùng tiền tố `cl-` và `@scope` để không ảnh hưởng trang tài khoản. Bố cục chính sẽ nâng cấp UI/UX sau theo yêu cầu người dùng.
 - Sidebar luôn hiện trên desktop. Trang chính giữ menu dạng lưới trên mobile; trang tài khoản dùng menu thu gọn có quản lý focus/Escape và robot ở cuối trang để không che form.
 - Motion dùng opacity/transform 220 ms cho chuyển form; CSS phản hồi nút 160 ms. Chuyển bằng bàn phím là tức thì; hỗ trợ prefers-reduced-motion.
+- Xem điều khoản: Antigravity đã chuyển thẻ kết quả/modal sang Motion shared layout với spring, nền mờ và nội dung hiện dần trong `src/components/ArticleDialog.tsx`. Các nút Xem điều khoản nằm giữa thẻ. Khi mở chat, tiêu đề thư viện ẩn không tham gia chung layoutId với kết quả/modal.
+- Chat robot: `src/components/ChatPopover.tsx` dùng Motion shared layout cho nút/panel và avatar, tham khảo Feedback popover trên animations.dev. Mở rộng từ góc dưới phải và thu về nút với spring 0.5 s; nội dung hiện sau một nhịp ngắn. Đóng bằng Esc, nút X hoặc click ngoài; giữ câu hỏi đang soạn/tin nhắn khi mở lại. Hỗ trợ bàn phím, reduced motion và màn hình nhỏ. Robot trang tài khoản vẫn dùng thông báo cũ.
 - Thư viện ảnh tại `public/assets/`; bản mẫu HTML/CSS/JS cũ được lưu trong `../experiments/archive/frontend-static/`.
 
 ## Kiểm tra
@@ -31,7 +33,7 @@ npm run format:check
 npm run test:e2e
 ```
 
-E2E dùng Playwright với Microsoft Edge đã cài trên Windows. Trên máy CI cần cung cấp Edge hoặc chỉnh channel phù hợp. 8 kịch bản kiểm tra tra cứu/bộ lọc ngày/thư viện/chat mẫu, form, mật khẩu, dữ liệu không bị gửi/lưu, dialog, focus, reduced motion và responsive 320/390/768/1024/1440 px. Axe kiểm tra tự động các quy tắc WCAG A/AA trên hai trang ở 1440 và 390 px; không thay thế đánh giá tiếp cận thủ công toàn diện.
+E2E dùng Playwright với Microsoft Edge đã cài trên Windows. Trên máy CI cần cung cấp Edge hoặc chỉnh channel phù hợp. 14 kịch bản kiểm tra tra cứu/bộ lọc ngày/thư viện/chat mẫu, form, mật khẩu, dữ liệu không bị gửi/lưu, dialog, focus, reduced motion, đóng/mở chat liên tục và responsive 320/390/768/1024/1440 px. Axe kiểm tra tự động các quy tắc WCAG A/AA trên hai trang ở 1440 và 390 px; không thay thế đánh giá tiếp cận thủ công toàn diện.
 
 Ảnh kiểm tra được lưu trong `../docs/design/screenshots/`. Kết quả tạm và dependency đã được bỏ qua bởi Git.
 
