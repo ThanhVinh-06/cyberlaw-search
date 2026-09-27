@@ -21,6 +21,9 @@ node_modules/
 frontend/dist/
 frontend/build/
 coverage/
+frontend/test-results/
+frontend/playwright-report/
+*.tsbuildinfo
 
 # Generated indexes and runtime data
 data/indexes/*

@@ -1,63 +1,17 @@
 <!doctype html>
 <html lang="vi">
-<head>
-  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>CyberLaw — Tra cứu Luật An ninh mạng</title>
-  <meta name="description" content="Bản thiết kế giao diện hệ thống tra cứu kiến thức Luật An ninh mạng.">
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect width='40' height='40' rx='10' fill='%23a61132'/%3E%3Ctext x='20' y='28' text-anchor='middle' font-size='27' font-family='serif' fill='%23fff'%3EC%3C/text%3E%3C/svg%3E">
-  <link rel="stylesheet" href="styles.css">
-</head>
-<body>
-<svg class="icon-library" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs>
-<symbol id="i-search" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/></symbol>
-<symbol id="i-book" viewBox="0 0 24 24"><path d="M12 5v15M3 4h5a4 4 0 0 1 4 2 4 4 0 0 1 4-2h5v15h-5a4 4 0 0 0-4 2 4 4 0 0 0-4-2H3z"/></symbol>
-<symbol id="i-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></symbol>
-<symbol id="i-chat" viewBox="0 0 24 24"><path d="M21 11a8 8 0 0 1-8 8H7l-5 3 1-7a8 8 0 0 1 7-12h3a8 8 0 0 1 8 8Z"/><path d="M7 10h10M7 14h6"/></symbol>
-<symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14m-5-5 5 5-5 5"/></symbol>
-<symbol id="i-file" viewBox="0 0 24 24"><path d="M14 3H5v18h14V8l-5-5Zm0 0v6h5M8 13h8M8 17h6"/></symbol>
-<symbol id="i-close" viewBox="0 0 24 24"><path d="m6 6 12 12M6 18 18 6"/></symbol>
-<symbol id="i-send" viewBox="0 0 24 24"><path d="m3 3 19 9-19 9 4-9-4-9Zm4 9h15"/></symbol>
-</defs></svg>
-<a class="skip" href="#main">Đến nội dung chính</a>
-<aside class="sidebar" aria-label="Điều hướng chính">
-  <a class="brand" href="#search"><span class="brand-mark">C<span>·</span></span><span>CyberLaw<small>KIẾN THỨC PHÁP LUẬT</small></span></a>
-  <div class="nav-label">KHÔNG GIAN TRA CỨU</div>
-  <nav>
-    <button class="nav-item selected" data-view="search" aria-current="page"><svg><use href="#i-search"/></svg>Tra cứu pháp luật</button>
-    <button class="nav-item" data-view="library"><svg><use href="#i-book"/></svg>Thư viện văn bản</button>
-    <button class="nav-item" data-view="terms"><svg><use href="#i-grid"/></svg>Thuật ngữ pháp luật</button>
-    <button class="nav-item" data-chat><svg><use href="#i-chat"/></svg>Hỏi đáp cùng AI<span class="tiny-ai">AI</span></button>
-  </nav>
-  <div class="sidebar-scope"><span class="scope-line"></span><div class="nav-label">PHẠM VI KIẾN THỨC</div><strong>Luật An ninh mạng</strong><p>Luật số 116/2025/QH15</p><span class="scope-tag">Văn bản năm 2025</span></div>
-  <div class="sidebar-bottom"><span class="project-mark">ĐỒ ÁN TRÍ TUỆ NHÂN TẠO</span><p>Tra cứu kiến thức pháp luật<br>có dẫn chiếu nguồn văn bản.</p><span class="prototype-label">Bản thiết kế giao diện</span></div>
-</aside>
-<div class="workspace">
-  <header class="masthead"><div><div class="masthead-eyebrow">HỆ THỐNG TRA CỨU KIẾN THỨC PHÁP LUẬT</div><p>LUẬT AN NINH MẠNG</p></div><div class="header-seal"><svg><use href="#i-book"/></svg><span>Hiểu luật<br><strong>Vững kiến thức</strong></span></div></header>
-  <div class="context-bar"><span>CyberLaw <span class="separator">/</span> <span id="breadcrumb">Tra cứu pháp luật</span></span><span class="context-meta">Nguồn: Luật số 116/2025/QH15</span></div>
-  <main id="main">
-    <section class="view" id="view-search">
-      <div class="page-heading"><div><span class="eyebrow">TRA CỨU KIẾN THỨC</span><h1>Tìm kiếm quy định pháp luật</h1><p>Tìm theo từ khóa, điều khoản hoặc câu hỏi của bạn.</p></div><span class="section-number">01 <span>/ TRA CỨU</span></span></div>
-      <form id="search-form" class="search-card">
-        <div class="search-primary"><label>Tìm kiếm theo<select id="search-mode"><option value="all">Nội dung & tiêu đề</option><option value="title">Tiêu đề điều luật</option><option value="article">Số điều</option></select></label><label class="query-label">Từ khóa hoặc câu hỏi<div class="input-icon"><svg><use href="#i-search"/></svg><input id="query" placeholder="Ví dụ: an ninh mạng là gì?" value="an ninh mạng" maxlength="1000"></div></label></div>
-        <div class="search-secondary"><label>Văn bản<div class="readonly-field">116/2025/QH15</div></label><label>Loại nội dung<select id="content-type"><option value="all">Tất cả nội dung</option><option value="general">Quy định chung</option><option value="definition">Khái niệm</option><option value="effect">Hiệu lực thi hành</option></select></label><label>Ban hành từ ngày<input type="date" id="date-from"></label><label>Đến ngày<input type="date" id="date-to"></label></div>
-        <div class="search-bottom"><div class="suggestions"><span>Gợi ý:</span><button type="button" data-query="khái niệm">Khái niệm</button><button type="button" data-query="Điều 44">Hiệu lực thi hành</button></div><div class="form-actions"><button type="button" class="text-button" id="reset">Đặt lại</button><button class="primary" type="submit"><svg><use href="#i-search"/></svg>Tìm kiếm</button></div></div>
-        <p class="validation" id="search-error" role="alert" hidden></p>
-      </form>
-      <div class="results-heading"><h2 id="result-count">Kết quả tra cứu</h2><span>Dữ liệu minh họa · 3 điều luật</span></div>
-      <div id="results" aria-live="polite"></div>
-      <div class="source-note"><svg><use href="#i-book"/></svg><span>Mỗi kết quả liên kết đến điều khoản và nguồn văn bản để bạn đối chiếu.</span></div>
-    </section>
-    <section class="view" id="view-library" hidden><div class="page-heading"><div><span class="eyebrow">THƯ VIỆN VĂN BẢN</span><h1>Luật An ninh mạng</h1><p>Luật số 116/2025/QH15 · Ban hành ngày 10/12/2025</p></div></div><div class="library-layout"><div class="article-nav"><h2>Mục lục minh họa</h2><button data-article="1">Điều 1 · Phạm vi điều chỉnh</button><button data-article="2">Điều 2 · Giải thích từ ngữ</button><button data-article="44">Điều 44 · Hiệu lực thi hành</button></div><article class="document-card" id="library-detail"></article></div></section>
-    <section class="view" id="view-terms" hidden><div class="page-heading"><div><span class="eyebrow">TỪ ĐIỂN KIẾN THỨC</span><h1>Thuật ngữ pháp luật</h1><p>Cụm từ và cách diễn đạt thường dùng khi tra cứu.</p></div></div><div class="term-card"><span class="result-category">KHÁI NIỆM</span><h2>An ninh mạng</h2><p>Biến thể tìm kiếm: “an ninh mang”, “an ninh mạng là gì”.</p><button class="link-button" data-article="2">Xem khoản 1 Điều 2 <svg><use href="#i-arrow"/></svg></button></div><div class="term-card"><span class="result-category">ỨNG VIÊN KEYPHRASE</span><h2>Tấn công mạng</h2><p>Truy vấn tình huống: “bị tấn công hệ thống”.</p><p class="muted">Cần duyệt liên kết điều khoản trước khi đưa vào bộ tìm kiếm.</p></div></section>
-    <footer class="page-footer"><strong>CyberLaw</strong><span>Đồ án môn Trí tuệ nhân tạo</span><span>Giao diện mẫu · Chưa kết nối AI</span></footer>
-  </main>
-</div>
-<button class="chat-launcher" id="chat-launcher" aria-label="Mở trò chuyện với trợ lý AI" aria-expanded="false" aria-controls="chat-panel"><span class="launcher-label">Hỏi trợ lý AI <small>Tìm hiểu luật dễ dàng hơn</small></span><span class="avatar-wrap"><img src="assets/ai-assistant.png" alt="" width="96" height="96"></span></button>
-<section id="chat-panel" class="chat-panel" role="dialog" aria-label="Trò chuyện với trợ lý CyberLaw" hidden>
-  <header class="chat-header"><span class="chat-avatar"><img src="assets/ai-assistant.png" alt="" width="51" height="51"></span><div><strong>Trợ lý CyberLaw</strong><span>Hỗ trợ tra cứu pháp luật</span></div><button id="close-chat" class="icon-button" aria-label="Đóng trò chuyện"><svg><use href="#i-close"/></svg></button></header>
-  <div class="chat-messages" id="chat-messages" role="log" aria-live="polite"><div class="chat-date">TRÒ CHUYỆN MỚI</div><div class="message assistant"><strong>Xin chào, tôi là trợ lý CyberLaw.</strong><p>Bạn muốn tìm hiểu quy định nào về Luật An ninh mạng?</p></div><div class="chat-prompts"><button data-chat-prompt="Luật có hiệu lực từ khi nào?">Luật có hiệu lực từ khi nào?</button><button data-chat-prompt="An ninh mạng là gì?">An ninh mạng là gì?</button></div></div>
-  <form id="chat-form"><label class="sr-only" for="chat-input">Câu hỏi cho trợ lý AI</label><input id="chat-input" placeholder="Nhập câu hỏi của bạn…" maxlength="1000" required><button type="submit" aria-label="Gửi câu hỏi"><svg><use href="#i-send"/></svg></button></form><div class="chat-disclaimer">Bản xem thử giao diện · Phản hồi mẫu</div>
-</section>
-<dialog id="article-dialog"><header><span class="eyebrow">CĂN CỨ PHÁP LÝ</span><button id="close-article" class="icon-button" aria-label="Đóng căn cứ"><svg><use href="#i-close"/></svg></button></header><article id="article-content"></article></dialog>
-<script src="app.js"></script>
-</body></html>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#752536" />
+    <meta
+      name="description"
+      content="CyberLaw — Không gian tra cứu và tìm hiểu pháp luật về an ninh mạng."
+    />
+    <title>CyberLaw · Tài khoản</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

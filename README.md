@@ -9,32 +9,31 @@
 - **Frontend đã chốt ngày 27/09/2026:** React + TypeScript + Vite + Tailwind CSS + shadcn/ui + Motion for React.
 - **Backend đang đề xuất theo yêu cầu kết hợp PHP và Python:** Laravel làm API nghiệp vụ, FastAPI làm dịch vụ xử lý AI.
 - **Database theo lựa chọn của người dùng:** MySQL. Bổ sung yêu cầu đăng ký, đăng nhập, đăng xuất và phân quyền; thiết kế chi tiết trong [Tài khoản và phân quyền](docs/requirements/02-tai-khoan-phan-quyen.md).
-- Mã frontend hiện vẫn là bản HTML/CSS/JavaScript thuần; chưa thực hiện chuyển đổi framework. Cây thư mục bên dưới phản ánh các tệp hiện có.
+- Frontend đã chuyển sang React/TypeScript/Vite. Trang đăng nhập, đăng ký và các trang tra cứu minh họa đã chạy; xác thực backend chưa được kết nối.
 
 Chi tiết phân chia trách nhiệm và luồng kết nối: [Phương án công nghệ](docs/technology-decisions.md).
 
 ## Trạng thái hiện tại
 
-- **Đã có:** giao diện HTML/CSS/JavaScript, hình trợ lý AI, tìm kiếm trên ba bản ghi minh họa, khung chat phản hồi mẫu; phân tích yêu cầu, đặc tả form và prompt thiết kế.
+- **Đã có:** frontend React, giao diện đăng ký/đăng nhập responsive, kiểm tra dữ liệu nhập, sidebar trái, robot AI, tìm kiếm ba điều luật minh họa và xem căn cứ. Trợ lý hiện thông báo tính năng AI chưa kết nối.
 - **Đã lưu:** tài liệu đề bài, PDF luật và văn bản trích xuất ban đầu.
 - **Database:** đã tạo `cyberlaw_search` trên MySQL 8.0.44 với 9 bảng; tên bảng/cột bằng tiếng Việt không dấu, các bảng đang rỗng. Xem [thiết kế dữ liệu](docs/design/04-co-so-du-lieu.md) và [file SQL đã xuất](database/cyberlaw_search.sql).
 - **Chưa triển khai:** backend/API, cơ sở tri thức đã duyệt, tìm kiếm ngữ nghĩa, kết nối LLM và bộ đánh giá. Các thư mục tương ứng là khung chuẩn bị.
 
 ## Mở giao diện
 
-Từ thư mục gốc dự án:
+Cài Node.js 22.12 trở lên, sau đó từ thư mục gốc dự án:
 
 ```powershell
-python scripts/serve_frontend.py
+cd frontend
+npm ci
+npm run dev
 ```
 
-Mở **http://127.0.0.1:4173**. Dừng bằng `Ctrl+C`. Có thể chọn cổng khác:
+Mở **http://127.0.0.1:5173/login** hoặc **http://127.0.0.1:5173/register**.
 
-```powershell
-python scripts/serve_frontend.py --port 4174
-```
-
-Lệnh chỉ dùng thư viện chuẩn Python 3 và chỉ phục vụ thư mục `frontend`, không công khai dữ liệu luật hay tài liệu dự án. Nếu không có Python, có thể mở trực tiếp `frontend/index.html`. Font trực tuyến có font hệ thống thay thế khi mất mạng.
+Kiểm tra: `npm run build`, `npm run format:check`, `npm run test:e2e` (E2E dùng Edge).
+Sau khi cài dependency, cũng có thể dùng `python scripts/serve_frontend.py` từ gốc dự án để khởi động Vite. Bản mẫu cũ có tại `experiments/archive/frontend-static/` và chạy bằng `python scripts/serve_frontend.py --legacy --port 4173`.
 
 ## Cấu trúc thư mục
 
@@ -42,9 +41,10 @@ Lệnh chỉ dùng thư viện chuẩn Python 3 và chỉ phục vụ thư mục
 cyberlaw-search/
 ├── frontend/                  # Giao diện hiện tại, chạy được
 │   ├── index.html
-│   ├── styles.css
-│   ├── app.js
-│   └── assets/                # Ảnh dùng trực tiếp trên giao diện
+│   ├── src/                   # React, TypeScript, CSS và component shadcn/ui
+│   ├── public/assets/         # Ảnh dùng trực tiếp trên giao diện
+│   ├── e2e/                   # Kiểm tra Playwright + Axe
+│   └── package.json           # Lệnh dev, build, format và test
 ├── backend/                   # Khung cho Python/FastAPI, chưa có API
 │   └── app/
 │       ├── api/               # Các endpoint tra cứu, văn bản, hỏi đáp

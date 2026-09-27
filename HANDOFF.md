@@ -1,6 +1,6 @@
 # Bàn giao dự án CyberLaw Search
 
-Cập nhật ngày 27/09/2026, sau khi đổi tên bảng/cột MySQL sang tiếng Việt và cập nhật SQL dump trên Desktop.
+Cập nhật ngày 27/09/2026: đã chuyển frontend sang React và thiết kế trang đăng ký/đăng nhập; database tiếng Việt giữ nguyên.
 
 Tài liệu này giúp agent mới tiếp tục dự án mà không cần lịch sử chat. Đây là trạng thái tại thời điểm bàn giao; kiểm tra mã và yêu cầu mới của người dùng trước khi thực hiện công việc tiếp theo.
 
@@ -16,10 +16,10 @@ Tài liệu này giúp agent mới tiếp tục dự án mà không cần lịch
 
 | Phần | Quyết định / hướng thực hiện | Trạng thái thực tế |
 |---|---|---|
-| Frontend | Đã chốt React + TypeScript + Vite + Tailwind CSS + shadcn/ui + Motion for React | Chưa chuyển mã, chưa có package.json |
+| Frontend | Đã chốt React + TypeScript + Vite + Tailwind CSS + shadcn/ui + Motion for React | Đã triển khai tại frontend/src; có package.json và lockfile |
 | Backend | Người dùng muốn PHP kết hợp Python; đề xuất Laravel cho nghiệp vụ, FastAPI cho AI | Chưa khởi tạo Laravel/FastAPI chạy được |
 | Database | Người dùng chọn MySQL; yêu cầu tên bảng và cột tiếng Việt không dấu | Đã tạo và kiểm tra trên MySQL 8.0.44 |
-| Tài khoản | Có đăng ký, đăng nhập, đăng xuất và phân quyền | Đã có thiết kế/schema; chưa có chức năng thật |
+| Tài khoản | Có đăng ký, đăng nhập, đăng xuất và phân quyền | Có giao diện và kiểm tra dữ liệu nhập; chưa nối API xác thực |
 | Phân quyền | Hai vai trò tài khoản user/admin; khách chưa đăng nhập | Chính sách chi tiết là đề xuất trong tài liệu |
 | AI | Keyphrase, khái niệm, quy định có cấu trúc, tìm kiếm ngữ nghĩa và đáp án có căn cứ | Chưa triển khai; chưa chốt nhà cung cấp LLM/embedding |
 
@@ -33,18 +33,25 @@ Luồng kiến trúc đề xuất: `React → Laravel → FastAPI`, Laravel qu�
 - Thay nhân vật cán bộ ở mẫu tham khảo bằng robot AI làm nút mở chat.
 - Người dùng muốn animation mượt, UI/UX đẹp. Hỗ trợ bàn phím và tùy chọn giảm chuyển động.
 - Ảnh robot đã có: `frontend/assets/ai-assistant.png`; ưu tiên tái sử dụng.
-- Các tệp đang chạy: `frontend/index.html`, `frontend/styles.css`, `frontend/app.js`.
-- Hiện chỉ có tìm kiếm trên ba bản ghi minh họa và chat phản hồi dựng sẵn. Chưa kết nối database hoặc dịch vụ AI.
+- Yêu cầu mới nhất: giữ bố cục/phong cách trang chính cũ, chỉ chuyển sang React; nâng cấp UI/UX trang chính để giai đoạn sau. Hai trang đăng ký/đăng nhập dùng thiết kế mới.
+- Frontend đang chạy: `frontend/src/App.tsx` (tài khoản), `frontend/src/MainSite.tsx` (trang chính), `frontend/src/index.css`, `frontend/src/main-site.css`, `frontend/src/components/ui/`. Entry là `frontend/index.html` và `frontend/src/main.tsx`.
+- Đã có `/` và `/search` là trang tra cứu cũ chuyển sang React, cùng `/login`, `/register`, `/library`, `/terms`, `/help`. Trang chính giữ bộ lọc loại nội dung/ngày/số điều, thư viện có mục lục, thuật ngữ và dialog căn cứ. Robot trên trang chính mở chat có hai phản hồi mẫu cùng liên kết điều khoản; robot tại trang tài khoản mở thông báo AI chưa sẵn sàng. Chưa kết nối database/API. Form không gửi/lưu mật khẩu và không giả lập đăng nhập thành công.
 - Form và thiết kế mục tiêu: `docs/design/03-dac-ta-form.md`. Prompt Stitch: `docs/prompts/04-prompt-stitch.md`.
 - Các yêu cầu bổ sung về trang tài khoản/quản trị nằm trong `docs/requirements/02-tai-khoan-phan-quyen.md`.
 
 Xem bản mẫu từ thư mục gốc:
 
 ```powershell
-python scripts/serve_frontend.py
+cd frontend
+npm ci
+npm run dev
 ```
 
-Mở `http://127.0.0.1:4173`. Kiểm tra cổng trước khi khởi động vì có thể đã có tiến trình preview; không giả định phiên chạy của agent trước còn hoạt động.
+Mở `http://127.0.0.1:5173/` cho trang chính, `/login` hoặc `/register` cho tài khoản. Kiểm tra cổng trước khi khởi động vì có thể đã có Vite chạy; không giả định phiên của agent trước còn hoạt động. Python launcher cũ nay khởi động Vite; thêm `--legacy --port 4173` để xem bản HTML đã lưu trong `experiments/archive/frontend-static/`.
+
+Kiểm tra: `npm run build`, `npm run format:check`, `npm run test:e2e` (Playwright dùng Edge trên Windows). Có 8 kịch bản đã đạt: form/login, register, guest/source dialog, menu mobile, responsive/Axe, keyboard/reduced motion, luồng tra cứu/thư viện/chat, responsive trang chính. Axe chỉ áp dụng hai trang tài khoản. Trang chính dùng CSS riêng có tiền tố cl- và @scope để không ảnh hưởng CSS tài khoản; đã kiểm tra bằng Edge hiện hành. Font được đóng gói local. Ảnh desktop/mobile trong `docs/design/screenshots/`.
+
+Skills đã đọc và áp dụng: `emil-design-eng`, `animate`, recipe về nút/chuyển động; shadcn/ui được thêm qua CLI. Motion dùng transform/opacity 220 ms, CSS phản hồi nút 160 ms, hỗ trợ giảm chuyển động và bỏ chuyển động khi dùng bàn phím.
 
 ## 4. Database hiện tại — phần vừa hoàn thành
 
@@ -103,9 +110,9 @@ Khi làm Laravel: khai báo rõ `$table`, `$primaryKey`, các khóa ngoại, `CR
 
 ## 7. Tiếp tục từ đâu
 
-Yêu cầu đổi tên database và cập nhật dump đã hoàn tất. Người dùng hiện muốn bàn giao sang agent khác, chưa giao một chức năng mới cụ thể.
+Yêu cầu database, commit/push trước đó đã hoàn tất (commit d79c2ec). Yêu cầu tiếp theo là thiết kế lại frontend theo stack đã chốt, tập trung đăng nhập/đăng ký, đồng thời chuyển giao diện chính cũ sang React và giữ bố cục: đã thực hiện. Người dùng đã yêu cầu commit và push toàn bộ phần frontend này lên nhánh `main` của `origin`. Bản bàn giao này đi cùng commit frontend; khi tiếp tục, kiểm tra `git status` và đối chiếu `HEAD` với `origin/main` để xác nhận trạng thái đồng bộ. Đã kiểm tra file đưa lên Git: không có mật khẩu/khóa riêng được phát hiện; `.env`, dump MySQL, `.agent`, dependencies và build được bỏ qua.
 
-Nếu người dùng yêu cầu tiếp tục giao diện, hướng hợp lý là chuyển bản mẫu hiện tại sang React/TypeScript/Vite theo stack đã chốt, giữ phong cách, sidebar và ảnh robot; sau đó làm màn hình đăng ký/đăng nhập và bố cục theo vai trò. Thực hiện theo yêu cầu tiếp theo của người dùng, không tự coi toàn bộ lộ trình là nhiệm vụ đang chạy.
+Bước tiếp theo tùy yêu cầu người dùng: duyệt giao diện, triển khai Laravel auth (CSRF/session, lỗi API, loading và redirect), hoặc hoàn thiện tra cứu/AI. Giữ tên cột tiếng Việt trong MySQL; không coi form frontend là xác thực hoặc phân quyền thật.
 
 Trước khi chỉnh sửa, agent mới nên:
 

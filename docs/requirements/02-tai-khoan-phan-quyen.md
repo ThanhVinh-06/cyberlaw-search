@@ -1,6 +1,6 @@
 # MySQL, tài khoản và phân quyền
 
-Cập nhật yêu cầu ngày 27/09/2026. Đã tạo database với 9 bảng theo [thiết kế dữ liệu](../design/04-co-so-du-lieu.md); chưa có chức năng đăng nhập thật.
+Cập nhật yêu cầu ngày 27/09/2026. Đã tạo database với 9 bảng theo [thiết kế dữ liệu](../design/04-co-so-du-lieu.md); đã có giao diện React `/login` và `/register`, kiểm tra form phía client; chưa kết nối API và chưa có chức năng đăng nhập thật.
 
 ## 1. Phần đã được yêu cầu và phần đề xuất
 

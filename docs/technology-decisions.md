@@ -8,7 +8,7 @@ React + TypeScript + Vite + Tailwind CSS + shadcn/ui + Motion for React.
 
 Giữ hướng thiết kế CyberLaw: màu đỏ burgundy, vàng nhạt, menu trái luôn hiển thị trên desktop và hình robot mở chat. Khi triển khai, chuyển từng phần của bản mẫu thành component, thêm responsive và animation ngắn, đồng thời hỗ trợ giảm chuyển động.
 
-Quyết định công nghệ chưa đồng nghĩa đã cài dependency hoặc chuyển mã. Hiện `frontend/` vẫn chứa bản HTML/CSS/JavaScript chạy được.
+Frontend đã chuyển sang React/TypeScript/Vite với Tailwind CSS, component shadcn/ui và Motion. Có trang đăng nhập/đăng ký và tra cứu minh họa. Backend xác thực chưa được nối; mã HTML/CSS/JS cũ được lưu tại `experiments/archive/frontend-static/`.
 
 ## 2. Backend được đề xuất: PHP + Python
 
