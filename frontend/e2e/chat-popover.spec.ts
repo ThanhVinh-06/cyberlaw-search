@@ -17,6 +17,75 @@ async function settle(page: Page) {
     .toBe("1");
 }
 
+test("account popovers share the morph, fit the viewport and preserve the form", async ({
+  page,
+}, testInfo) => {
+  const errors: string[] = [];
+  page.on("pageerror", (error) => errors.push(error.message));
+  for (const [route, width, height] of [
+    ["login", 1440, 1000],
+    ["register", 390, 844],
+    ["login", 320, 568],
+    ["register", 844, 390],
+  ] as const) {
+    await page.setViewportSize({ width, height });
+    await page.goto(`/${route}`);
+    const email = page.getByLabel("Địa chỉ email");
+    await email.fill("demo@example.com");
+    const launcher = page.getByRole("button", {
+      name: "Mở trò chuyện với trợ lý AI",
+    });
+    await launcher.click();
+    const dialog = page.getByRole("dialog", {
+      name: "Trò chuyện với trợ lý CyberLaw",
+    });
+    await expect(
+      dialog.getByRole("link", { name: "Khám phá thư viện luật" }),
+    ).toBeFocused();
+    await expect(dialog).toContainText(
+      "Tính năng hỏi đáp AI đang được hoàn thiện",
+    );
+    await settle(page);
+    const box = await dialog.boundingBox();
+    expect(box!.x).toBeGreaterThanOrEqual(0);
+    expect(box!.y).toBeGreaterThanOrEqual(0);
+    expect(box!.x + box!.width).toBeLessThanOrEqual(width);
+    expect(box!.y + box!.height).toBeLessThanOrEqual(height);
+    await page.screenshot({
+      path: testInfo.outputPath(`account-chat-${width}.png`),
+    });
+    await dialog.getByRole("button", { name: "Đóng trò chuyện" }).click();
+    await expect(launcher).toBeFocused();
+    await launcher.click();
+    await expect(dialog).toHaveCount(1);
+    await email.click();
+    await expect(email).toBeFocused();
+    await expect(email).toHaveValue("demo@example.com");
+    await expect(dialog).toHaveCount(0);
+  }
+  expect(errors).toEqual([]);
+});
+
+test("account popover supports keyboard, reduced motion and navigation", async ({
+  page,
+}) => {
+  await page.goto("/login");
+  const launcher = page.getByRole("button", {
+    name: "Mở trò chuyện với trợ lý AI",
+  });
+  await launcher.focus();
+  await page.keyboard.press("Enter");
+  await expect(page.locator("#cl-chat-panel")).toHaveCSS("transform", "none");
+  await page.keyboard.press("Escape");
+  await expect(launcher).toBeFocused();
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await launcher.click();
+  await expect(page.locator("#cl-chat-panel")).toHaveCSS("transform", "none");
+  await page.getByRole("link", { name: "Khám phá thư viện luật" }).click();
+  await expect(page).toHaveURL(/\/search$/);
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+});
+
 test("chat morphs from its launcher and keeps draft and messages on reopen", async ({
   page,
 }, testInfo) => {

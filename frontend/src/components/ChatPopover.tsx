@@ -15,8 +15,10 @@ import {
   type Transition,
 } from "motion/react";
 import { X } from "lucide-react";
+import "./ChatPopover.css";
 
 type Props = {
+  className?: string;
   open: boolean;
   instant: boolean;
   articleOpen: boolean;
@@ -117,6 +119,7 @@ function ChatPanel({
 }
 
 export function ChatPopover({
+  className = "",
   open,
   instant,
   articleOpen,
@@ -145,7 +148,12 @@ export function ChatPopover({
 
   return (
     <LayoutGroup id={id}>
-      <motion.div className="cl-chat-dock" ref={dockRef} layoutRoot>
+      <motion.div
+        className={`cl-chat-dock ${className}`}
+        data-open={open}
+        ref={dockRef}
+        layoutRoot
+      >
         <motion.button
           className="cl-chat-launcher"
           ref={launcherRef}

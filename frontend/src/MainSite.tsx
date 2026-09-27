@@ -272,7 +272,12 @@ export default function MainSite() {
             <br />
             có dẫn chiếu nguồn văn bản.
           </p>
-          <span className="cl-prototype-label">Bản thiết kế giao diện</span>
+          <div className="cl-sidebar-account" aria-label="Tài khoản">
+            <Link to="/login" className="cl-primary">
+              Đăng nhập
+            </Link>
+            <Link to="/register">Đăng ký</Link>
+          </div>
         </div>
       </aside>
       <div className="cl-workspace">
@@ -296,13 +301,7 @@ export default function MainSite() {
           <span>
             CyberLaw <span className="cl-separator">/</span> {currentTitle}
           </span>
-          <div className="cl-context-actions">
-            <span className="cl-context-meta">
-              Nguồn: Luật số 116/2025/QH15
-            </span>
-            <Link to="/login">Đăng nhập</Link>
-            <Link to="/register">Đăng ký</Link>
-          </div>
+          <span className="cl-context-meta">Nguồn: Luật số 116/2025/QH15</span>
         </div>
         <main id="cl-main" ref={mainRef} tabIndex={-1}>
           <section className="cl-view" hidden={view !== "/search"}>

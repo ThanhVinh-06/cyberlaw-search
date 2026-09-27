@@ -139,7 +139,7 @@ test("responsive layouts, WCAG checks and screenshots", async ({ page }) => {
       await page.evaluate(() => document.fonts.ready);
       await expect(page.locator("h1")).toBeVisible();
       if (width <= 390) {
-        const launcher = await page.locator(".companion").boundingBox();
+        const launcher = await page.locator(".cl-chat-launcher").boundingBox();
         const form = await page.locator(".auth-form").boundingBox();
         expect(launcher!.y).toBeGreaterThan(form!.y + form!.height);
       }

@@ -861,50 +861,6 @@ main {
   align-items: center;
   gap: 5px;
 }
-.companion {
-  position: fixed;
-  bottom: 12px;
-  right: 19px;
-  z-index: 20;
-  display: flex;
-  align-items: center;
-  border: 0;
-  background: transparent;
-  padding: 0;
-}
-.companion > span:first-child {
-  display: none;
-  background: #fffefa;
-  border: 1px solid #e7dfd5;
-  padding: 9px 13px;
-  border-radius: 9px 9px 1px 9px;
-  color: #76665c;
-  font-size: 8px;
-  text-align: left;
-  line-height: 1.7;
-  box-shadow: 0 3px 15px #30221a06;
-}
-.companion strong {
-  color: #694c46;
-  font-weight: 500;
-}
-.companion img {
-  width: 60px;
-  height: 60px;
-  object-fit: contain;
-  margin-left: 4px;
-  filter: drop-shadow(0 3px 3px #57332820);
-}
-.companion-dot {
-  position: absolute;
-  bottom: 0;
-  right: 0;
-  background: #772e40;
-  border-radius: 50%;
-  padding: 5px;
-  color: #fff;
-  border: 2px solid #f8f7f4;
-}
 .register-card .form-emblem {
   margin-bottom: 15px;
   width: 40px;
@@ -961,18 +917,6 @@ main {
   align-items: center;
   gap: 8px;
   margin: 18px 0 0;
-}
-.assistant-dialog {
-  padding: 30px;
-  border-radius: 16px;
-}
-.assistant-dialog > img {
-  margin: 0 auto;
-}
-.assistant-dialog > p {
-  font-size: 13px;
-  line-height: 1.9;
-  color: #7c6a62;
 }
 [data-slot="dialog-overlay"] {
   background: #2f1b2666;
@@ -1231,9 +1175,6 @@ main {
     padding: 21px 26px;
   }
   .site-footer > span:nth-child(2) {
-    display: none;
-  }
-  .companion > span:first-child {
     display: none;
   }
   .topbar-subtitle,
@@ -1502,15 +1443,6 @@ main {
   .site-footer {
     padding: 21px 20px 90px;
     font-size: 8px;
-  }
-  .companion {
-    position: absolute;
-    right: 12px;
-    bottom: 15px;
-  }
-  .companion img {
-    width: 53px;
-    height: 53px;
   }
   .mobile-navigation {
     max-width: 380px;

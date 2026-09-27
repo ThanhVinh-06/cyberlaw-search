@@ -1,5 +1,6 @@
 import MainSite from "./MainSite";
 import {
+  useCallback,
   useEffect,
   useLayoutEffect,
   useRef,
@@ -24,7 +25,6 @@ import {
   LockKeyhole,
   Mail,
   Menu,
-  MessageCircle,
   Search,
   ShieldCheck,
   Sparkles,
@@ -33,6 +33,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { ChatPopover } from "@/components/ChatPopover";
 import {
   Dialog,
   DialogContent,
@@ -169,46 +170,56 @@ function MobileMenu() {
 }
 
 function Companion() {
+  const [open, setOpen] = useState(false);
+  const [instant, setInstant] = useState(false);
+  const launcherRef = useRef<HTMLButtonElement>(null);
+  const actionRef = useRef<HTMLAnchorElement>(null);
+  const close = useCallback((immediate = false, restoreFocus = true) => {
+    setInstant(immediate);
+    setOpen(false);
+    if (restoreFocus)
+      requestAnimationFrame(() =>
+        launcherRef.current?.focus({ preventScroll: true }),
+      );
+  }, []);
+  useEffect(() => {
+    if (!open) return;
+    actionRef.current?.focus({ preventScroll: true });
+    const escape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") close(true);
+    };
+    window.addEventListener("keydown", escape);
+    return () => window.removeEventListener("keydown", escape);
+  }, [open, close]);
   return (
-    <Dialog>
-      <DialogTrigger asChild>
-        <button className="companion" aria-label="Hỏi trợ lý CyberLaw">
-          <span>
-            Chúng mình cùng
-            <br />
-            <strong>tìm hiểu luật nhé!</strong>
-          </span>
-          <img src="/assets/ai-assistant.png" alt="" width="66" height="66" />
-          <span className="companion-dot">
-            <MessageCircle size={12} />
-          </span>
-        </button>
-      </DialogTrigger>
-      <DialogContent className="assistant-dialog">
-        <DialogHeader>
-          <DialogTitle>Xin chào, mình là CyberLaw.</DialogTitle>
-          <DialogDescription>
-            Không gian hỏi đáp về Luật An ninh mạng.
-          </DialogDescription>
-        </DialogHeader>
-        <img
-          src="/assets/ai-assistant.png"
-          alt="Trợ lý CyberLaw"
-          width="120"
-          height="120"
-        />
+    <ChatPopover
+      className="cl-auth-chat"
+      open={open}
+      instant={instant}
+      articleOpen={false}
+      launcherRef={launcherRef}
+      onOpen={(immediate) => {
+        setInstant(immediate);
+        setOpen(true);
+      }}
+      onClose={close}
+    >
+      <div className="cl-auth-chat-body">
+        <img src="/assets/ai-assistant.png" alt="" width="120" height="120" />
+        <h2>Xin chào, mình là CyberLaw.</h2>
+        <p>Không gian hỏi đáp về Luật An ninh mạng.</p>
         <p>
           Tính năng hỏi đáp AI đang được hoàn thiện. Bạn có thể khám phá các
           điều khoản minh họa trong trang tra cứu ngay lúc này.
         </p>
         <Button asChild>
-          <Link to="/search">
+          <Link to="/search" ref={actionRef}>
             Khám phá thư viện luật
             <ArrowRight size={17} />
           </Link>
         </Button>
-      </DialogContent>
-    </Dialog>
+      </div>
+    </ChatPopover>
   );
 }
 
@@ -754,7 +765,7 @@ export default function App() {
           </Link>
         </footer>
       </div>
-      <Companion />
+      <Companion key={location.pathname} />
     </div>
   );
 }
