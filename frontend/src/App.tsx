@@ -2,6 +2,8 @@ import MainSite from "./MainSite";
 import AdminUsersPage from "./pages/admin/AdminUsersPage";
 import AdminAccessDenied from "./pages/admin/AdminAccessDenied";
 import { useAuth } from "./lib/auth-context";
+import { Brand } from "./components/Brand";
+import { publicNavigation, historyNavigation } from "./lib/navigation";
 import {
   useCallback,
   useEffect,
@@ -13,6 +15,7 @@ import {
 import {
   Link,
   NavLink,
+  Navigate,
   Route,
   Routes,
   useLocation,
@@ -31,7 +34,6 @@ import {
   Fingerprint,
   History,
   Info,
-  Library,
   LockKeyhole,
   Mail,
   Menu,
@@ -53,26 +55,6 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 
-const nav = [
-  { to: "/search", label: "Tra cứu pháp luật", icon: Search },
-  { to: "/library", label: "Thư viện văn bản", icon: Library },
-  { to: "/terms", label: "Từ điển thuật ngữ", icon: BookOpen },
-];
-
-function Brand() {
-  return (
-    <Link className="brand" to="/search" aria-label="CyberLaw — Trang tra cứu">
-      <span className="brand-mark">
-        <ShieldCheck size={25} strokeWidth={1.6} />
-      </span>
-      <span>
-        Cyber<span className="brand-law">Law</span>
-        <small>HIỂU LUẬT · AN TÂM</small>
-      </span>
-    </Link>
-  );
-}
-
 function Navigation({ close }: { close?: () => void }) {
   const authRoute = ["/login", "/register"].includes(useLocation().pathname);
   const { currentUser, isAuthenticated, isAdmin, logout } = useAuth();
@@ -81,7 +63,7 @@ function Navigation({ close }: { close?: () => void }) {
     <>
       <div className="nav-group-label">KHÁM PHÁ</div>
       <nav aria-label="Điều hướng chính">
-        {nav.map(({ to, label, icon: Icon }) => (
+        {publicNavigation.map(({ to, label, icon: Icon }) => (
           <NavLink
             onClick={close}
             key={to}
@@ -188,10 +170,14 @@ function Navigation({ close }: { close?: () => void }) {
         </div>
       )}
 
-      <Link onClick={close} className="nav-link" to="/login?next=history">
+      <Link
+        onClick={close}
+        className="nav-link"
+        to={isAuthenticated ? historyNavigation.to : "/login?next=history"}
+      >
         <History size={19} />
-        Lịch sử hỏi đáp
-        <LockKeyhole size={13} className="nav-chevron" />
+        {historyNavigation.label}
+        {!isAuthenticated && <LockKeyhole size={13} className="nav-chevron" />}
       </Link>
 
       {/* CHỈ hiển thị Quản trị hệ thống khi đã đăng nhập đúng tài khoản Quản trị viên (admin) */}
@@ -213,8 +199,10 @@ function Navigation({ close }: { close?: () => void }) {
 
 function Sidebar() {
   return (
-    <aside className="sidebar">
-      <Brand />
+    <aside className="sidebar" aria-label="Điều hướng tài khoản">
+      <div className="site-sidebar-header">
+        <Brand />
+      </div>
       <div className="sidebar-nav">
         <Navigation />
       </div>
@@ -264,7 +252,8 @@ function MobileMenu() {
       </DialogTrigger>
       <DialogContent className="mobile-navigation">
         <DialogHeader>
-          <DialogTitle>CyberLaw</DialogTitle>
+          <DialogTitle className="sr-only">Điều hướng chính</DialogTitle>
+          <Brand onClick={() => setOpen(false)} />
           <DialogDescription>
             Tra cứu kiến thức pháp luật về an ninh mạng.
           </DialogDescription>
@@ -539,7 +528,9 @@ function AuthPage({
     const loginRes = auth.login(values.email, values.password);
     if (loginRes.success && loginRes.user) {
       // Phân quyền điều hướng
-      if (loginRes.user.vai_tro === "admin") {
+      if (historyIntent) {
+        navigate(historyNavigation.to);
+      } else if (loginRes.user.vai_tro === "admin") {
         navigate("/admin");
       } else {
         navigate("/search");
@@ -851,7 +842,7 @@ function AuthPage({
                       fontSize: "11px",
                       padding: "3px 8px",
                       borderRadius: "4px",
-                      backgroundColor: "#800020",
+                      backgroundColor: "var(--primary)",
                       color: "#fff",
                       border: "none",
                       cursor: "pointer",
@@ -887,7 +878,7 @@ function AuthPage({
                       fontSize: "11px",
                       padding: "3px 8px",
                       borderRadius: "4px",
-                      backgroundColor: "#4a3e40",
+                      backgroundColor: "var(--primary)",
                       color: "#fff",
                       border: "none",
                       cursor: "pointer",
@@ -966,6 +957,8 @@ export default function App() {
     return <AdminUsersPage />;
   }
   const isAuthRoute = ["/login", "/register"].includes(location.pathname);
+  if (location.pathname === historyNavigation.to && !auth.isAuthenticated)
+    return <Navigate to="/login?next=history" replace />;
   if (!isAuthRoute) return <MainSite />;
   return (
     <div className="app-shell">

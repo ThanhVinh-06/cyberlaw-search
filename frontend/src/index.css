@@ -28,6 +28,10 @@
   --background: #f8f7f4;
   --foreground: #30292b;
   --primary: #752536;
+  --primary-hover: #652133;
+  --primary-border: #692034;
+  --sidebar-width: 270px;
+  --sidebar-background: #fffefa;
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
   --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
   font-family: "Be Vietnam Pro", sans-serif;
@@ -104,16 +108,21 @@ main:focus {
   min-height: 100dvh;
 }
 .sidebar {
-  width: 232px;
+  width: var(--sidebar-width);
   position: fixed;
   inset: 0 auto 0 0;
   display: flex;
   flex-direction: column;
   border-right: 1px solid #e9e4de;
-  background: #fffefa;
+  background: var(--sidebar-background);
   z-index: 30;
-  padding: 31px 20px 0;
+  padding: 0;
   overflow-y: auto;
+}
+.site-sidebar-header {
+  padding: 22px 20px 18px;
+  border-bottom: 1px solid #f2ede8;
+  flex-shrink: 0;
 }
 .brand {
   display: flex;
@@ -123,17 +132,27 @@ main:focus {
   font-weight: 700;
   font-size: 24px;
   letter-spacing: -0.9px;
-  padding-left: 9px;
+  line-height: 1.5;
+  font-family: "Be Vietnam Pro", sans-serif;
+  text-decoration: none;
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 .brand-mark {
   width: 39px;
   height: 44px;
   display: grid;
   place-items: center;
-  background: #752536;
+  background: var(--primary);
   border-radius: 11px 11px 16px 16px;
   color: #f2e0bc;
   box-shadow: 0 3px 7px #75253615;
+  flex-shrink: 0;
+}
+.brand-mark svg {
+  width: 25px;
+  height: 25px;
+  stroke-width: 1.6;
 }
 .brand-law {
   color: #8a3949;
@@ -148,48 +167,13 @@ main:focus {
   font-weight: 500;
   margin-top: 2px;
 }
-.sidebar-nav {
-  margin-top: 55px;
-}
-.nav-group-label {
-  padding: 0 13px;
-  color: #76665c;
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 1.3px;
-  margin-bottom: 14px;
-}
-.nav-link {
-  display: flex;
-  align-items: center;
-  gap: 11px;
-  padding: 13px 12px;
-  margin-bottom: 5px;
-  border: 1px solid transparent;
-  border-radius: 8px;
-  font-size: 13px;
-  font-weight: 500;
-  color: #716968;
-  min-height: 45px;
-  transition:
-    background-color 150ms ease,
-    color 150ms ease;
-}
-.nav-link.active {
-  color: #7a293c;
-  background: #f6eaea;
-  border-color: #efdddd;
-}
 .nav-chevron {
   margin-left: auto;
   opacity: 0.7;
 }
-.personal-label {
-  margin-top: 32px;
-}
 .sidebar-bottom {
   margin-top: auto;
-  padding-top: 55px;
+  padding: 30px 14px 0;
 }
 .sidebar-note {
   margin: 0 6px 30px;
@@ -236,7 +220,7 @@ main:focus {
   border-radius: 50%;
 }
 .workspace {
-  margin-left: 232px;
+  margin-left: var(--sidebar-width);
   min-height: 100dvh;
   display: flex;
   flex-direction: column;
@@ -755,10 +739,10 @@ main {
   justify-content: center;
   gap: 12px;
   width: 100%;
-  border: 1px solid #692034;
+  border: 1px solid var(--primary-border);
   border-radius: 7px;
   height: 46px;
-  background: #752536;
+  background: var(--primary);
   color: white;
   font-size: 13px;
   font-weight: 500;
@@ -1102,15 +1086,8 @@ main {
 }
 
 @media (hover: hover) and (pointer: fine) {
-  .nav-link:hover {
-    background: #f5efea;
-    color: #732d3e;
-  }
-  .nav-link.active:hover {
-    background: #f2e2e3;
-  }
   .submit-button:hover {
-    background: #652133;
+    background: var(--primary-hover);
   }
   .password-toggle:hover {
     color: #752536;
@@ -1146,14 +1123,6 @@ main {
   }
 }
 @media (max-width: 1200px) {
-  .sidebar {
-    width: 212px;
-    padding-left: 13px;
-    padding-right: 13px;
-  }
-  .workspace {
-    margin-left: 212px;
-  }
   .topbar {
     padding: 0 26px;
   }
@@ -1239,7 +1208,7 @@ main {
     font-size: 8px;
   }
 }
-@media (max-width: 850px) and (min-width: 701px) {
+@media (max-width: 1000px) and (min-width: 701px) {
   .auth-card {
     display: block;
     max-width: 510px;
@@ -1263,6 +1232,22 @@ main {
   .project-badge {
     font-size: 7px;
   }
+}
+@media (max-width: 900px) {
+  .sidebar {
+    display: none;
+  }
+  .workspace {
+    margin-left: 0;
+  }
+  .mobile-menu {
+    display: inline-flex !important;
+  }
+}
+.mobile-navigation {
+  background: var(--sidebar-background);
+  max-height: calc(100dvh - 32px);
+  overflow-y: auto;
 }
 @media (max-width: 700px) {
   .sidebar {
@@ -1453,13 +1438,6 @@ main {
   }
   .mobile-navigation {
     max-width: 380px;
-  }
-  .mobile-navigation .nav-group-label {
-    margin-top: 15px;
-    margin-bottom: 4px;
-  }
-  .mobile-navigation nav .nav-link {
-    margin-top: 3px;
   }
   .explore-page {
     padding: 36px 20px 65px;

@@ -39,7 +39,7 @@ test("original public views retain filters, article references and sample chat",
     "Trích khoản 1",
   );
   await page
-    .getByRole("link", { name: "Thuật ngữ pháp luật", exact: true })
+    .getByRole("link", { name: "Từ điển thuật ngữ", exact: true })
     .click();
   await page.getByRole("button", { name: "Xem khoản 1 Điều 2" }).click();
   await expect(

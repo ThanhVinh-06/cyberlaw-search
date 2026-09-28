@@ -1,0 +1,107 @@
+/* Account and public menus share geometry so route changes do not move the links. */
+.nav-group-label,
+.cl-nav-label {
+  margin: 0;
+  padding: 10px 14px;
+  color: #73747d;
+  font-family: "Be Vietnam Pro", sans-serif;
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1.65;
+  letter-spacing: 1.3px;
+}
+
+.sidebar-nav {
+  padding: 0 0 18px;
+}
+.sidebar-nav nav,
+.cl-sidebar nav,
+.mobile-navigation nav {
+  display: grid;
+  gap: 8px;
+  margin-top: 7px;
+  padding: 0 14px;
+}
+.nav-link,
+.cl-nav-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  width: 100%;
+  min-height: 47.45px;
+  margin: 0;
+  padding: 13px 14px;
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  color: #716968;
+  font-family: "Be Vietnam Pro", sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.65;
+  letter-spacing: normal;
+  text-align: left;
+  text-decoration: none;
+  white-space: nowrap;
+  transition:
+    background-color 150ms ease,
+    color 150ms ease;
+}
+.nav-link > svg,
+.cl-nav-item > svg {
+  width: 19px;
+  height: 19px;
+  flex-shrink: 0;
+  stroke-width: 2;
+}
+.nav-link.active,
+.cl-nav-item.cl-selected {
+  background: #fbf0f2;
+  color: var(--primary);
+}
+.nav-link.active::before,
+.cl-nav-item.cl-selected::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  width: 3px;
+  height: 20px;
+  border-radius: 3px;
+  background: var(--primary);
+}
+.sidebar-nav > .nav-link,
+.mobile-navigation > .nav-link {
+  width: calc(100% - 28px);
+  margin: 8px 14px 0;
+}
+.personal-label {
+  margin-top: 32px;
+}
+.nav-link .nav-chevron {
+  width: 15px;
+  height: 15px;
+}
+@media (hover: hover) and (pointer: fine) {
+  .nav-link:hover,
+  .cl-nav-item:hover {
+    background: #f8f7f8;
+  }
+  .nav-link.active:hover,
+  .cl-nav-item.cl-selected:hover {
+    background: #fbf0f2;
+  }
+}
+@media (max-width: 760px) {
+  .cl-sidebar nav {
+    grid-template-columns: 1fr 1fr;
+    gap: 4px;
+    margin: 0;
+    padding: 0;
+  }
+  .cl-nav-item {
+    padding: 10px;
+    font-size: 12px;
+    white-space: normal;
+  }
+}

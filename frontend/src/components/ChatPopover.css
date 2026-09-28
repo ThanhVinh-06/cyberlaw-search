@@ -1,7 +1,7 @@
 /* Shared by the public site and account pages. */
 @scope (.cl-chat-dock) {
   :scope {
-    --red: #a61132;
+    --red: var(--primary);
     font-family: "Be Vietnam Pro", "Segoe UI", sans-serif;
     font-size: 16px;
     line-height: 1.65;

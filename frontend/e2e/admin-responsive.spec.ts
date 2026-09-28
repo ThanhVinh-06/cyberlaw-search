@@ -119,6 +119,18 @@ for (const width of [320, 440, 834, 1024, 1440]) {
         expect(dimensions.height).toBeLessThanOrEqual(dimensions.line + 1);
       }
       if (index === 0 || index === 1) {
+        if (index === 0) {
+          const nameLines = await page
+            .locator(".cl-admin-user-cell-name")
+            .evaluateAll((cells) =>
+              cells.map(
+                (cell) =>
+                  cell.getBoundingClientRect().height /
+                  parseFloat(getComputedStyle(cell).lineHeight),
+              ),
+            );
+          expect(Math.max(...nameLines)).toBeLessThanOrEqual(2.1);
+        }
         const table = page.locator(".cl-admin-table-responsive");
         const tableBox = (await table.boundingBox())!;
         expect(tableBox.x + tableBox.width).toBeLessThanOrEqual(width);

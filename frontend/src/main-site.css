@@ -43,15 +43,15 @@
     color: #262830;
   }
   :scope {
-    --red: #a61132;
-    --red-dark: #7b0c25;
+    --red: var(--primary);
+    --red-dark: var(--primary-hover);
     --red-pale: #fbf0f2;
     --gold: #e9c887;
     --text: #262830;
     --muted: #71747e;
     --border: #e7e7ed;
     --bg: var(--background);
-    --sidebar: 252px;
+    --sidebar: var(--sidebar-width);
     font-family: "Be Vietnam Pro", "Segoe UI", sans-serif;
     color: var(--text);
     font-size: 16px;
@@ -138,105 +138,13 @@
     width: var(--sidebar);
     position: fixed;
     inset: 0 auto 0 0;
-    background: #fff;
+    background: var(--sidebar-background);
     border-right: 1px solid var(--border);
     display: flex;
     flex-direction: column;
     z-index: 20;
-    padding: 32px 18px 24px;
+    padding: 0 0 24px;
     overflow-y: auto;
-  }
-  .cl-brand {
-    display: flex;
-    align-items: center;
-    gap: 11px;
-    text-decoration: none;
-    color: var(--red-dark);
-    font-size: 27px;
-    font-weight: 700;
-    letter-spacing: -1px;
-    padding: 0 10px 35px;
-  }
-  .cl-brand small {
-    display: block;
-    font-size: 9px;
-    letter-spacing: 1.3px;
-    color: var(--muted);
-    font-weight: 600;
-    margin-top: 1px;
-  }
-  .cl-brand-mark {
-    width: 43px;
-    height: 48px;
-    background: var(--red);
-    color: white;
-    border-radius: 12px 12px 18px 5px;
-    display: grid;
-    place-items: center;
-    font:
-      35px Georgia,
-      serif;
-    position: relative;
-  }
-  .cl-brand-mark span {
-    position: absolute;
-    right: 8px;
-    bottom: 2px;
-    color: var(--gold);
-  }
-  .cl-nav-label {
-    font-size: 10px;
-    letter-spacing: 1.3px;
-    font-weight: 600;
-    color: #9a9ba4;
-    padding: 10px 14px;
-  }
-  .cl-sidebar nav {
-    display: grid;
-    gap: 8px;
-    margin-top: 7px;
-  }
-  .cl-nav-item {
-    display: flex;
-    align-items: center;
-    gap: 11px;
-    background: none;
-    border: 0;
-    text-align: left;
-    width: 100%;
-    padding: 13px 14px;
-    border-radius: 8px;
-    font-size: 13px;
-    font-weight: 500;
-    white-space: nowrap;
-  }
-  .cl-nav-item svg {
-    width: 19px;
-    height: 19px;
-    color: #8a8c95;
-  }
-  @media (hover: hover) and (pointer: fine) {
-    .cl-nav-item:hover {
-      background: #f8f7f8;
-    }
-  }
-  .cl-nav-item.cl-selected {
-    background: var(--red-pale);
-    color: var(--red);
-    font-weight: 650;
-    position: relative;
-  }
-  .cl-nav-item.cl-selected:before {
-    content: "";
-    position: absolute;
-    left: 0;
-    height: 20px;
-    width: 3px;
-    background: var(--red);
-    border-radius: 3px;
-  }
-  .cl-nav-item.cl-selected svg {
-    color: var(--red);
   }
   .cl-tiny-ai {
     font-size: 9px;
@@ -537,7 +445,7 @@
   }
   .cl-primary {
     background: var(--red);
-    border: 1px solid var(--red);
+    border: 1px solid var(--primary-border);
     border-radius: 6px;
     color: white;
     padding: 10px 19px;
@@ -1014,12 +922,6 @@
     transform: scale(0.92);
   }
   @media (min-width: 1600px) {
-    :scope {
-      --sidebar: 280px;
-    }
-    .cl-nav-item {
-      font-size: 15px;
-    }
     .cl-masthead {
       padding-left: 55px;
     }
@@ -1029,20 +931,6 @@
     }
   }
   @media (max-width: 1150px) {
-    :scope {
-      --sidebar: 228px;
-    }
-    .cl-sidebar {
-      padding-left: 12px;
-      padding-right: 12px;
-    }
-    .cl-nav-item {
-      font-size: 12px;
-      gap: 9px;
-    }
-    .cl-brand {
-      font-size: 24px;
-    }
     .cl-masthead {
       padding: 24px 28px;
     }
@@ -1096,18 +984,10 @@
       padding: 13px 17px 10px;
       overflow: visible;
     }
-    .cl-brand {
+    .site-sidebar-header {
       padding: 0 0 12px;
-      font-size: 24px;
-      gap: 9px;
-    }
-    .cl-brand-mark {
-      width: 33px;
-      height: 36px;
-      font-size: 27px;
-    }
-    .cl-brand small {
-      font-size: 8px;
+      margin-bottom: 10px;
+      border-bottom: 0;
     }
     .cl-sidebar > .cl-nav-label,
     .cl-sidebar-scope,
@@ -1123,17 +1003,6 @@
     .cl-sidebar-account {
       justify-content: center;
       gap: 28px;
-    }
-    .cl-sidebar nav {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 4px;
-      margin: 0;
-    }
-    .cl-nav-item {
-      padding: 10px;
-      font-size: 12px;
-      white-space: normal;
     }
     .cl-tiny-ai {
       display: none;
@@ -1292,9 +1161,24 @@
     }
   }
 
-  .cl-nav-item {
-    text-decoration: none;
-    color: inherit;
+  .cl-history-view .cl-admin-tab-content {
+    display: block;
+  }
+  .cl-history-empty {
+    text-align: center;
+  }
+  .cl-history-empty > svg {
+    color: var(--primary);
+    width: 28px;
+    height: 28px;
+    margin: 0 auto;
+  }
+  .cl-history-empty .cl-primary {
+    margin: 18px auto 0;
+  }
+  .cl-history-item {
+    margin-bottom: 16px;
+    overflow-wrap: anywhere;
   }
   .cl-field-label {
     display: block;

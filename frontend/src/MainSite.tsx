@@ -4,7 +4,6 @@ import {
   ArrowRight,
   BookOpen,
   FileText,
-  Grid2X2,
   MessageCircle,
   Search,
   Send,
@@ -15,6 +14,9 @@ import { useAuth } from "./lib/auth-context";
 import { ArticleDialog } from "./components/ArticleDialog";
 import { ChatPopover } from "./components/ChatPopover";
 import { ResultReveal } from "./components/ResultReveal";
+import { Brand } from "./components/Brand";
+import { AdminTabReveal } from "./components/admin/AdminTabReveal";
+import { publicNavigation, historyNavigation } from "./lib/navigation";
 import { motion, AnimatePresence } from "motion/react";
 
 type Article = (typeof articles)[number];
@@ -39,11 +41,6 @@ const normalize = (s: string) =>
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .replace(/đ/g, "d");
-const nav = [
-  { path: "/search", title: "Tra cứu pháp luật", icon: Search },
-  { path: "/library", title: "Thư viện văn bản", icon: BookOpen },
-  { path: "/terms", title: "Thuật ngữ pháp luật", icon: Grid2X2 },
-];
 
 function ArticleContent({
   article,
@@ -77,6 +74,9 @@ export default function MainSite() {
   const { currentUser, isAuthenticated, isAdmin, logout } = useAuth();
   const { pathname } = useLocation();
   const view = pathname === "/" ? "/search" : pathname;
+  const nav = isAuthenticated
+    ? [...publicNavigation, historyNavigation]
+    : publicNavigation;
   const [filters, setFilters] = useState<Filters>({
     ...emptyFilters,
     query: "an ninh mạng",
@@ -105,7 +105,13 @@ export default function MainSite() {
   const logRef = useRef<HTMLDivElement>(null);
   const mainRef = useRef<HTMLElement>(null);
   const currentTitle =
-    nav.find((item) => item.path === view)?.title ?? "Về dự án";
+    nav.find((item) => item.to === view)?.label ?? "Về dự án";
+
+  useEffect(() => {
+    setMessages([]);
+    setQuestion("");
+    setChatOpen(false);
+  }, [currentUser?.ma_nguoi_dung]);
 
   useEffect(() => {
     document.title = `${currentTitle} — CyberLaw`;
@@ -242,25 +248,20 @@ export default function MainSite() {
         Đến nội dung chính
       </a>
       <aside className="cl-sidebar" aria-label="Điều hướng chính">
-        <Link className="cl-brand" to="/search">
-          <span className="cl-brand-mark">
-            C<span>·</span>
-          </span>
-          <span>
-            CyberLaw<small>KIẾN THỨC PHÁP LUẬT</small>
-          </span>
-        </Link>
+        <div className="site-sidebar-header">
+          <Brand />
+        </div>
         <div className="cl-nav-label">KHÔNG GIAN TRA CỨU</div>
         <nav>
-          {nav.map(({ path, title, icon: Icon }) => (
+          {nav.map(({ to, label, icon: Icon }) => (
             <NavLink
-              key={path}
-              to={path}
-              className={`cl-nav-item${view === path ? " cl-selected" : ""}`}
-              aria-current={view === path ? "page" : undefined}
+              key={to}
+              to={to}
+              className={`cl-nav-item${view === to ? " cl-selected" : ""}`}
+              aria-current={view === to ? "page" : undefined}
             >
-              <Icon aria-hidden="true" />
-              {title}
+              <Icon size={19} aria-hidden="true" />
+              {label}
             </NavLink>
           ))}
 
@@ -695,7 +696,7 @@ export default function MainSite() {
             <div className="cl-page-heading">
               <div>
                 <span className="cl-eyebrow">TỪ ĐIỂN KIẾN THỨC</span>
-                <h1>Thuật ngữ pháp luật</h1>
+                <h1>Từ điển thuật ngữ</h1>
                 <p>Cụm từ và cách diễn đạt thường dùng khi tra cứu.</p>
               </div>
             </div>
@@ -714,7 +715,65 @@ export default function MainSite() {
               </p>
             </div>
           </section>
-          {!nav.some((item) => item.path === view) && (
+          {view === historyNavigation.to && isAuthenticated && (
+            <section className="cl-view cl-history-view">
+              <AdminTabReveal
+                tab="history"
+                instant={document.documentElement.dataset.input === "keyboard"}
+              >
+                <div className="cl-page-heading" data-admin-reveal="0">
+                  <div>
+                    <span className="cl-eyebrow">KHÔNG GIAN CỦA BẠN</span>
+                    <h1>{historyNavigation.label}</h1>
+                    <p>
+                      Các trao đổi dùng thử trong lần mở trang này. Lịch sử chưa
+                      được lưu lên hệ thống.
+                    </p>
+                  </div>
+                </div>
+                {messages.length === 0 ? (
+                  <div
+                    className="cl-document-card cl-history-empty"
+                    data-admin-reveal="50"
+                  >
+                    <historyNavigation.icon size={28} aria-hidden="true" />
+                    <h2>Bạn chưa có cuộc hỏi đáp nào</h2>
+                    <p>
+                      Bắt đầu một câu hỏi để xem phản hồi và căn cứ pháp lý minh
+                      họa.
+                    </p>
+                    <button
+                      className="cl-primary"
+                      onClick={(event) => openChat(event.detail === 0)}
+                    >
+                      <MessageCircle aria-hidden="true" /> Hỏi đáp cùng AI
+                    </button>
+                  </div>
+                ) : (
+                  messages
+                    .filter((message) => message.kind === "user")
+                    .map((message, index) => {
+                      const response = messages[index * 2 + 1];
+                      return (
+                        <article
+                          className="cl-document-card cl-history-item"
+                          key={index}
+                          data-admin-reveal={50 + Math.min(index, 5) * 50}
+                        >
+                          <span className="cl-eyebrow">
+                            CÂU HỎI {index + 1}
+                          </span>
+                          <h2>{message.text}</h2>
+                          <p>{response?.text}</p>
+                          {response?.article && articleButton(response.article)}
+                        </article>
+                      );
+                    })
+                )}
+              </AdminTabReveal>
+            </section>
+          )}
+          {!nav.some((item) => item.to === view) && (
             <section className="cl-document-card">
               <h1>
                 {view === "/help"

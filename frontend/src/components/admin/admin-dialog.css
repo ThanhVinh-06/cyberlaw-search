@@ -1,0 +1,160 @@
+.cl-admin-dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  background: rgba(22, 10, 17, 0.68);
+  backdrop-filter: blur(14px) saturate(180%);
+  -webkit-backdrop-filter: blur(14px) saturate(180%);
+}
+.cl-admin-dialog-frame {
+  position: fixed;
+  inset: 0;
+  z-index: 71;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  pointer-events: none;
+}
+.cl-admin-dialog-surface {
+  pointer-events: auto;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-height: min(90dvh, calc(100dvh - 48px));
+  overflow: hidden;
+  border-radius: 18px;
+  border: 1px solid rgba(220, 210, 215, 0.8);
+  background: #fff;
+  color: #30292b;
+  box-shadow:
+    0 28px 75px -12px rgba(24, 8, 17, 0.38),
+    0 0 0 1px rgba(255, 255, 255, 0.8) inset;
+  outline: none;
+}
+.cl-admin-dialog-surface.cl-admin-modal-container {
+  max-width: 520px;
+  animation: none;
+}
+.cl-admin-dialog-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-shrink: 0;
+  gap: 16px;
+  padding: 22px 24px;
+  border-bottom: 1px solid #f0eae5;
+}
+.cl-admin-dialog-header > div {
+  min-width: 0;
+}
+.cl-admin-dialog-header h2 {
+  margin: 0;
+  color: #261c1e;
+  font-size: 18px;
+  line-height: 1.55;
+  font-weight: 650;
+  overflow-wrap: anywhere;
+}
+.cl-admin-dialog-header h2.is-danger {
+  color: #b52f36;
+}
+.cl-admin-dialog-header p {
+  margin: 7px 0 0;
+  color: #75676b;
+  font-size: 12px;
+  line-height: 1.7;
+}
+.cl-admin-dialog-close {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  flex-shrink: 0;
+  background: transparent;
+  color: #85747c;
+  border: none;
+  border-radius: 8px;
+  transition:
+    background-color 160ms ease,
+    color 160ms ease,
+    transform 160ms var(--ease-out);
+}
+.cl-admin-dialog-close:active {
+  transform: scale(0.97);
+}
+.cl-admin-dialog-content,
+.cl-admin-dialog-content > form {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+.cl-admin-dialog-surface .cl-admin-modal-body {
+  max-height: none;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.cl-admin-dialog-surface
+  :is(.cl-admin-modal-footer, .cl-knowledge-dialog-footer) {
+  flex-shrink: 0;
+}
+.cl-admin-dialog-surface .cl-admin-form-group {
+  min-width: 0;
+}
+.cl-admin-dialog-surface :is(.cl-admin-form-input, .cl-admin-form-select) {
+  min-width: 0;
+  width: 100%;
+}
+.cl-admin-dialog-surface .cl-admin-form-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+@media (hover: hover) and (pointer: fine) {
+  .cl-admin-dialog-close:hover {
+    background: #f8edf0;
+    color: #800020;
+  }
+}
+@media (max-width: 600px) {
+  .cl-admin-dialog-frame {
+    padding: 12px;
+  }
+  .cl-admin-dialog-surface {
+    max-height: calc(100dvh - 24px);
+    border-radius: 14px;
+  }
+  .cl-admin-dialog-header {
+    padding: 18px;
+    gap: 8px;
+  }
+  .cl-admin-dialog-header h2 {
+    font-size: 17px;
+  }
+  .cl-admin-dialog-close {
+    width: 40px;
+    height: 40px;
+  }
+  .cl-admin-dialog-surface .cl-admin-modal-body {
+    padding: 20px 18px;
+  }
+  .cl-admin-dialog-surface .cl-admin-modal-footer {
+    padding: 14px 18px;
+    flex-wrap: wrap;
+  }
+  .cl-admin-dialog-surface :is(.cl-admin-form-input, .cl-admin-form-select) {
+    font-size: 16px;
+  }
+  .cl-admin-dialog-surface .cl-admin-form-row {
+    grid-template-columns: 1fr;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cl-admin-dialog-close:active {
+    transform: none;
+  }
+}

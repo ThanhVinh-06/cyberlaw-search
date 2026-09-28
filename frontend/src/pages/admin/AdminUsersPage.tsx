@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef } from "react";
+import { useState, useMemo, useRef, type MouseEvent } from "react";
 import {
   Users,
   ShieldCheck,
@@ -29,7 +29,9 @@ import {
 import { useLocation } from "react-router-dom";
 import AdminLayout from "./AdminLayout";
 import AdminStatsPage from "./AdminStatsPage";
+import AdminDocumentsPage from "./AdminDocumentsPage";
 import { AdminTabReveal } from "@/components/admin/AdminTabReveal";
+import { AdminDialog } from "@/components/admin/AdminDialog";
 import {
   AdminToastContainer,
   ToastItem,
@@ -79,6 +81,42 @@ export default function AdminUsersPage() {
   const [statusToggleUser, setStatusToggleUser] = useState<NguoiDung | null>(
     null,
   );
+  const [instantDialog, setInstantDialog] = useState(false);
+  const dialogTrigger = useRef<HTMLButtonElement | null>(null);
+  const dialogMode = isAddModalOpen
+    ? "add"
+    : editingUser
+      ? "edit"
+      : viewingUser
+        ? "view"
+        : statusToggleUser
+          ? "status"
+          : deletingUser
+            ? "delete"
+            : "closed";
+  const dialogTitle = isAddModalOpen
+    ? "Thêm người dùng & Gán quyền mới"
+    : editingUser
+      ? `Chỉnh sửa tài khoản #${editingUser.ma_nguoi_dung} & Phân quyền`
+      : viewingUser
+        ? `Thông tin tài khoản #${viewingUser.ma_nguoi_dung}`
+        : statusToggleUser
+          ? statusToggleUser.trang_thai === "active"
+            ? "Xác nhận khóa tài khoản"
+            : "Xác nhận mở khóa tài khoản"
+          : "Xóa tài khoản người dùng";
+  function captureDialogTrigger(event: MouseEvent<HTMLButtonElement>) {
+    event.preventDefault();
+    if (dialogMode === "closed") dialogTrigger.current = event.currentTarget;
+    setInstantDialog(event.detail === 0);
+  }
+  function closeUserDialog() {
+    setIsAddModalOpen(false);
+    setEditingUser(null);
+    setViewingUser(null);
+    setStatusToggleUser(null);
+    setDeletingUser(null);
+  }
 
   // Smooth Toast stack state (animations.dev style)
   const [toasts, setToasts] = useState<ToastItem[]>([]);
@@ -410,6 +448,8 @@ export default function AdminUsersPage() {
 
       {activeTab === "stats" ? (
         <AdminStatsPage onNavigateTab={changeTab} />
+      ) : activeTab === "documents" ? (
+        <AdminDocumentsPage instant={instantTabReveal} />
       ) : (
         <AdminTabReveal tab={activeTab} instant={instantTabReveal}>
           {/* Page Title & Add Button */}
@@ -426,8 +466,10 @@ export default function AdminUsersPage() {
 
             <div style={{ display: "flex", gap: "10px" }}>
               <button
+                data-admin-user-add
                 className="cl-admin-btn-primary"
-                onClick={() => {
+                onClick={(event) => {
+                  captureDialogTrigger(event);
                   resetForm();
                   setIsAddModalOpen(true);
                 }}
@@ -723,7 +765,8 @@ export default function AdminUsersPage() {
                                   <button
                                     className="cl-admin-action-btn view"
                                     title="Xem chi tiết tài khoản"
-                                    onClick={() => {
+                                    onClick={(event) => {
+                                      captureDialogTrigger(event);
                                       setViewingUser(user);
                                       addToast(
                                         "Chi tiết người dùng",
@@ -737,7 +780,10 @@ export default function AdminUsersPage() {
                                   <button
                                     className="cl-admin-action-btn edit"
                                     title="Chỉnh sửa thông tin & phân quyền"
-                                    onClick={() => openEditModal(user)}
+                                    onClick={(event) => {
+                                      captureDialogTrigger(event);
+                                      openEditModal(user);
+                                    }}
                                   >
                                     <Edit2 size={15} />
                                   </button>
@@ -748,7 +794,10 @@ export default function AdminUsersPage() {
                                         ? "Khóa tài khoản"
                                         : "Mở khóa tài khoản"
                                     }
-                                    onClick={() => setStatusToggleUser(user)}
+                                    onClick={(event) => {
+                                      captureDialogTrigger(event);
+                                      setStatusToggleUser(user);
+                                    }}
                                   >
                                     {user.trang_thai === "active" ? (
                                       <Lock size={15} />
@@ -759,7 +808,10 @@ export default function AdminUsersPage() {
                                   <button
                                     className="cl-admin-action-btn delete"
                                     title="Xóa tài khoản vĩnh viễn"
-                                    onClick={() => setDeletingUser(user)}
+                                    onClick={(event) => {
+                                      captureDialogTrigger(event);
+                                      setDeletingUser(user);
+                                    }}
                                   >
                                     <Trash2 size={15} />
                                   </button>
@@ -888,25 +940,18 @@ export default function AdminUsersPage() {
         </AdminTabReveal>
       )}
 
-      {/* Modal: Thêm người dùng mới (Create) */}
-      {isAddModalOpen && (
-        <div
-          className="cl-admin-modal-overlay"
-          onClick={() => setIsAddModalOpen(false)}
-        >
-          <div
-            className="cl-admin-modal-container"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="cl-admin-modal-header">
-              <h3>Thêm người dùng & Gán quyền mới</h3>
-              <button
-                className="cl-admin-modal-close"
-                onClick={() => setIsAddModalOpen(false)}
-              >
-                <X size={18} />
-              </button>
-            </div>
+      <AdminDialog
+        open={dialogMode !== "closed"}
+        title={dialogTitle}
+        titleClassName={dialogMode === "delete" ? "is-danger" : undefined}
+        instant={instantDialog}
+        trigger={dialogTrigger.current}
+        onClose={closeUserDialog}
+        revealKey={dialogMode}
+      >
+        {/* Modal: Thêm người dùng mới (Create) */}
+        {isAddModalOpen && (
+          <>
             <form onSubmit={handleAddSubmit}>
               <div className="cl-admin-modal-body">
                 <div className="cl-admin-form-group">
@@ -978,13 +1023,7 @@ export default function AdminUsersPage() {
                   )}
                 </div>
 
-                <div
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: "1fr 1fr",
-                    gap: "14px",
-                  }}
-                >
+                <div className="cl-admin-form-row">
                   <div className="cl-admin-form-group">
                     <label htmlFor="add_vai_tro">
                       Vai trò (Phân quyền) <span className="required">*</span>
@@ -1027,6 +1066,7 @@ export default function AdminUsersPage() {
                 </div>
 
                 <div
+                  data-dialog-reveal
                   style={{
                     background: "#fbf5f5",
                     border: "1px solid #eedad7",
@@ -1071,31 +1111,12 @@ export default function AdminUsersPage() {
                 </button>
               </div>
             </form>
-          </div>
-        </div>
-      )}
+          </>
+        )}
 
-      {/* Modal: Chỉnh sửa người dùng & Phân quyền (Update) */}
-      {editingUser && (
-        <div
-          className="cl-admin-modal-overlay"
-          onClick={() => setEditingUser(null)}
-        >
-          <div
-            className="cl-admin-modal-container"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="cl-admin-modal-header">
-              <h3>
-                Chỉnh sửa tài khoản #{editingUser.ma_nguoi_dung} & Phân quyền
-              </h3>
-              <button
-                className="cl-admin-modal-close"
-                onClick={() => setEditingUser(null)}
-              >
-                <X size={18} />
-              </button>
-            </div>
+        {/* Modal: Chỉnh sửa người dùng & Phân quyền (Update) */}
+        {editingUser && (
+          <>
             <form onSubmit={handleEditSubmit}>
               <div className="cl-admin-modal-body">
                 <div className="cl-admin-form-group">
@@ -1160,13 +1181,7 @@ export default function AdminUsersPage() {
                   )}
                 </div>
 
-                <div
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: "1fr 1fr",
-                    gap: "14px",
-                  }}
-                >
+                <div className="cl-admin-form-row">
                   <div className="cl-admin-form-group">
                     <label htmlFor="edit_vai_tro">
                       Vai trò (Phân quyền) <span className="required">*</span>
@@ -1249,29 +1264,12 @@ export default function AdminUsersPage() {
                 </button>
               </div>
             </form>
-          </div>
-        </div>
-      )}
+          </>
+        )}
 
-      {/* Modal: Xem chi tiết tài khoản (View Detail) */}
-      {viewingUser && (
-        <div
-          className="cl-admin-modal-overlay"
-          onClick={() => setViewingUser(null)}
-        >
-          <div
-            className="cl-admin-modal-container"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="cl-admin-modal-header">
-              <h3>Thông tin tài khoản #{viewingUser.ma_nguoi_dung}</h3>
-              <button
-                className="cl-admin-modal-close"
-                onClick={() => setViewingUser(null)}
-              >
-                <X size={18} />
-              </button>
-            </div>
+        {/* Modal: Xem chi tiết tài khoản (View Detail) */}
+        {viewingUser && (
+          <>
             <div className="cl-admin-modal-body">
               <div
                 style={{
@@ -1458,7 +1456,8 @@ export default function AdminUsersPage() {
               </button>
               <button
                 className="cl-admin-btn-primary"
-                onClick={() => {
+                onClick={(event) => {
+                  captureDialogTrigger(event);
                   const userToEdit = viewingUser;
                   setViewingUser(null);
                   openEditModal(userToEdit);
@@ -1468,33 +1467,12 @@ export default function AdminUsersPage() {
                 <span>Chỉnh sửa tài khoản</span>
               </button>
             </div>
-          </div>
-        </div>
-      )}
+          </>
+        )}
 
-      {/* Modal: Xác nhận Khóa / Mở khóa tài khoản */}
-      {statusToggleUser && (
-        <div
-          className="cl-admin-modal-overlay"
-          onClick={() => setStatusToggleUser(null)}
-        >
-          <div
-            className="cl-admin-modal-container"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="cl-admin-modal-header">
-              <h3>
-                {statusToggleUser.trang_thai === "active"
-                  ? "Xác nhận khóa tài khoản"
-                  : "Xác nhận mở khóa tài khoản"}
-              </h3>
-              <button
-                className="cl-admin-modal-close"
-                onClick={() => setStatusToggleUser(null)}
-              >
-                <X size={18} />
-              </button>
-            </div>
+        {/* Modal: Xác nhận Khóa / Mở khóa tài khoản */}
+        {statusToggleUser && (
+          <>
             <div className="cl-admin-modal-body">
               <div
                 style={{
@@ -1585,29 +1563,12 @@ export default function AdminUsersPage() {
                 )}
               </button>
             </div>
-          </div>
-        </div>
-      )}
+          </>
+        )}
 
-      {/* Modal: Xác nhận Xóa tài khoản vĩnh viễn */}
-      {deletingUser && (
-        <div
-          className="cl-admin-modal-overlay"
-          onClick={() => setDeletingUser(null)}
-        >
-          <div
-            className="cl-admin-modal-container"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="cl-admin-modal-header">
-              <h3 style={{ color: "#dc2626" }}>Xóa tài khoản người dùng</h3>
-              <button
-                className="cl-admin-modal-close"
-                onClick={() => setDeletingUser(null)}
-              >
-                <X size={18} />
-              </button>
-            </div>
+        {/* Modal: Xác nhận Xóa tài khoản vĩnh viễn */}
+        {deletingUser && (
+          <>
             <div className="cl-admin-modal-body">
               <div
                 style={{
@@ -1670,9 +1631,9 @@ export default function AdminUsersPage() {
                 <span>Xác nhận xóa vĩnh viễn</span>
               </button>
             </div>
-          </div>
-        </div>
-      )}
+          </>
+        )}
+      </AdminDialog>
     </AdminLayout>
   );
 }

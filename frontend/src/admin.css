@@ -11,9 +11,9 @@
 
 /* Sidebar Admin */
 .cl-admin-sidebar {
-  width: 270px;
+  width: var(--sidebar-width);
   flex-shrink: 0;
-  background: #ffffff;
+  background: var(--sidebar-background);
   border-right: 1px solid #e7e1dd;
   display: flex;
   flex-direction: column;
@@ -21,55 +21,6 @@
   top: 0;
   height: 100vh;
   z-index: 40;
-}
-
-.cl-admin-sidebar-header {
-  padding: 22px 20px 18px;
-  border-bottom: 1px solid #f2ede8;
-}
-
-.cl-admin-brand {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  text-decoration: none;
-  color: inherit;
-}
-
-.cl-admin-brand-icon {
-  width: 36px;
-  height: 36px;
-  border-radius: 9px;
-  background: linear-gradient(135deg, #800020, #5c0017);
-  color: #ffffff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 4px 10px rgba(128, 0, 32, 0.18);
-}
-
-.cl-admin-brand-title {
-  display: flex;
-  flex-direction: column;
-}
-
-.cl-admin-brand-title strong {
-  font-size: 16px;
-  font-weight: 700;
-  line-height: 1.2;
-  letter-spacing: -0.01em;
-}
-
-.cl-admin-brand-title strong span {
-  color: #800020;
-}
-
-.cl-admin-brand-title small {
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  color: #8c8280;
-  text-transform: uppercase;
 }
 
 .cl-admin-sidebar-nav {
@@ -661,6 +612,7 @@
   display: flex;
   align-items: center;
   gap: 12px;
+  min-width: 190px;
 }
 
 .cl-admin-avatar-small {
@@ -690,6 +642,8 @@
 .cl-admin-user-cell-meta {
   display: flex;
   flex-direction: column;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .cl-admin-user-cell-name {
@@ -840,7 +794,7 @@
   gap: 8px;
   padding: 9px 18px;
   border-radius: 8px;
-  background: #800020;
+  background: var(--primary);
   color: #ffffff;
   font-size: 13.5px;
   font-weight: 600;
@@ -851,7 +805,7 @@
 }
 
 .cl-admin-btn-primary:hover {
-  background: #6b001b;
+  background: var(--primary-hover);
   transform: translateY(-1px);
   box-shadow: 0 4px 10px rgba(128, 0, 32, 0.28);
 }

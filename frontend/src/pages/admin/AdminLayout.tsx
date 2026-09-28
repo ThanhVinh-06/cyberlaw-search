@@ -13,7 +13,9 @@ import {
   Database,
   ExternalLink,
   Sparkles,
+  Library,
 } from "lucide-react";
+import { Brand } from "@/components/Brand";
 import "@/admin.css";
 
 interface AdminLayoutProps {
@@ -75,7 +77,7 @@ export default function AdminLayout({
             }}
           >
             <Dialog.Title className="sr-only">Điều hướng quản trị</Dialog.Title>
-            <div className="cl-admin-sidebar-header">
+            <div className="site-sidebar-header">
               <div
                 style={{
                   display: "flex",
@@ -83,17 +85,7 @@ export default function AdminLayout({
                   justifyContent: "space-between",
                 }}
               >
-                <div className="cl-admin-brand">
-                  <div className="cl-admin-brand-icon">
-                    <ShieldCheck size={20} />
-                  </div>
-                  <div className="cl-admin-brand-title">
-                    <strong>
-                      Cyber<span>Law</span>
-                    </strong>
-                    <small>BẢNG ĐIỀU KHIỂN QUẢN TRỊ</small>
-                  </div>
-                </div>
+                <Brand onClick={() => setMobileOpen(false)} />
                 <button
                   className="cl-admin-action-btn"
                   onClick={() => setMobileOpen(false)}
@@ -137,18 +129,8 @@ export default function AdminLayout({
 
         {/* Desktop Sidebar */}
         <aside className="cl-admin-sidebar" aria-label="Điều hướng quản trị">
-          <div className="cl-admin-sidebar-header">
-            <Link to="/admin" className="cl-admin-brand">
-              <div className="cl-admin-brand-icon">
-                <ShieldCheck size={20} />
-              </div>
-              <div className="cl-admin-brand-title">
-                <strong>
-                  Cyber<span>Law</span> Admin
-                </strong>
-                <small>HỆ THỐNG QUẢN TRỊ & PHÂN QUYỀN</small>
-              </div>
-            </Link>
+          <div className="site-sidebar-header">
+            <Brand />
           </div>
 
           <div className="cl-admin-sidebar-nav">
@@ -182,7 +164,7 @@ export default function AdminLayout({
               <span>Xem trang tra cứu</span>
             </Link>
             <Link to="/library" className="cl-admin-nav-item" target="_blank">
-              <FileText size={16} />
+              <Library size={19} />
               <span>Thư viện văn bản</span>
             </Link>
           </div>
@@ -244,8 +226,12 @@ export default function AdminLayout({
             <div className="cl-admin-topbar-actions">
               <div className="cl-admin-status-pill cl-admin-database-status">
                 <Database size={13} style={{ color: "#800020" }} />
-                <span>MySQL 8.0</span>
-                <span className="cl-admin-status-dot" />
+                <span>
+                  {activeTab === "documents" ? "Bản minh họa" : "MySQL 8.0"}
+                </span>
+                {activeTab !== "documents" && (
+                  <span className="cl-admin-status-dot" />
+                )}
               </div>
               <Link
                 to="/search"

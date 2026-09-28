@@ -3,10 +3,12 @@ import { useLayoutEffect, useRef, type ReactNode } from "react";
 export function AdminTabReveal({
   tab,
   instant,
+  duration = 350,
   children,
 }: {
   tab: string;
   instant: boolean;
+  duration?: number;
   children: ReactNode;
 }) {
   const rootRef = useRef<HTMLDivElement>(null);
@@ -48,7 +50,7 @@ export function AdminTabReveal({
               { opacity: 1, translate: "0 0" },
             ],
         {
-          duration: reduced ? 160 : 350,
+          duration: reduced ? 160 : duration,
           delay:
             reduced || interrupted ? 0 : Number(element.dataset.adminReveal),
           easing,
@@ -62,7 +64,7 @@ export function AdminTabReveal({
           animations.current.delete(element);
       };
     });
-  }, [tab, instant]);
+  }, [tab, instant, duration]);
 
   useLayoutEffect(() => {
     const preference = matchMedia("(prefers-reduced-motion: reduce)");

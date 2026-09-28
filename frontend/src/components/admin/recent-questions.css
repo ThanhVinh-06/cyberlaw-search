@@ -218,8 +218,8 @@
   transition: background-color 160ms ease;
 }
 .cl-question-action.is-primary {
-  background: #800020;
-  border-color: #800020;
+  background: var(--primary);
+  border-color: var(--primary-border);
   color: #fff;
 }
 @media (hover: hover) and (pointer: fine) {
@@ -233,7 +233,7 @@
     background: #f0e8e5;
   }
   .cl-question-action.is-primary:hover {
-    background: #65001a;
+    background: var(--primary-hover);
   }
 }
 @media (max-width: 600px) {
