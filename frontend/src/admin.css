@@ -290,6 +290,13 @@
 }
 
 /* Page Header */
+.cl-admin-tab-content {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  min-width: 0;
+}
+
 .cl-admin-page-header {
   display: flex;
   flex-wrap: wrap;

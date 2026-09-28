@@ -18,7 +18,7 @@ import "@/admin.css";
 interface AdminLayoutProps {
   children: ReactNode;
   activeTab?: string;
-  onTabChange?: (tab: string) => void;
+  onTabChange?: (tab: string, instant?: boolean) => void;
 }
 
 export default function AdminLayout({
@@ -112,8 +112,8 @@ export default function AdminLayout({
                   <button
                     key={item.id}
                     className={`cl-admin-nav-item ${isActive ? "active" : ""}`}
-                    onClick={() => {
-                      if (onTabChange) onTabChange(item.id);
+                    onClick={(event) => {
+                      if (onTabChange) onTabChange(item.id, event.detail === 0);
                       setMobileOpen(false);
                     }}
                   >
@@ -159,7 +159,7 @@ export default function AdminLayout({
               <button
                 key={item.id}
                 className={`cl-admin-nav-item ${isActive ? "active" : ""}`}
-                onClick={() => onTabChange && onTabChange(item.id)}
+                onClick={(event) => onTabChange?.(item.id, event.detail === 0)}
               >
                 <Icon size={18} />
                 <span>{item.label}</span>

@@ -1,0 +1,289 @@
+.cl-recent-questions {
+  min-width: 0;
+}
+.cl-question-card {
+  display: block;
+  width: 100%;
+  padding: 20px;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  background: #fff;
+  border: 1px solid #ebe4df;
+  cursor: pointer;
+  outline-offset: 4px;
+  transition:
+    border-color 160ms ease,
+    background-color 160ms ease,
+    box-shadow 160ms ease;
+}
+.cl-question-card:focus-visible,
+.cl-question-close:focus-visible,
+.cl-question-action:focus-visible {
+  outline: 2px solid #800020;
+  outline-offset: 3px;
+}
+.cl-question-summary {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+}
+.cl-question-summary-text {
+  display: block;
+  flex: 1;
+  min-width: 0;
+}
+.cl-question-byline {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+}
+.cl-question-summary .cl-comment-role {
+  display: block;
+  margin-top: 3px;
+}
+.cl-question-title {
+  display: block;
+  margin: 12px 0;
+  font-size: 14px;
+  line-height: 1.65;
+  font-weight: 600;
+  color: #302328;
+  overflow-wrap: anywhere;
+}
+.cl-question-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.cl-question-open-hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: #800020;
+  white-space: nowrap;
+}
+.cl-question-meta .cl-comment-badge {
+  line-height: 1.5;
+}
+.cl-question-meta svg {
+  flex-shrink: 0;
+}
+.cl-question-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: rgb(30 20 24 / 35%);
+  backdrop-filter: blur(5px);
+}
+.cl-question-dialog-frame {
+  position: fixed;
+  inset: 0;
+  z-index: 101;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  pointer-events: none;
+}
+.cl-question-dialog {
+  display: flex;
+  flex-direction: column;
+  width: min(800px, 100%);
+  max-height: calc(100dvh - 48px);
+  min-height: 0;
+  background: #fff;
+  border: 1px solid #e8dedb;
+  box-shadow: 0 24px 80px rgb(41 16 27 / 20%);
+  overflow: hidden;
+  pointer-events: auto;
+  outline: none;
+  color: #302328;
+}
+.cl-question-dialog-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 20px 24px 16px;
+  flex-shrink: 0;
+}
+.cl-question-eyebrow {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: #800020;
+  margin: 0;
+}
+.cl-question-demo-note {
+  margin: 5px 0 0;
+  font-size: 11px;
+  color: #807277;
+}
+.cl-question-close {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border: 1px solid #ece4e1;
+  border-radius: 50%;
+  background: #faf8f6;
+  color: #66545b;
+  cursor: pointer;
+  transition: background-color 160ms ease;
+}
+.cl-question-dialog-scroll {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+  padding: 0 24px 24px;
+}
+.cl-question-dialog-scroll::-webkit-scrollbar {
+  display: none;
+}
+.cl-question-dialog .cl-question-summary {
+  padding: 4px 0 20px;
+  border-bottom: 1px solid #eee5e1;
+}
+.cl-question-title.is-detail {
+  font-size: 16px;
+  line-height: 1.6;
+}
+.cl-question-detail-body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding-top: 20px;
+}
+.cl-question-detail-body h4 {
+  margin: 0;
+}
+.cl-question-detail-body .cl-comment-ai-box,
+.cl-question-detail-body .cl-comment-legal-box {
+  padding: 18px;
+  border-radius: 14px;
+}
+.cl-question-detail-body .cl-ai-box-header {
+  gap: 12px;
+  margin-bottom: 14px;
+}
+.cl-question-detail-body .cl-ai-box-text,
+.cl-question-detail-body .cl-legal-quote {
+  font-size: 14px;
+  line-height: 1.75;
+}
+.cl-question-detail-body .cl-ai-box-badges,
+.cl-question-detail-body .cl-legal-box-title {
+  flex-wrap: wrap;
+}
+.cl-question-detail-body .cl-legal-quote {
+  margin: 12px 0 0;
+  padding: 10px 14px;
+}
+.cl-question-detail-body .cl-legal-penalty {
+  align-items: flex-start;
+  line-height: 1.6;
+  padding: 10px;
+}
+.cl-question-detail-body .cl-legal-penalty svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.cl-question-actions {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.cl-question-action {
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  border: 1px solid #e9dfda;
+  border-radius: 10px;
+  padding: 11px 14px;
+  color: #514049;
+  background: #faf8f6;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 160ms ease;
+}
+.cl-question-action.is-primary {
+  background: #800020;
+  border-color: #800020;
+  color: #fff;
+}
+@media (hover: hover) and (pointer: fine) {
+  .cl-question-card:hover {
+    border-color: #c9a7af;
+    background: #fffcfc;
+    box-shadow: 0 4px 18px rgb(128 0 32 / 5%);
+  }
+  .cl-question-close:hover,
+  .cl-question-action:hover {
+    background: #f0e8e5;
+  }
+  .cl-question-action.is-primary:hover {
+    background: #65001a;
+  }
+}
+@media (max-width: 600px) {
+  .cl-recent-questions {
+    padding: 18px;
+  }
+  .cl-question-card {
+    padding: 16px;
+  }
+  .cl-question-summary {
+    gap: 10px;
+  }
+  .cl-question-summary .cl-comment-avatar {
+    width: 32px;
+    height: 32px;
+    font-size: 11px;
+  }
+  .cl-question-title {
+    font-size: 13px;
+  }
+  .cl-question-dialog-frame {
+    padding: 12px;
+  }
+  .cl-question-dialog {
+    max-height: calc(100dvh - 24px);
+  }
+  .cl-question-dialog-heading {
+    padding: 18px 16px 14px;
+  }
+  .cl-question-dialog-scroll {
+    padding: 0 16px 18px;
+  }
+  .cl-question-detail-body .cl-comment-ai-box,
+  .cl-question-detail-body .cl-comment-legal-box {
+    padding: 14px;
+  }
+  .cl-question-title.is-detail {
+    font-size: 14px;
+  }
+  .cl-question-actions {
+    flex-direction: column;
+  }
+  .cl-question-action {
+    min-height: 44px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cl-question-card,
+  .cl-question-close,
+  .cl-question-action {
+    transition-duration: 0s;
+  }
+}

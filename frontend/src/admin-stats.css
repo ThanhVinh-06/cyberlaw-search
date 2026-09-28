@@ -1,0 +1,1146 @@
+/* ==========================================================================
+   Admin Statistics & Reports (Mazer Profile Statistics Theme)
+   Palette: CyberLaw Burgundy (#800020), Cream (#f8f7f4), Emerald, Amber, Cyan
+   ========================================================================== */
+
+.cl-admin-stats-dashboard {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  animation: fadeInStats 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes fadeInStats {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Header bar for Stats */
+.cl-stats-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 4px;
+}
+
+.cl-stats-title-group h1 {
+  font-size: 24px;
+  font-weight: 700;
+  color: #211618;
+  margin: 0 0 6px 0;
+  letter-spacing: -0.02em;
+}
+
+.cl-stats-title-group p {
+  margin: 0;
+  font-size: 13.5px;
+  color: #736769;
+}
+
+.cl-stats-title-group code {
+  background: #f2ece7;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 12px;
+  color: #800020;
+  font-weight: 600;
+}
+
+.cl-stats-filter-pills {
+  display: flex;
+  align-items: center;
+  background: #ffffff;
+  padding: 4px;
+  border-radius: 10px;
+  border: 1px solid #e7e0dc;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+}
+
+.cl-stats-pill-btn {
+  padding: 6px 14px;
+  border-radius: 7px;
+  font-size: 12.5px;
+  font-weight: 500;
+  border: none;
+  background: transparent;
+  color: #695e60;
+  cursor: pointer;
+  transition: all 0.16s ease;
+}
+
+.cl-stats-pill-btn:hover {
+  color: #211618;
+  background: #fbf9f7;
+}
+
+.cl-stats-pill-btn.active {
+  background: #800020;
+  color: #ffffff;
+  font-weight: 600;
+  box-shadow: 0 2px 6px rgba(128, 0, 32, 0.22);
+}
+
+/* ==========================================================================
+   Top 4 Stat Cards (Mazer Row 1)
+   ========================================================================== */
+.cl-stats-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+}
+
+@media (max-width: 1200px) {
+  .cl-stats-cards-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .cl-stats-cards-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.cl-stat-box {
+  background: #ffffff;
+  border: 1px solid #e8e2de;
+  border-radius: 16px;
+  padding: 22px 24px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  transition:
+    translate 0.2s ease,
+    box-shadow 0.2s ease;
+  /* Keep hover separate from Motion's inline transform used for entry. */
+  translate: 0 0;
+  position: relative;
+  overflow: hidden;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .cl-stat-box:hover {
+    translate: 0 -2px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cl-stat-box:hover {
+    translate: 0 0;
+  }
+}
+
+.cl-stat-icon-wrapper {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.cl-stat-icon-wrapper.burgundy {
+  background: #fdf2f4;
+  color: #800020;
+}
+
+.cl-stat-icon-wrapper.sky {
+  background: #e0f2fe;
+  color: #0284c7;
+}
+
+.cl-stat-icon-wrapper.emerald {
+  background: #ecfdf5;
+  color: #059669;
+}
+
+.cl-stat-icon-wrapper.amber {
+  background: #fef3c7;
+  color: #d97706;
+}
+
+.cl-stat-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.cl-stat-info-label {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #7b7072;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  margin-bottom: 4px;
+}
+
+.cl-stat-info-value {
+  font-size: 26px;
+  font-weight: 700;
+  color: #1e1315;
+  line-height: 1.15;
+  font-feature-settings: "tnum";
+}
+
+.cl-stat-info-sub {
+  font-size: 11.5px;
+  color: #059669;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+/* ==========================================================================
+   2-Column Main Layout (Left 8 cols, Right 4 cols)
+   ========================================================================== */
+.cl-stats-main-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 340px;
+  gap: 24px;
+}
+
+@media (max-width: 1080px) {
+  .cl-stats-main-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.cl-stats-left-col {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  min-width: 0;
+}
+
+.cl-stats-right-col {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* Card Base */
+.cl-stats-card {
+  background: #ffffff;
+  border: 1px solid #e8e2de;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.025);
+}
+
+.cl-stats-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.cl-stats-card-header h2,
+.cl-stats-card-header h3 {
+  font-size: 17px;
+  font-weight: 700;
+  color: #211618;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cl-stats-card-header p {
+  font-size: 13px;
+  color: #786d70;
+  margin: 4px 0 0 0;
+}
+
+/* ==========================================================================
+   Big Chart: Monthly Traffic (Mazer Profile Visit Chart)
+   ========================================================================== */
+.cl-barchart-container {
+  width: 100%;
+  padding-top: 12px;
+  position: relative;
+}
+
+.cl-barchart-legend {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 18px;
+  margin-bottom: 24px;
+}
+
+.cl-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12.5px;
+  color: #615658;
+  font-weight: 500;
+}
+
+.cl-legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.cl-legend-dot.burgundy {
+  background: #800020;
+}
+
+.cl-legend-dot.sky {
+  background: #0284c7;
+}
+
+/* Dedicated Layout: Y-Axis Column (Left) + Plot Area (Right) */
+.cl-barchart-layout {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: flex-start !important;
+  width: 100% !important;
+  position: relative;
+  margin-top: 8px;
+}
+
+/* Y-Axis Column (Left, completely separated from bars) */
+.cl-barchart-yaxis {
+  width: 44px;
+  flex-shrink: 0;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: space-between;
+  height: 220px;
+  padding-right: 14px;
+  text-align: right;
+  user-select: none;
+  border-right: 1px solid #f0eae5;
+}
+
+.cl-barchart-yaxis-label {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #9c9190;
+  line-height: 1;
+  font-feature-settings: "tnum";
+  transform: translateY(-50%);
+}
+
+.cl-barchart-yaxis-label:last-child {
+  transform: translateY(-50%);
+}
+
+/* Plot Area (Right of Y-Axis) */
+.cl-barchart-plot-area {
+  flex: 1;
+  display: flex !important;
+  flex-direction: column !important;
+  position: relative;
+  min-width: 0;
+}
+
+/* Horizontal Grid Lines inside Plot Area */
+.cl-barchart-grid-lines {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 220px;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: space-between;
+  pointer-events: none;
+}
+
+.cl-barchart-grid-line {
+  width: 100%;
+  border-bottom: 1px dashed #f0eae5;
+}
+
+.cl-barchart-grid-line.zero {
+  border-bottom: 2px solid #e2dbd5;
+}
+
+/* Columns container */
+.cl-barchart-columns-wrapper {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: flex-end !important;
+  justify-content: space-between !important;
+  height: 220px !important;
+  padding: 0 14px !important;
+  position: relative;
+  z-index: 2;
+  gap: 6px;
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+.cl-barchart-col {
+  flex: 1 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  height: 100% !important;
+  justify-content: flex-end !important;
+  position: relative;
+  cursor: pointer;
+  padding-bottom: 0;
+  min-width: 0;
+}
+
+.cl-barchart-col-bars {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: flex-end !important;
+  gap: 5px;
+  width: 100%;
+  justify-content: center;
+}
+
+.cl-bar-single {
+  width: 13px;
+  border-radius: 4px 4px 0 0;
+  position: relative;
+  transform-origin: bottom center;
+  will-change: height, transform;
+}
+
+.cl-barchart-col:hover .cl-bar-single {
+  filter: brightness(1.15);
+  box-shadow: 0 0 10px rgba(128, 0, 32, 0.25);
+}
+
+.cl-bar-single.burgundy {
+  background: linear-gradient(180deg, #991b1b 0%, #800020 100%);
+}
+
+.cl-bar-single.sky {
+  background: linear-gradient(180deg, #38bdf8 0%, #0284c7 100%);
+}
+
+/* Month labels under the zero line */
+.cl-barchart-x-labels {
+  display: flex !important;
+  flex-direction: row !important;
+  justify-content: space-between !important;
+  padding: 10px 14px 0 14px !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+  gap: 6px;
+}
+
+.cl-barchart-x-label {
+  flex: 1;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 600;
+  color: #716667;
+  transition: color 0.15s ease;
+}
+
+.cl-barchart-x-label.active {
+  color: #800020;
+  font-weight: 700;
+}
+
+/* Tooltip on bar hover with headroom */
+.cl-barchart-tooltip {
+  position: absolute;
+  bottom: calc(100% + 14px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(33, 22, 24, 0.95);
+  backdrop-filter: blur(8px);
+  color: #ffffff;
+  padding: 9px 13px;
+  border-radius: 9px;
+  font-size: 11.5px;
+  white-space: nowrap;
+  pointer-events: none;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.28);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  z-index: 50;
+}
+
+.cl-barchart-tooltip::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border-width: 5px;
+  border-style: solid;
+  border-color: rgba(33, 22, 24, 0.95) transparent transparent transparent;
+}
+
+/* ==========================================================================
+   Bottom Left Grid: 2 Cards (Sparklines & Recent Comments)
+   ========================================================================== */
+/* Latest Questions Card (Mazer Latest Comments) */
+.cl-comments-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.cl-comment-item {
+  display: flex;
+  flex-direction: column;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: #ffffff;
+  border: 1px solid #ebe4df;
+  cursor: pointer;
+  user-select: none;
+  transition:
+    border-color 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+    background-color 0.2s ease;
+  position: relative;
+}
+
+.cl-comment-item:hover {
+  background: #fcfaf8;
+  border-color: #d6cac4;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.035);
+}
+
+.cl-comment-item.expanded {
+  background: #ffffff;
+  border-color: #800020;
+  box-shadow:
+    0 12px 28px -6px rgba(128, 0, 32, 0.12),
+    0 3px 8px -2px rgba(0, 0, 0, 0.04);
+}
+
+.cl-comment-summary-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  width: 100%;
+}
+
+.cl-comment-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #800020;
+  color: #ffffff;
+  font-size: 13.5px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 2px 6px rgba(128, 0, 32, 0.2);
+}
+
+.cl-comment-avatar.user-alt-1 {
+  background: #0284c7;
+  box-shadow: 0 2px 6px rgba(2, 132, 199, 0.2);
+}
+
+.cl-comment-avatar.user-alt-2 {
+  background: #059669;
+  box-shadow: 0 2px 6px rgba(5, 150, 105, 0.2);
+}
+
+.cl-comment-avatar.user-alt-3 {
+  background: #d97706;
+  box-shadow: 0 2px 6px rgba(217, 119, 6, 0.2);
+}
+
+.cl-comment-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.cl-comment-author-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.cl-comment-author-info {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.cl-comment-author {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #261b1d;
+}
+
+.cl-comment-role {
+  font-size: 11.5px;
+  color: #800020;
+  font-weight: 600;
+}
+
+.cl-comment-time {
+  font-size: 11.5px;
+  color: #8c8280;
+}
+
+.cl-comment-text {
+  font-size: 13px;
+  color: #3b3032;
+  line-height: 1.45;
+  margin-bottom: 6px;
+  font-weight: 500;
+}
+
+.cl-comment-footer-preview {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 4px;
+  gap: 10px;
+}
+
+.cl-comment-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: #fdf2f4;
+  color: #800020;
+  border: 1px solid #f5cfd7;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.cl-comment-toggle-hint {
+  font-size: 11.5px;
+  color: #8f8385;
+  font-weight: 500;
+  font-style: italic;
+  transition: color 0.15s ease;
+}
+
+.cl-comment-item:hover .cl-comment-toggle-hint {
+  color: #800020;
+}
+
+.cl-comment-toggle-hint.active {
+  color: #800020;
+  font-weight: 600;
+  font-style: normal;
+}
+
+.cl-comment-chevron-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #f5eeea;
+  color: #6b5e61;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease;
+}
+
+.cl-comment-item:hover .cl-comment-chevron-btn {
+  background: #fdf2f4;
+  color: #800020;
+}
+
+.cl-comment-chevron-btn.open {
+  background: #800020;
+  color: #ffffff;
+}
+
+/* ==========================================================================
+   Expandable Detail Section (Inside Card)
+   ========================================================================== */
+.cl-comment-detail {
+  width: 100%;
+  padding-top: 14px;
+  margin-top: 12px;
+  border-top: 1px dashed #ebdcd8;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* 1. AI Answer Box */
+.cl-comment-ai-box {
+  background: linear-gradient(135deg, #fff9f9 0%, #fdf5f5 100%);
+  border: 1px solid #f2ded9;
+  border-radius: 10px;
+  padding: 12px 14px;
+}
+
+.cl-ai-box-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.cl-ai-box-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #800020;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.cl-ai-box-badges {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.cl-ai-badge-confidence {
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  color: #047857;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.cl-ai-badge-time {
+  background: #fef3c7;
+  border: 1px solid #fde68a;
+  color: #b45309;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.cl-ai-box-text {
+  font-size: 13px;
+  color: #2b1f21;
+  line-height: 1.55;
+  margin: 0;
+}
+
+/* 2. Legal Citation & Excerpt Box */
+.cl-comment-legal-box {
+  background: #faf8f6;
+  border: 1px solid #ebe4df;
+  border-radius: 10px;
+  padding: 12px 14px;
+}
+
+.cl-legal-box-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.cl-legal-box-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #382c2e;
+}
+
+.cl-legal-tag {
+  background: #fdf2f4;
+  border: 1px solid #f5cfd7;
+  color: #800020;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 1px 7px;
+  border-radius: 5px;
+}
+
+.cl-legal-quote {
+  font-size: 12.5px;
+  color: #4a3e40;
+  line-height: 1.5;
+  font-style: italic;
+  background: #ffffff;
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: 0;
+  box-shadow:
+    rgba(0, 0, 0, 0.05) 0px 6px 24px 0px,
+    rgba(0, 0, 0, 0.08) 0px 0px 0px 1px;
+  margin-top: 6px;
+}
+
+.cl-legal-penalty {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  font-size: 12px;
+  color: #9f1239;
+  background: #fff1f2;
+  border: 1px solid #fecdd3;
+  padding: 6px 10px;
+  border-radius: 6px;
+}
+
+/* 3. Action Buttons */
+.cl-comment-footer-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 2px;
+}
+
+.cl-comment-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.16s cubic-bezier(0.16, 1, 0.3, 1);
+  border: none;
+}
+
+.cl-comment-action-btn.copy {
+  background: #f3efe9;
+  color: #45383a;
+}
+
+.cl-comment-action-btn.copy:hover {
+  background: #e8e2dc;
+  color: #1e1315;
+  transform: translateY(-1px);
+}
+
+.cl-comment-action-btn.detail {
+  background: #fdf2f4;
+  color: #800020;
+  border: 1px solid #f5cfd7;
+}
+
+.cl-comment-action-btn.detail:hover {
+  background: #800020;
+  color: #ffffff;
+  border-color: #800020;
+  transform: translateY(-1px);
+}
+
+.cl-comment-action-btn.collapse {
+  background: transparent;
+  color: #7a6e70;
+  margin-left: auto;
+}
+
+.cl-comment-action-btn.collapse:hover {
+  color: #800020;
+  text-decoration: underline;
+}
+
+/* ==========================================================================
+   Right Column (Profile, Active Users, Donut Chart)
+   ========================================================================== */
+
+/* Profile Card */
+.cl-profile-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 26px 20px;
+}
+
+.cl-profile-avatar-large {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #800020 0%, #4a0013 100%);
+  color: #ffffff;
+  font-size: 26px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 14px rgba(128, 0, 32, 0.25);
+  margin-bottom: 12px;
+  border: 3px solid #ffffff;
+}
+
+.cl-profile-name {
+  font-size: 16.5px;
+  font-weight: 700;
+  color: #211618;
+  margin: 0 0 2px 0;
+}
+
+.cl-profile-handle {
+  font-size: 12.5px;
+  color: #7b7072;
+  margin-bottom: 10px;
+}
+
+.cl-profile-role-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: #fdf2f4;
+  color: #800020;
+  border: 1px solid #eed2d7;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 14px;
+}
+
+.cl-profile-system-status {
+  width: 100%;
+  background: #faf6f3;
+  border: 1px solid #ede5df;
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 12px;
+  color: #574d4f;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.cl-status-live-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #10b981;
+  display: inline-block;
+  margin-right: 6px;
+  animation: pulseDot 2s infinite ease-in-out;
+}
+
+@keyframes pulseDot {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.5;
+    transform: scale(1.2);
+  }
+}
+
+/* Active Users (Recent Messages in Mazer) */
+.cl-active-users-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.cl-active-user-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px;
+  border-radius: 10px;
+  transition: background 0.15s ease;
+}
+
+.cl-active-user-item:hover {
+  background: #faf6f3;
+}
+
+.cl-active-user-avatar-wrap {
+  position: relative;
+}
+
+.cl-active-user-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #eee8e4;
+  color: #4e4345;
+  font-size: 13px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cl-active-status-badge {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 2px solid #ffffff;
+}
+
+.cl-active-status-badge.online {
+  background: #10b981;
+}
+
+.cl-active-status-badge.idle {
+  background: #f59e0b;
+}
+
+.cl-active-status-badge.offline {
+  background: #9ca3af;
+}
+
+.cl-active-user-meta {
+  flex: 1;
+  min-width: 0;
+}
+
+.cl-active-user-name {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #211618;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cl-active-user-handle {
+  font-size: 11.5px;
+  color: #857a7d;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cl-active-user-stat {
+  font-size: 12px;
+  font-weight: 600;
+  color: #800020;
+  background: #fdf2f4;
+  padding: 2px 8px;
+  border-radius: 6px;
+  white-space: nowrap;
+}
+
+.cl-stats-action-btn-full {
+  width: 100%;
+  padding: 10px;
+  border-radius: 10px;
+  border: 1px solid #800020;
+  background: transparent;
+  color: #800020;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.16s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.cl-stats-action-btn-full:hover {
+  background: #800020;
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(128, 0, 32, 0.2);
+}
+
+/* Donut Chart Card (Visitors Profile in Mazer) */
+.cl-donut-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 8px 0;
+}
+
+.cl-donut-svg-wrap {
+  position: relative;
+  width: 160px;
+  height: 160px;
+  margin-bottom: 18px;
+}
+
+.cl-donut-center-label {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  pointer-events: none;
+}
+
+.cl-donut-center-pct {
+  font-size: 26px;
+  font-weight: 800;
+  color: #800020;
+  line-height: 1;
+}
+
+.cl-donut-center-text {
+  font-size: 11px;
+  color: #7b7072;
+  margin-top: 3px;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+.cl-donut-legend-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+}
+
+.cl-donut-legend-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12.5px;
+}
+
+.cl-donut-legend-label-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #4a3e40;
+}
+
+.cl-donut-legend-color-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+}
+
+.cl-donut-legend-pct {
+  font-weight: 700;
+  color: #211618;
+  font-feature-settings: "tnum";
+}

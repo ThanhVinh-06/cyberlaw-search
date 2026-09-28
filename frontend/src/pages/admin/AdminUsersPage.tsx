@@ -26,7 +26,10 @@ import {
   Shield,
   Layers,
 } from "lucide-react";
+import { useLocation } from "react-router-dom";
 import AdminLayout from "./AdminLayout";
+import AdminStatsPage from "./AdminStatsPage";
+import { AdminTabReveal } from "@/components/admin/AdminTabReveal";
 import {
   AdminToastContainer,
   ToastItem,
@@ -41,7 +44,19 @@ import {
 } from "@/lib/admin-data";
 
 export default function AdminUsersPage() {
-  const [activeTab, setActiveTab] = useState<string>("users");
+  const location = useLocation();
+  const getInitialTab = () => {
+    if (location.pathname === "/admin/stats") return "stats";
+    if (location.pathname === "/admin/matrix") return "matrix";
+    return "users";
+  };
+  const [activeTab, setActiveTab] = useState<string>(getInitialTab);
+  const [instantTabReveal, setInstantTabReveal] = useState(false);
+  const changeTab = (tab: string, instant = false) => {
+    if (tab === activeTab) return;
+    setInstantTabReveal(instant);
+    setActiveTab(tab);
+  };
   const [users, setUsers] = useState<NguoiDung[]>(initialNguoiDungList);
 
   // Search and Filters
@@ -388,462 +403,486 @@ export default function AdminUsersPage() {
   };
 
   return (
-    <AdminLayout activeTab={activeTab} onTabChange={setActiveTab}>
+    <AdminLayout activeTab={activeTab} onTabChange={changeTab}>
       {/* Modern Smooth Toast Notifications (animations.dev style) */}
       <AdminToastContainer toasts={toasts} onDismiss={dismissToast} />
 
-      {/* Page Title & Add Button */}
-      <div className="cl-admin-page-header">
-        <div className="cl-admin-page-title">
-          <h1>Phân quyền & Quản lý người dùng</h1>
-          <p>
-            Theo dõi, phân quyền (Role-Based Access Control) và quản lý tài
-            khoản trong bảng <code>nguoi_dung</code>
-          </p>
-        </div>
-
-        <div style={{ display: "flex", gap: "10px" }}>
-          <button
-            className="cl-admin-btn-primary"
-            onClick={() => {
-              resetForm();
-              setIsAddModalOpen(true);
-            }}
-          >
-            <Plus size={16} />
-            <span>Thêm tài khoản & Phân quyền</span>
-          </button>
-        </div>
-      </div>
-
-      {/* Stats Cards */}
-      <div className="cl-admin-stats-grid">
-        <div className="cl-admin-stat-card">
-          <div className="cl-admin-stat-icon burgundy">
-            <Users size={22} />
-          </div>
-          <div className="cl-admin-stat-content">
-            <span className="cl-admin-stat-label">Tổng tài khoản</span>
-            <span className="cl-admin-stat-value">{stats.total}</span>
-          </div>
-        </div>
-
-        <div className="cl-admin-stat-card">
-          <div className="cl-admin-stat-icon burgundy">
-            <ShieldCheck size={22} />
-          </div>
-          <div className="cl-admin-stat-content">
-            <span className="cl-admin-stat-label">Quản trị viên (admin)</span>
-            <span className="cl-admin-stat-value">{stats.adminCount}</span>
-          </div>
-        </div>
-
-        <div className="cl-admin-stat-card">
-          <div className="cl-admin-stat-icon emerald">
-            <UserCheck size={22} />
-          </div>
-          <div className="cl-admin-stat-content">
-            <span className="cl-admin-stat-label">Đang hoạt động (active)</span>
-            <span className="cl-admin-stat-value">{stats.activeCount}</span>
-          </div>
-        </div>
-
-        <div className="cl-admin-stat-card">
-          <div className="cl-admin-stat-icon rose">
-            <UserX size={22} />
-          </div>
-          <div className="cl-admin-stat-content">
-            <span className="cl-admin-stat-label">Bị tạm khóa (blocked)</span>
-            <span className="cl-admin-stat-value">{stats.blockedCount}</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Tabs Switcher: Users CRUD vs Permission Matrix */}
-      <div className="cl-admin-tabs">
-        <button
-          className={`cl-admin-tab-btn ${activeTab === "users" ? "active" : ""}`}
-          onClick={() => setActiveTab("users")}
-        >
-          <Users size={16} />
-          <span>Danh sách tài khoản ({filteredUsers.length})</span>
-        </button>
-        <button
-          className={`cl-admin-tab-btn ${activeTab === "matrix" ? "active" : ""}`}
-          onClick={() => setActiveTab("matrix")}
-        >
-          <Shield size={16} />
-          <span>Ma trận quyền hạn</span>
-        </button>
-      </div>
-
-      {activeTab === "users" && (
-        <>
-          {/* Toolbar: Search & Filters */}
-          <div className="cl-admin-toolbar">
-            <div className="cl-admin-toolbar-search">
-              <div className="cl-admin-search-input-wrapper">
-                <Search size={16} className="cl-search-icon" />
-                <input
-                  ref={searchInputRef}
-                  type="text"
-                  placeholder="Tìm theo họ tên hoặc email..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-              </div>
-              {searchQuery && (
-                <button
-                  type="button"
-                  className="cl-admin-search-clear-btn"
-                  onClick={handleClearSearch}
-                  title="Xóa tìm kiếm"
-                  aria-label="Xóa nội dung tìm kiếm"
-                >
-                  <X size={14} />
-                </button>
-              )}
+      {activeTab === "stats" ? (
+        <AdminStatsPage onNavigateTab={changeTab} />
+      ) : (
+        <AdminTabReveal tab={activeTab} instant={instantTabReveal}>
+          {/* Page Title & Add Button */}
+          <div className="cl-admin-page-header" data-admin-reveal="0">
+            <div className="cl-admin-page-title">
+              <h1>Phân quyền & Quản lý người dùng</h1>
+              <p>
+                Theo dõi, phân quyền (Role-Based Access Control) và quản lý tài
+                khoản trong bảng <code>nguoi_dung</code>
+              </p>
             </div>
 
-            <div className="cl-admin-toolbar-filters">
-              <div
-                style={{ display: "flex", alignItems: "center", gap: "6px" }}
+            <div style={{ display: "flex", gap: "10px" }}>
+              <button
+                className="cl-admin-btn-primary"
+                onClick={() => {
+                  resetForm();
+                  setIsAddModalOpen(true);
+                }}
               >
-                <Filter size={14} style={{ color: "#716667" }} />
-                <span style={{ fontSize: "12.5px", color: "#716667" }}>
-                  Vai trò:
-                </span>
-                <select
-                  className="cl-admin-filter-select"
-                  value={roleFilter}
-                  onChange={(e) => setRoleFilter(e.target.value)}
-                >
-                  <option value="all">Tất cả vai trò</option>
-                  <option value="admin">Quản trị viên (admin)</option>
-                  <option value="user">Người dùng (user)</option>
-                </select>
-              </div>
-
-              <div
-                style={{ display: "flex", alignItems: "center", gap: "6px" }}
-              >
-                <span style={{ fontSize: "12.5px", color: "#716667" }}>
-                  Trạng thái:
-                </span>
-                <select
-                  className="cl-admin-filter-select"
-                  value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value)}
-                >
-                  <option value="all">Tất cả trạng thái</option>
-                  <option value="active">Đang hoạt động</option>
-                  <option value="blocked">Đã bị khóa</option>
-                </select>
-              </div>
-
-              {(searchQuery ||
-                roleFilter !== "all" ||
-                statusFilter !== "all") && (
-                <button
-                  className="cl-admin-btn-outline"
-                  style={{ padding: "7px 12px", fontSize: "12.5px" }}
-                  onClick={() => {
-                    setSearchQuery("");
-                    setRoleFilter("all");
-                    setStatusFilter("all");
-                  }}
-                >
-                  <RefreshCw size={13} />
-                  <span>Đặt lại lọc</span>
-                </button>
-              )}
+                <Plus size={16} />
+                <span>Thêm tài khoản & Phân quyền</span>
+              </button>
             </div>
           </div>
 
-          {/* Table Card */}
-          <div className="cl-admin-table-card">
-            {filteredUsers.length === 0 ? (
-              <div className="cl-admin-empty">
-                <div className="cl-admin-empty-icon">
-                  <Search size={28} />
+          {/* Stats Cards */}
+          <div className="cl-admin-stats-grid">
+            <div className="cl-admin-stat-card" data-admin-reveal="50">
+              <div className="cl-admin-stat-icon burgundy">
+                <Users size={22} />
+              </div>
+              <div className="cl-admin-stat-content">
+                <span className="cl-admin-stat-label">Tổng tài khoản</span>
+                <span className="cl-admin-stat-value">{stats.total}</span>
+              </div>
+            </div>
+
+            <div className="cl-admin-stat-card" data-admin-reveal="100">
+              <div className="cl-admin-stat-icon burgundy">
+                <ShieldCheck size={22} />
+              </div>
+              <div className="cl-admin-stat-content">
+                <span className="cl-admin-stat-label">
+                  Quản trị viên (admin)
+                </span>
+                <span className="cl-admin-stat-value">{stats.adminCount}</span>
+              </div>
+            </div>
+
+            <div className="cl-admin-stat-card" data-admin-reveal="150">
+              <div className="cl-admin-stat-icon emerald">
+                <UserCheck size={22} />
+              </div>
+              <div className="cl-admin-stat-content">
+                <span className="cl-admin-stat-label">
+                  Đang hoạt động (active)
+                </span>
+                <span className="cl-admin-stat-value">{stats.activeCount}</span>
+              </div>
+            </div>
+
+            <div className="cl-admin-stat-card" data-admin-reveal="200">
+              <div className="cl-admin-stat-icon rose">
+                <UserX size={22} />
+              </div>
+              <div className="cl-admin-stat-content">
+                <span className="cl-admin-stat-label">
+                  Bị tạm khóa (blocked)
+                </span>
+                <span className="cl-admin-stat-value">
+                  {stats.blockedCount}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Tabs Switcher: Users CRUD vs Permission Matrix */}
+          <div className="cl-admin-tabs" data-admin-reveal="225">
+            <button
+              className={`cl-admin-tab-btn ${activeTab === "users" ? "active" : ""}`}
+              onClick={(event) => changeTab("users", event.detail === 0)}
+            >
+              <Users size={16} />
+              <span>Danh sách tài khoản ({filteredUsers.length})</span>
+            </button>
+            <button
+              className={`cl-admin-tab-btn ${activeTab === "matrix" ? "active" : ""}`}
+              onClick={(event) => changeTab("matrix", event.detail === 0)}
+            >
+              <Shield size={16} />
+              <span>Ma trận quyền hạn</span>
+            </button>
+          </div>
+
+          {activeTab === "users" && (
+            <>
+              {/* Toolbar: Search & Filters */}
+              <div className="cl-admin-toolbar" data-admin-reveal="250">
+                <div className="cl-admin-toolbar-search">
+                  <div className="cl-admin-search-input-wrapper">
+                    <Search size={16} className="cl-search-icon" />
+                    <input
+                      ref={searchInputRef}
+                      type="text"
+                      placeholder="Tìm theo họ tên hoặc email..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                    />
+                  </div>
+                  {searchQuery && (
+                    <button
+                      type="button"
+                      className="cl-admin-search-clear-btn"
+                      onClick={handleClearSearch}
+                      title="Xóa tìm kiếm"
+                      aria-label="Xóa nội dung tìm kiếm"
+                    >
+                      <X size={14} />
+                    </button>
+                  )}
                 </div>
-                <h4>Không tìm thấy người dùng nào</h4>
-                <p>
-                  Thử tìm kiếm với từ khóa khác hoặc xóa bớt các điều kiện lọc
-                  vai trò, trạng thái.
-                </p>
-                <button
-                  className="cl-admin-btn-outline"
-                  onClick={() => {
-                    setSearchQuery("");
-                    setRoleFilter("all");
-                    setStatusFilter("all");
-                  }}
-                >
-                  Xóa bộ lọc
-                </button>
+
+                <div className="cl-admin-toolbar-filters">
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "6px",
+                    }}
+                  >
+                    <Filter size={14} style={{ color: "#716667" }} />
+                    <span style={{ fontSize: "12.5px", color: "#716667" }}>
+                      Vai trò:
+                    </span>
+                    <select
+                      className="cl-admin-filter-select"
+                      value={roleFilter}
+                      onChange={(e) => setRoleFilter(e.target.value)}
+                    >
+                      <option value="all">Tất cả vai trò</option>
+                      <option value="admin">Quản trị viên (admin)</option>
+                      <option value="user">Người dùng (user)</option>
+                    </select>
+                  </div>
+
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "6px",
+                    }}
+                  >
+                    <span style={{ fontSize: "12.5px", color: "#716667" }}>
+                      Trạng thái:
+                    </span>
+                    <select
+                      className="cl-admin-filter-select"
+                      value={statusFilter}
+                      onChange={(e) => setStatusFilter(e.target.value)}
+                    >
+                      <option value="all">Tất cả trạng thái</option>
+                      <option value="active">Đang hoạt động</option>
+                      <option value="blocked">Đã bị khóa</option>
+                    </select>
+                  </div>
+
+                  {(searchQuery ||
+                    roleFilter !== "all" ||
+                    statusFilter !== "all") && (
+                    <button
+                      className="cl-admin-btn-outline"
+                      style={{ padding: "7px 12px", fontSize: "12.5px" }}
+                      onClick={() => {
+                        setSearchQuery("");
+                        setRoleFilter("all");
+                        setStatusFilter("all");
+                      }}
+                    >
+                      <RefreshCw size={13} />
+                      <span>Đặt lại lọc</span>
+                    </button>
+                  )}
+                </div>
               </div>
-            ) : (
+
+              {/* Table Card */}
+              <div className="cl-admin-table-card" data-admin-reveal="300">
+                {filteredUsers.length === 0 ? (
+                  <div className="cl-admin-empty">
+                    <div className="cl-admin-empty-icon">
+                      <Search size={28} />
+                    </div>
+                    <h4>Không tìm thấy người dùng nào</h4>
+                    <p>
+                      Thử tìm kiếm với từ khóa khác hoặc xóa bớt các điều kiện
+                      lọc vai trò, trạng thái.
+                    </p>
+                    <button
+                      className="cl-admin-btn-outline"
+                      onClick={() => {
+                        setSearchQuery("");
+                        setRoleFilter("all");
+                        setStatusFilter("all");
+                      }}
+                    >
+                      Xóa bộ lọc
+                    </button>
+                  </div>
+                ) : (
+                  <div className="cl-admin-table-responsive">
+                    <table className="cl-admin-table">
+                      <thead>
+                        <tr>
+                          <th style={{ width: "70px" }}>#ID</th>
+                          <th>Người dùng</th>
+                          <th>Thư điện tử (Email)</th>
+                          <th>Vai trò (Phân quyền)</th>
+                          <th style={{ width: "130px", minWidth: "130px" }}>
+                            Trạng thái
+                          </th>
+                          <th>Ngày tham gia</th>
+                          <th style={{ textAlign: "right" }}>Thao tác</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filteredUsers.map((user) => {
+                          const initials = user.ho_ten
+                            .split(" ")
+                            .map((n) => n[0])
+                            .slice(-2)
+                            .join("")
+                            .toUpperCase();
+
+                          return (
+                            <tr key={user.ma_nguoi_dung}>
+                              <td style={{ fontWeight: 600, color: "#8c8280" }}>
+                                #{user.ma_nguoi_dung}
+                              </td>
+                              <td>
+                                <div className="cl-admin-user-cell">
+                                  <div
+                                    className={`cl-admin-avatar-small ${user.vai_tro}`}
+                                  >
+                                    {initials}
+                                  </div>
+                                  <div className="cl-admin-user-cell-meta">
+                                    <span className="cl-admin-user-cell-name">
+                                      {user.ho_ten}
+                                    </span>
+                                    <span className="cl-admin-user-cell-id">
+                                      {user.so_hoi_thoai ?? 0} cuộc hỏi đáp AI
+                                    </span>
+                                  </div>
+                                </div>
+                              </td>
+                              <td
+                                style={{
+                                  color: "#453b3d",
+                                  fontFamily: "monospace",
+                                }}
+                              >
+                                {user.thu_dien_tu}
+                              </td>
+                              <td>
+                                {user.vai_tro === "admin" ? (
+                                  <span className="cl-admin-role-badge admin">
+                                    <ShieldCheck size={13} />
+                                    Quản trị viên
+                                  </span>
+                                ) : (
+                                  <span className="cl-admin-role-badge user">
+                                    <Users size={13} />
+                                    Người dùng
+                                  </span>
+                                )}
+                              </td>
+                              <td>
+                                {user.trang_thai === "active" ? (
+                                  <span className="cl-admin-status-badge active">
+                                    <span className="cl-admin-status-dot-active" />
+                                    <span className="cl-admin-status-text">
+                                      Đang hoạt
+                                      <br />
+                                      động
+                                    </span>
+                                  </span>
+                                ) : (
+                                  <span className="cl-admin-status-badge blocked">
+                                    <span className="cl-admin-status-dot-blocked" />
+                                    <span className="cl-admin-status-text">
+                                      Đã bị
+                                      <br />
+                                      khóa
+                                    </span>
+                                  </span>
+                                )}
+                              </td>
+                              <td
+                                style={{ color: "#716667", fontSize: "13px" }}
+                              >
+                                {user.ngay_tao.split(" ")[0]}
+                              </td>
+                              <td style={{ textAlign: "right" }}>
+                                <div
+                                  className="cl-admin-actions-cell"
+                                  style={{ justifyContent: "flex-end" }}
+                                >
+                                  <button
+                                    className="cl-admin-action-btn view"
+                                    title="Xem chi tiết tài khoản"
+                                    onClick={() => {
+                                      setViewingUser(user);
+                                      addToast(
+                                        "Chi tiết người dùng",
+                                        `Đang xem hồ sơ #${user.ma_nguoi_dung} - ${user.ho_ten}`,
+                                        "view",
+                                      );
+                                    }}
+                                  >
+                                    <Eye size={15} />
+                                  </button>
+                                  <button
+                                    className="cl-admin-action-btn edit"
+                                    title="Chỉnh sửa thông tin & phân quyền"
+                                    onClick={() => openEditModal(user)}
+                                  >
+                                    <Edit2 size={15} />
+                                  </button>
+                                  <button
+                                    className="cl-admin-action-btn block"
+                                    title={
+                                      user.trang_thai === "active"
+                                        ? "Khóa tài khoản"
+                                        : "Mở khóa tài khoản"
+                                    }
+                                    onClick={() => setStatusToggleUser(user)}
+                                  >
+                                    {user.trang_thai === "active" ? (
+                                      <Lock size={15} />
+                                    ) : (
+                                      <Unlock size={15} color="#059669" />
+                                    )}
+                                  </button>
+                                  <button
+                                    className="cl-admin-action-btn delete"
+                                    title="Xóa tài khoản vĩnh viễn"
+                                    onClick={() => setDeletingUser(user)}
+                                  >
+                                    <Trash2 size={15} />
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+
+          {/* Tab: Permission Matrix (Ma trận phân quyền) */}
+          {activeTab === "matrix" && (
+            <div className="cl-admin-matrix-card" data-admin-reveal="250">
+              <div className="cl-admin-matrix-header">
+                <div>
+                  <h3>Ma trận quyền hạn hệ thống</h3>
+                  <p>
+                    Chi tiết quyền hạn được thiết kế theo tài liệu kiến trúc{" "}
+                    <code>docs/requirements/02-tai-khoan-phan-quyen.md</code>
+                  </p>
+                </div>
+                <div className="cl-admin-status-pill">
+                  <ShieldCheck size={14} color="#800020" />
+                  <span>Chính sách quyền tối thiểu</span>
+                </div>
+              </div>
+
               <div className="cl-admin-table-responsive">
                 <table className="cl-admin-table">
                   <thead>
                     <tr>
-                      <th style={{ width: "70px" }}>#ID</th>
-                      <th>Người dùng</th>
-                      <th>Thư điện tử (Email)</th>
-                      <th>Vai trò (Phân quyền)</th>
-                      <th style={{ width: "130px", minWidth: "130px" }}>
-                        Trạng thái
+                      <th>Chức năng & Nghiệp vụ</th>
+                      <th>Phạm vi / Mục đích</th>
+                      <th style={{ textAlign: "center", width: "120px" }}>
+                        Khách vãng lai
                       </th>
-                      <th>Ngày tham gia</th>
-                      <th style={{ textAlign: "right" }}>Thao tác</th>
+                      <th style={{ textAlign: "center", width: "120px" }}>
+                        Người dùng (user)
+                      </th>
+                      <th style={{ textAlign: "center", width: "140px" }}>
+                        Quản trị viên (admin)
+                      </th>
+                      <th>Ghi chú chính sách</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredUsers.map((user) => {
-                      const initials = user.ho_ten
-                        .split(" ")
-                        .map((n) => n[0])
-                        .slice(-2)
-                        .join("")
-                        .toUpperCase();
-
-                      return (
-                        <tr key={user.ma_nguoi_dung}>
-                          <td style={{ fontWeight: 600, color: "#8c8280" }}>
-                            #{user.ma_nguoi_dung}
-                          </td>
-                          <td>
-                            <div className="cl-admin-user-cell">
-                              <div
-                                className={`cl-admin-avatar-small ${user.vai_tro}`}
-                              >
-                                {initials}
-                              </div>
-                              <div className="cl-admin-user-cell-meta">
-                                <span className="cl-admin-user-cell-name">
-                                  {user.ho_ten}
-                                </span>
-                                <span className="cl-admin-user-cell-id">
-                                  {user.so_hoi_thoai ?? 0} cuộc hỏi đáp AI
-                                </span>
-                              </div>
-                            </div>
-                          </td>
-                          <td
-                            style={{
-                              color: "#453b3d",
-                              fontFamily: "monospace",
-                            }}
-                          >
-                            {user.thu_dien_tu}
-                          </td>
-                          <td>
-                            {user.vai_tro === "admin" ? (
-                              <span className="cl-admin-role-badge admin">
-                                <ShieldCheck size={13} />
-                                Quản trị viên
-                              </span>
-                            ) : (
-                              <span className="cl-admin-role-badge user">
-                                <Users size={13} />
-                                Người dùng
-                              </span>
-                            )}
-                          </td>
-                          <td>
-                            {user.trang_thai === "active" ? (
-                              <span className="cl-admin-status-badge active">
-                                <span className="cl-admin-status-dot-active" />
-                                <span className="cl-admin-status-text">
-                                  Đang hoạt
-                                  <br />
-                                  động
-                                </span>
-                              </span>
-                            ) : (
-                              <span className="cl-admin-status-badge blocked">
-                                <span className="cl-admin-status-dot-blocked" />
-                                <span className="cl-admin-status-text">
-                                  Đã bị
-                                  <br />
-                                  khóa
-                                </span>
-                              </span>
-                            )}
-                          </td>
-                          <td style={{ color: "#716667", fontSize: "13px" }}>
-                            {user.ngay_tao.split(" ")[0]}
-                          </td>
-                          <td style={{ textAlign: "right" }}>
-                            <div
-                              className="cl-admin-actions-cell"
-                              style={{ justifyContent: "flex-end" }}
+                    {maTranPhanQuyen.map((rule) => (
+                      <tr key={rule.ma_chuc_nang}>
+                        <td>
+                          <strong style={{ color: "#261c1e" }}>
+                            {rule.ten_chuc_nang}
+                          </strong>
+                        </td>
+                        <td style={{ color: "#615759" }}>{rule.mo_ta}</td>
+                        <td style={{ textAlign: "center" }}>
+                          {rule.khach ? (
+                            <span
+                              style={{
+                                color: "#059669",
+                                fontWeight: 600,
+                                fontSize: "12px",
+                              }}
                             >
-                              <button
-                                className="cl-admin-action-btn view"
-                                title="Xem chi tiết tài khoản"
-                                onClick={() => {
-                                  setViewingUser(user);
-                                  addToast(
-                                    "Chi tiết người dùng",
-                                    `Đang xem hồ sơ #${user.ma_nguoi_dung} - ${user.ho_ten}`,
-                                    "view",
-                                  );
-                                }}
-                              >
-                                <Eye size={15} />
-                              </button>
-                              <button
-                                className="cl-admin-action-btn edit"
-                                title="Chỉnh sửa thông tin & phân quyền"
-                                onClick={() => openEditModal(user)}
-                              >
-                                <Edit2 size={15} />
-                              </button>
-                              <button
-                                className="cl-admin-action-btn block"
-                                title={
-                                  user.trang_thai === "active"
-                                    ? "Khóa tài khoản"
-                                    : "Mở khóa tài khoản"
-                                }
-                                onClick={() => setStatusToggleUser(user)}
-                              >
-                                {user.trang_thai === "active" ? (
-                                  <Lock size={15} />
-                                ) : (
-                                  <Unlock size={15} color="#059669" />
-                                )}
-                              </button>
-                              <button
-                                className="cl-admin-action-btn delete"
-                                title="Xóa tài khoản vĩnh viễn"
-                                onClick={() => setDeletingUser(user)}
-                              >
-                                <Trash2 size={15} />
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
+                              ✓ Được phép
+                            </span>
+                          ) : (
+                            <span
+                              style={{
+                                color: "#9c9190",
+                                fontSize: "12px",
+                              }}
+                            >
+                              ✕ Không
+                            </span>
+                          )}
+                        </td>
+                        <td style={{ textAlign: "center" }}>
+                          {rule.user ? (
+                            <span
+                              style={{
+                                color: "#059669",
+                                fontWeight: 600,
+                                fontSize: "12px",
+                              }}
+                            >
+                              ✓ Được phép
+                            </span>
+                          ) : (
+                            <span
+                              style={{
+                                color: "#dc2626",
+                                fontWeight: 500,
+                                fontSize: "12px",
+                              }}
+                            >
+                              ✕ Bị chặn (403)
+                            </span>
+                          )}
+                        </td>
+                        <td style={{ textAlign: "center" }}>
+                          {rule.admin ? (
+                            <span className="cl-admin-role-badge admin">
+                              <ShieldCheck size={12} />
+                              Toàn quyền
+                            </span>
+                          ) : (
+                            <span style={{ color: "#9c9190" }}>✕</span>
+                          )}
+                        </td>
+                        <td style={{ fontSize: "12.5px", color: "#7a6f71" }}>
+                          {rule.ghi_chu || "Áp dụng theo vai trò đăng nhập"}
+                        </td>
+                      </tr>
+                    ))}
                   </tbody>
                 </table>
               </div>
-            )}
-          </div>
-        </>
-      )}
-
-      {/* Tab: Permission Matrix (Ma trận phân quyền) */}
-      {activeTab === "matrix" && (
-        <div className="cl-admin-matrix-card">
-          <div className="cl-admin-matrix-header">
-            <div>
-              <h3>Ma trận quyền hạn hệ thống</h3>
-              <p>
-                Chi tiết quyền hạn được thiết kế theo tài liệu kiến trúc{" "}
-                <code>docs/requirements/02-tai-khoan-phan-quyen.md</code>
-              </p>
             </div>
-            <div className="cl-admin-status-pill">
-              <ShieldCheck size={14} color="#800020" />
-              <span>Chính sách quyền tối thiểu</span>
-            </div>
-          </div>
-
-          <div className="cl-admin-table-responsive">
-            <table className="cl-admin-table">
-              <thead>
-                <tr>
-                  <th>Chức năng & Nghiệp vụ</th>
-                  <th>Phạm vi / Mục đích</th>
-                  <th style={{ textAlign: "center", width: "120px" }}>
-                    Khách vãng lai
-                  </th>
-                  <th style={{ textAlign: "center", width: "120px" }}>
-                    Người dùng (user)
-                  </th>
-                  <th style={{ textAlign: "center", width: "140px" }}>
-                    Quản trị viên (admin)
-                  </th>
-                  <th>Ghi chú chính sách</th>
-                </tr>
-              </thead>
-              <tbody>
-                {maTranPhanQuyen.map((rule) => (
-                  <tr key={rule.ma_chuc_nang}>
-                    <td>
-                      <strong style={{ color: "#261c1e" }}>
-                        {rule.ten_chuc_nang}
-                      </strong>
-                    </td>
-                    <td style={{ color: "#615759" }}>{rule.mo_ta}</td>
-                    <td style={{ textAlign: "center" }}>
-                      {rule.khach ? (
-                        <span
-                          style={{
-                            color: "#059669",
-                            fontWeight: 600,
-                            fontSize: "12px",
-                          }}
-                        >
-                          ✓ Được phép
-                        </span>
-                      ) : (
-                        <span
-                          style={{
-                            color: "#9c9190",
-                            fontSize: "12px",
-                          }}
-                        >
-                          ✕ Không
-                        </span>
-                      )}
-                    </td>
-                    <td style={{ textAlign: "center" }}>
-                      {rule.user ? (
-                        <span
-                          style={{
-                            color: "#059669",
-                            fontWeight: 600,
-                            fontSize: "12px",
-                          }}
-                        >
-                          ✓ Được phép
-                        </span>
-                      ) : (
-                        <span
-                          style={{
-                            color: "#dc2626",
-                            fontWeight: 500,
-                            fontSize: "12px",
-                          }}
-                        >
-                          ✕ Bị chặn (403)
-                        </span>
-                      )}
-                    </td>
-                    <td style={{ textAlign: "center" }}>
-                      {rule.admin ? (
-                        <span className="cl-admin-role-badge admin">
-                          <ShieldCheck size={12} />
-                          Toàn quyền
-                        </span>
-                      ) : (
-                        <span style={{ color: "#9c9190" }}>✕</span>
-                      )}
-                    </td>
-                    <td style={{ fontSize: "12.5px", color: "#7a6f71" }}>
-                      {rule.ghi_chu || "Áp dụng theo vai trò đăng nhập"}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
+          )}
+        </AdminTabReveal>
       )}
 
       {/* Modal: Thêm người dùng mới (Create) */}
