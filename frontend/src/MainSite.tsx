@@ -8,8 +8,10 @@ import {
   MessageCircle,
   Search,
   Send,
+  ShieldCheck,
 } from "lucide-react";
 import { articles, source } from "./lib/articles";
+import { useAuth } from "./lib/auth-context";
 import { ArticleDialog } from "./components/ArticleDialog";
 import { ChatPopover } from "./components/ChatPopover";
 import { ResultReveal } from "./components/ResultReveal";
@@ -72,6 +74,7 @@ function ArticleContent({
 }
 
 export default function MainSite() {
+  const { currentUser, isAuthenticated, isAdmin, logout } = useAuth();
   const { pathname } = useLocation();
   const view = pathname === "/" ? "/search" : pathname;
   const [filters, setFilters] = useState<Filters>({
@@ -260,6 +263,19 @@ export default function MainSite() {
               {title}
             </NavLink>
           ))}
+
+          {/* CHỈ hiển thị Quản trị hệ thống trên menubar khi người dùng là Admin */}
+          {isAdmin && (
+            <NavLink
+              to="/admin"
+              className={`cl-nav-item${view === "/admin" ? " cl-selected" : ""}`}
+              style={{ color: "#800020", fontWeight: 600 }}
+            >
+              <ShieldCheck aria-hidden="true" />
+              Quản trị hệ thống
+            </NavLink>
+          )}
+
           <button
             className="cl-nav-item"
             onClick={(event) => openChat(event.detail === 0)}
@@ -282,12 +298,121 @@ export default function MainSite() {
             <br />
             có dẫn chiếu nguồn văn bản.
           </p>
-          <div className="cl-sidebar-account" aria-label="Tài khoản">
-            <Link to="/login" className="cl-primary">
-              Đăng nhập
-            </Link>
-            <Link to="/register">Đăng ký</Link>
-          </div>
+
+          {!isAuthenticated ? (
+            <div className="cl-sidebar-account" aria-label="Tài khoản">
+              <Link to="/login" className="cl-primary">
+                Đăng nhập
+              </Link>
+              <Link to="/register">Đăng ký</Link>
+            </div>
+          ) : (
+            <div
+              style={{
+                backgroundColor: "#ffffff",
+                border: "1px solid #e7e1dd",
+                borderRadius: "8px",
+                padding: "10px",
+                display: "flex",
+                flexDirection: "column",
+                gap: "8px",
+              }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                }}
+              >
+                <div
+                  style={{
+                    width: "28px",
+                    height: "28px",
+                    borderRadius: "50%",
+                    backgroundColor: isAdmin ? "#800020" : "#4a3e40",
+                    color: "#ffffff",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontSize: "11px",
+                    fontWeight: 600,
+                    flexShrink: 0,
+                  }}
+                >
+                  {currentUser?.ho_ten
+                    .split(" ")
+                    .map((n) => n[0])
+                    .slice(-2)
+                    .join("")
+                    .toUpperCase()}
+                </div>
+                <div style={{ overflow: "hidden", lineHeight: 1.25 }}>
+                  <div
+                    style={{
+                      fontSize: "12px",
+                      fontWeight: 600,
+                      color: "#21181d",
+                      whiteSpace: "nowrap",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                    }}
+                  >
+                    {currentUser?.ho_ten}
+                  </div>
+                  <div
+                    style={{
+                      fontSize: "10.5px",
+                      color: isAdmin ? "#800020" : "#6e6466",
+                      fontWeight: 500,
+                    }}
+                  >
+                    {isAdmin ? "Quản trị viên" : "Người dùng"}
+                  </div>
+                </div>
+              </div>
+
+              {/* CHỈ hiển thị liên kết vào trang Quản trị khi là Admin */}
+              {isAdmin && (
+                <Link
+                  to="/admin"
+                  style={{
+                    fontSize: "12px",
+                    color: "#800020",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: "6px",
+                    padding: "6px 8px",
+                    backgroundColor: "#fbf2f3",
+                    border: "1px solid #eed2d7",
+                    borderRadius: "6px",
+                    textDecoration: "none",
+                    fontWeight: 600,
+                  }}
+                >
+                  <ShieldCheck size={14} />
+                  <span>Khu vực Quản trị →</span>
+                </Link>
+              )}
+
+              <button
+                onClick={logout}
+                style={{
+                  fontSize: "11.5px",
+                  color: "#716667",
+                  background: "none",
+                  border: "none",
+                  padding: "2px",
+                  cursor: "pointer",
+                  textAlign: "center",
+                  textDecoration: "underline",
+                }}
+              >
+                Đăng xuất
+              </button>
+            </div>
+          )}
         </div>
       </aside>
       <div className="cl-workspace">

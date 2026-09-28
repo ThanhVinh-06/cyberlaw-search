@@ -1,4 +1,7 @@
 import MainSite from "./MainSite";
+import AdminUsersPage from "./pages/admin/AdminUsersPage";
+import AdminAccessDenied from "./pages/admin/AdminAccessDenied";
+import { useAuth } from "./lib/auth-context";
 import {
   useCallback,
   useEffect,
@@ -7,7 +10,14 @@ import {
   useState,
   type FormEvent,
 } from "react";
-import { Link, NavLink, Route, Routes, useLocation } from "react-router-dom";
+import {
+  Link,
+  NavLink,
+  Route,
+  Routes,
+  useLocation,
+  useNavigate,
+} from "react-router-dom";
 import { motion, useReducedMotion } from "motion/react";
 import {
   ArrowLeft,
@@ -64,7 +74,9 @@ function Brand() {
 }
 
 function Navigation({ close }: { close?: () => void }) {
-  const auth = ["/login", "/register"].includes(useLocation().pathname);
+  const authRoute = ["/login", "/register"].includes(useLocation().pathname);
+  const { currentUser, isAuthenticated, isAdmin, logout } = useAuth();
+
   return (
     <>
       <div className="nav-group-label">KHÁM PHÁ</div>
@@ -82,21 +94,119 @@ function Navigation({ close }: { close?: () => void }) {
         ))}
       </nav>
       <div className="nav-group-label personal-label">KHÔNG GIAN CỦA BẠN</div>
-      <Link
-        onClick={close}
-        className={`nav-link ${auth ? "active" : ""}`}
-        to="/login"
-        aria-current={auth ? "page" : undefined}
-      >
-        <UserRound size={19} />
-        Tài khoản
-        <ChevronRight size={15} className="nav-chevron" />
-      </Link>
+
+      {!isAuthenticated ? (
+        <Link
+          onClick={close}
+          className={`nav-link ${authRoute ? "active" : ""}`}
+          to="/login"
+          aria-current={authRoute ? "page" : undefined}
+        >
+          <UserRound size={19} />
+          Tài khoản
+          <ChevronRight size={15} className="nav-chevron" />
+        </Link>
+      ) : (
+        <div
+          style={{
+            padding: "8px 12px",
+            background: "#ffffff",
+            borderRadius: "8px",
+            border: "1px solid #e7e1dd",
+            margin: "4px 8px 8px",
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+              marginBottom: "6px",
+            }}
+          >
+            <div
+              style={{
+                width: "24px",
+                height: "24px",
+                borderRadius: "50%",
+                background: isAdmin ? "#800020" : "#4a3e40",
+                color: "#fff",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: "10px",
+                fontWeight: 600,
+              }}
+            >
+              {currentUser?.ho_ten
+                .split(" ")
+                .map((n) => n[0])
+                .slice(-2)
+                .join("")
+                .toUpperCase()}
+            </div>
+            <div style={{ overflow: "hidden", lineHeight: 1.2 }}>
+              <div
+                style={{
+                  fontSize: "12px",
+                  fontWeight: 600,
+                  color: "#21181d",
+                  whiteSpace: "nowrap",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                }}
+              >
+                {currentUser?.ho_ten}
+              </div>
+              <div
+                style={{
+                  fontSize: "10px",
+                  color: isAdmin ? "#800020" : "#6e6466",
+                }}
+              >
+                {isAdmin ? "Quản trị viên" : "Người dùng"}
+              </div>
+            </div>
+          </div>
+          <button
+            onClick={() => {
+              logout();
+              if (close) close();
+            }}
+            style={{
+              fontSize: "11px",
+              color: "#8b8082",
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              padding: 0,
+              textDecoration: "underline",
+            }}
+          >
+            Đăng xuất
+          </button>
+        </div>
+      )}
+
       <Link onClick={close} className="nav-link" to="/login?next=history">
         <History size={19} />
         Lịch sử hỏi đáp
         <LockKeyhole size={13} className="nav-chevron" />
       </Link>
+
+      {/* CHỈ hiển thị Quản trị hệ thống khi đã đăng nhập đúng tài khoản Quản trị viên (admin) */}
+      {isAdmin && (
+        <Link
+          onClick={close}
+          className="nav-link"
+          to="/admin"
+          style={{ color: "#800020", fontWeight: 600 }}
+        >
+          <ShieldCheck size={19} />
+          Quản trị hệ thống
+          <ChevronRight size={15} className="nav-chevron" />
+        </Link>
+      )}
     </>
   );
 }
@@ -400,6 +510,9 @@ function AuthPage({
         : {}),
     }));
   }
+  const auth = useAuth();
+  const navigate = useNavigate();
+
   function submit(event: FormEvent) {
     event.preventDefault();
     const next = Object.fromEntries(
@@ -411,12 +524,37 @@ function AuthPage({
       formRef.current?.querySelector<HTMLInputElement>(`#${first}`)?.focus();
       return;
     }
-    // UI preview only: no credentials are sent, persisted, or treated as an authenticated session.
-    setNotice(
-      register
-        ? "Thông tin đã đúng định dạng. Bản xem trước chưa tạo tài khoản; đăng ký sẽ khả dụng khi dịch vụ tài khoản được kết nối."
-        : "Bản xem trước chưa kết nối dịch vụ tài khoản. Thông tin của bạn chưa được gửi hoặc lưu. Bạn vẫn có thể tra cứu mà không cần đăng nhập.",
-    );
+
+    if (register) {
+      setNotice(
+        "Thông tin đã đúng định dạng. Bản xem trước chưa tạo tài khoản; đăng ký sẽ khả dụng khi dịch vụ tài khoản được kết nối.",
+      );
+      setValues((previous) => ({ ...previous, password: "", confirm: "" }));
+      setRevealed({ password: false, confirm: false });
+      requestAnimationFrame(() => noticeRef.current?.focus());
+      return;
+    }
+
+    // Xử lý đăng nhập
+    const loginRes = auth.login(values.email, values.password);
+    if (loginRes.success && loginRes.user) {
+      // Phân quyền điều hướng
+      if (loginRes.user.vai_tro === "admin") {
+        navigate("/admin");
+      } else {
+        navigate("/search");
+      }
+      return;
+    }
+
+    // Nếu không khớp tài khoản
+    if (values.email.toLowerCase() === "demo@example.invalid") {
+      setNotice(
+        "Bản xem trước chưa kết nối dịch vụ tài khoản. Thông tin của bạn chưa được gửi hoặc lưu. Bạn vẫn có thể tra cứu mà không cần đăng nhập.",
+      );
+    } else {
+      setNotice(loginRes.error || "Email hoặc mật khẩu không chính xác.");
+    }
     setValues((previous) => ({ ...previous, password: "", confirm: "" }));
     setRevealed({ password: false, confirm: false });
     requestAnimationFrame(() => noticeRef.current?.focus());
@@ -659,6 +797,108 @@ function AuthPage({
                 <ArrowRight size={13} />
               </Link>
             </p>
+            {!register && (
+              <div
+                style={{
+                  marginTop: "16px",
+                  padding: "12px 14px",
+                  backgroundColor: "#faf8f6",
+                  border: "1px dashed #d9d2cd",
+                  borderRadius: "8px",
+                  fontSize: "12px",
+                  color: "#5c4d50",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "8px",
+                  textAlign: "left",
+                }}
+              >
+                <div
+                  style={{
+                    fontWeight: 600,
+                    color: "#800020",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "5px",
+                  }}
+                >
+                  <ShieldCheck size={14} />
+                  <span>Tài khoản thử nghiệm phân quyền:</span>
+                </div>
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                  }}
+                >
+                  <div>
+                    <strong>Admin:</strong> <code>admin@cyberlaw.vn</code>{" "}
+                    (pass: <code>admin12345</code>)
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setValues((prev) => ({
+                        ...prev,
+                        email: "admin@cyberlaw.vn",
+                        password: "admin12345",
+                      }));
+                      setErrors({});
+                      setNotice("");
+                    }}
+                    style={{
+                      fontSize: "11px",
+                      padding: "3px 8px",
+                      borderRadius: "4px",
+                      backgroundColor: "#800020",
+                      color: "#fff",
+                      border: "none",
+                      cursor: "pointer",
+                      fontWeight: 600,
+                    }}
+                  >
+                    Điền Admin
+                  </button>
+                </div>
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                  }}
+                >
+                  <div>
+                    <strong>User:</strong> <code>mai.nguyen@gmail.com</code>{" "}
+                    (pass: <code>user12345</code>)
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setValues((prev) => ({
+                        ...prev,
+                        email: "mai.nguyen@gmail.com",
+                        password: "user12345",
+                      }));
+                      setErrors({});
+                      setNotice("");
+                    }}
+                    style={{
+                      fontSize: "11px",
+                      padding: "3px 8px",
+                      borderRadius: "4px",
+                      backgroundColor: "#4a3e40",
+                      color: "#fff",
+                      border: "none",
+                      cursor: "pointer",
+                      fontWeight: 600,
+                    }}
+                  >
+                    Điền User
+                  </button>
+                </div>
+              </div>
+            )}
             <p className="preview-note">
               <Info size={13} />
               Bản xem trước giao diện · Chưa kết nối tài khoản
@@ -715,8 +955,18 @@ export default function App() {
     if (!["/login", "/register"].includes(location.pathname))
       mainRef.current?.focus({ preventScroll: true });
   }, [location.pathname]);
-  const auth = ["/login", "/register"].includes(location.pathname);
-  if (!auth) return <MainSite />;
+  const auth = useAuth();
+  if (location.pathname.startsWith("/admin")) {
+    if (!auth.isAuthenticated) {
+      return <AdminAccessDenied reason="unauthenticated" />;
+    }
+    if (!auth.isAdmin) {
+      return <AdminAccessDenied reason="forbidden" />;
+    }
+    return <AdminUsersPage />;
+  }
+  const isAuthRoute = ["/login", "/register"].includes(location.pathname);
+  if (!isAuthRoute) return <MainSite />;
   return (
     <div className="app-shell">
       <a className="skip-link" href="#main-content">

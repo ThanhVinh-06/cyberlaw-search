@@ -13,15 +13,18 @@ import "@fontsource/be-vietnam-pro/latin-700.css";
 import "@fontsource/newsreader/vietnamese-400-italic.css";
 import "@fontsource/newsreader/latin-400-italic.css";
 import App from "./App";
+import { AuthProvider } from "./lib/auth-context";
 import "./index.css";
 import "./main-site.css";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <BrowserRouter>
-      <MotionConfig reducedMotion="user">
-        <App />
-      </MotionConfig>
+      <AuthProvider>
+        <MotionConfig reducedMotion="user">
+          <App />
+        </MotionConfig>
+      </AuthProvider>
     </BrowserRouter>
   </React.StrictMode>,
 );

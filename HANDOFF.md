@@ -20,7 +20,7 @@ Tài liệu này giúp agent mới tiếp tục dự án mà không cần lịch
 | Backend | Người dùng muốn PHP kết hợp Python; đề xuất Laravel cho nghiệp vụ, FastAPI cho AI | Chưa khởi tạo Laravel/FastAPI chạy được |
 | Database | Người dùng chọn MySQL; yêu cầu tên bảng và cột tiếng Việt không dấu | Đã tạo và kiểm tra trên MySQL 8.0.44 |
 | Tài khoản | Có đăng ký, đăng nhập, đăng xuất và phân quyền | Có giao diện và kiểm tra dữ liệu nhập; chưa nối API xác thực |
-| Phân quyền | Hai vai trò tài khoản user/admin; khách chưa đăng nhập | Chính sách chi tiết là đề xuất trong tài liệu |
+| Phân quyền | Hai vai trò tài khoản user/admin; quản lý qua Dashboard Admin `/admin` | Đã triển khai trang Admin CRUD người dùng, phân quyền RBAC, tìm kiếm, lọc, stats card theo schema `nguoi_dung` |
 | AI | Keyphrase, khái niệm, quy định có cấu trúc, tìm kiếm ngữ nghĩa và đáp án có căn cứ | Chưa triển khai; chưa chốt nhà cung cấp LLM/embedding |
 
 Luồng kiến trúc đề xuất: `React → Laravel → FastAPI`, Laravel quản lý MySQL; Python xử lý tri thức và chỉ mục tìm kiếm. Giữ cách triển khai đơn giản trên cùng máy ở giai đoạn đầu.
@@ -44,6 +44,40 @@ Luồng kiến trúc đề xuất: `React → Laravel → FastAPI`, Laravel qu�
 - Đã giới hạn layoutId tiêu đề điều khoản vào cặp thẻ kết quả/modal; tiêu đề trong thư viện ẩn không dùng chung ID nữa để tránh mất chữ khi chat làm trang render lại. File `ArticleDialog.tsx` của Antigravity giữ nguyên (SHA-256 B50E9DF28546307E31BFD032B920CFAD178A287898EF8E6C6D3C81A9E55ECC68). Bộ kiểm tra hiện có 14 kịch bản, gồm 3 kịch bản mới trong `frontend/e2e/chat-popover.spec.ts`; đã đạt, các kịch bản liên quan được chạy lại sau sửa layoutId. Các thay đổi animation/chat trang chủ đã push ở commit bd39b54.
 - Cập nhật animation điều khoản: thiết kế lại chuẩn theo triết lý và ví dụ mẫu tại Module 04 "Good vs Great animations" trên https://animations.dev/ (mẫu App Store Card Expansion / Shared Layout bằng Motion). Thẻ kết quả tra cứu chuyển thành `<motion.article layoutId={`article-card-${article.id}`}>`, tiêu đề `<motion.h3 layoutId={`article-title-${article.id}`}>`. Khi bấm "Xem điều khoản", thẻ gốc phóng lớn và biến hình mượt mà thành modal dialog căn cứ giữa màn hình với spring physics (`stiffness: 190, damping: 25, mass: 0.85`), tạo cảm giác chuyển động êm, chậm và mượt mà ("đẹp chậm, và mượt mà"). Backdrop làm mờ sâu chuẩn frosted glass (`backdrop-filter: blur(14px) saturate(180%)`) kết hợp sắc độ burgundy ấm (`rgba(22, 10, 17, 0.68)`). Nội dung căn cứ pháp lý hiện dần với độ trễ nhẹ (`y: 14 -> 0, opacity: 0 -> 1, delay: 0.12s`). Khi đóng bằng nút X, bấm ra nền hoặc phím Escape, modal thu nhỏ và hạ cánh mượt mà trở lại đúng vị trí thẻ kết quả ban đầu, trả focus về nút kích hoạt và khôi phục thanh cuộn trang.
 - Hỗ trợ trợ năng và phím: người dùng bật `prefers-reduced-motion` được chuyển sang hiệu ứng crossfade nhẹ 160 ms không dịch chuyển vị trí. Phím Tab được giữ trong phạm vi modal (focus trap). Khi mở từ chat AI hoặc thư viện, modal xuất hiện êm từ trung tâm với cùng thông số spring. Toàn bộ 11 kịch bản kiểm thử Playwright (`npm run test:e2e`) đều đạt. Build và format Prettier đạt chuẩn.
+- Cập nhật Dashboard Phân quyền Admin (`/admin` và `/admin/users`): Thiết kế giao diện Quản trị & Phân quyền hoàn chỉnh theo yêu cầu người dùng, khớp chuẩn dữ liệu bảng `nguoi_dung` trong `database/schema.sql` và tài liệu `docs/requirements/02-tai-khoan-phan-quyen.md`. Bao gồm:
+  + Các trường dữ liệu: `ma_nguoi_dung`, `ho_ten`, `thu_dien_tu`, `mat_khau`, `vai_tro` (`admin` / `user`), `trang_thai` (`active` / `blocked`), `ngay_tao`, `ngay_cap_nhat`.
+  + Giao diện đồng bộ: sidebar quản trị màu kem, đỏ burgundy `#800020`, font `Be Vietnam Pro`, breadcrumb và trạng thái kết nối MySQL 8.0.
+  + Thẻ thống kê tổng quan (Stats Cards): Tổng tài khoản, Quản trị viên, Đang hoạt động, Bị tạm khóa.
+  + Tìm kiếm & Bộ lọc: Ô tìm kiếm tức thời theo họ tên hoặc email, bộ lọc dropdown theo vai trò và trạng thái tài khoản.
+  + Tính năng CRUD hoàn chỉnh:
+    * Thêm tài khoản mới: modal dialog có form validation (họ tên, email đúng định dạng & không trùng lặp, mật khẩu khởi tạo, chọn vai trò và trạng thái kèm mô tả quyền hạn).
+    * Xem chi tiết: modal thông tin tài khoản, ngày tạo, cập nhật, số cuộc trò chuyện AI và các quyền hạn được gán.
+    * Chỉnh sửa thông tin & phân quyền: modal cập nhật họ tên, email, thay đổi vai trò (user ↔ admin), đổi trạng thái, tùy chọn đổi mật khẩu mới.
+    * Khóa / Mở khóa nhanh: modal xác nhận thao tác an toàn; có cơ chế bảo vệ ngăn chặn tự khóa Quản trị viên Hệ thống chính (#1) hoặc Admin hoạt động duy nhất.
+    * Xóa tài khoản vĩnh viễn: modal cảnh báo nguy hiểm và xác nhận xóa tài khoản khỏi CSDL.
+  + Tab Ma trận phân quyền RBAC: Bảng đối chiếu chi tiết quyền hạn giữa Khách vãng lai, Người dùng và Quản trị viên theo tài liệu `02-tai-khoan-phan-quyen.md`.
+  + Tích hợp điều hướng & Bảo mật phân quyền theo vai trò (Cập nhật theo yêu cầu người dùng):
+    * Ẩn hoàn toàn trang Quản trị và các liên kết menubar/sidebar đối với khách vãng lai và tài khoản người dùng thường.
+    * Khi đăng nhập đúng email/mật khẩu Admin (`admin@cyberlaw.vn` / `admin12345`): tự động điều hướng sang `/admin`, thanh menubar và sidebar hiển thị mục "Quản trị hệ thống".
+    * Khi đăng nhập đúng email/mật khẩu User (`mai.nguyen@gmail.com` / `user12345`): tự động điều hướng sang trang người dùng (`/search`), sidebar hiển thị hồ sơ cá nhân và KHÔNG CÓ mục Quản trị.
+    * Bảo vệ route `/admin` (Guard): Khách vãng lai cố tình vào `/admin` bị yêu cầu đăng nhập; User thường cố tình vào `/admin` bị chặn với màn hình cảnh báo 403 (Từ chối quyền truy cập).
+    * Tinh chỉnh menubar quản trị: Bỏ các badge CRUD, RBAC, Sắp tới, DB 9 bảng; cố định chiều cao đồng đều 44px và chiều rộng cho tất cả các box menubar (Người dùng & Phân quyền, Ma trận quyền hạn, Thống kê, Văn bản), đảm bảo thẳng hàng và không bị lệch kích thước.
+  + Nâng cấp Animation thông báo CRUD góc phải dưới (Theo mẫu CSS/Motion của animations.dev):
+    * Loại bỏ hoàn toàn hộp thông báo màu đen cũ một dòng thô cứng.
+    * Tạo component `AdminToast.tsx` (`AdminToastContainer`, `ToastItem`): thiết kế chuẩn thẻ toast trắng kem bo góc `rounded-xl`, shadow nổi sâu (`shadow-[0_12px_32px_rgba(0,0,0,0.12)]`), hỗ trợ xếp chồng đa thông báo (multi-toast stacking) tự động trượt sắp xếp bằng Motion layout animation.
+    * Cấu trúc thông báo 2 dòng chi tiết: tiêu đề in đậm rõ ràng + dòng mô tả cụ thể về tài khoản và hành động được thực hiện.
+    * Phân loại màu sắc và icon tinh tế: Xóa tài khoản (đỏ burgundy/rose), Khóa tài khoản (hổ phách/amber), Mở khóa & Thêm mới (xanh ngọc/emerald), Xem thông tin (đỏ mận burgundy/indigo).
+    * Hiệu ứng chuyển động tự nhiên: Trượt vào với spring physics (`stiffness: 420, damping: 28, mass: 0.8`), trượt ra sang phải khi hết hạn (3.8s) hoặc khi bấm nút X.
+    * Hiệu ứng phản hồi xúc giác trên các icon CRUD (`cl-admin-action-btn`): Micro-scale 1.1 khi hover, chuyển màu riêng biệt theo hành động (xem/sửa/khóa/xóa), co nhẹ 0.92 khi bấm chuột (active press) với cubic-bezier `(0.16, 1, 0.3, 1)`.
+    * Tinh chỉnh thanh tìm kiếm & Nút X xóa nhanh email/họ tên:
+    * Khắc phục lỗi icon X bị tụt xuống góc đáy và bị văng ra viền ngoài (do selector `.cl-admin-toolbar-search svg` áp dụng nhầm `left: 12px; pointer-events: none`).
+    * Thiết kế nút xóa `cl-admin-search-clear-btn` tròn 28x28px tinh tế, căn giữa hoàn hảo theo chiều dọc (`align-items: center`), cách mép ô tìm kiếm một khoảng đệm 8px ("cách xa ô tìm kiếm một xíu, chỉ một xíu thôi").
+    * Xử lý tương tác: Click nút X lập tức xóa trắng từ khóa tìm kiếm (`searchQuery = ""`), tự động focus lại con trỏ vào ô input (`searchInputRef.current?.focus()`), bảng người dùng khôi phục đầy đủ tức thì.
+  + Tinh chỉnh hiển thị thẻ trạng thái tài khoản (Status Badges) trong trang Quản trị & Phân quyền:
+    * Đồng bộ kích thước chuẩn và hình dáng: cố định kích thước `.cl-admin-status-badge` thành `width: 104px; height: 42px;` và padding `4px 8px;`, đặt `min-width: 130px;` cho cột header `<th>Trạng thái</th>`. Cả hai box "Đang hoạt động" và "Đã bị khóa" đều có kích thước $104\text{px} \times 42\text{px}$ bằng hệt nhau, không bị lệch kích thước dù hiển thị ở bất kỳ màn hình nào.
+    * Định dạng 2 dòng cân đối: cả "Đang hoạt động" (`Đang hoạt / động`) và "Đã bị khóa" (`Đã bị / khóa`) đều được tách 2 dòng đồng nhất với `text-align: center`, chữ dòng dưới tự động căn giữa thẳng hàng dưới chữ dòng trên.
+    * Thêm `flex-shrink: 0` cho icon chấm tròn trạng thái (`.cl-admin-status-dot-active`, `.cl-admin-status-dot-blocked`) để giữ chấm tròn luôn hoàn hảo và căn giữa theo trục dọc cạnh khối chữ.
+  + Kiểm thử: Toàn bộ 20/20 kịch bản Playwright E2E đều đạt (`npm run test:e2e`). Đã kiểm tra trực tiếp qua trình duyệt với browser subagent qua các thao tác Khóa, Mở khóa, Xem và Xóa tài khoản thành công 100%.
 - Tham khảo ban đầu: https://bocongan.gov.vn/tim-kiem?search=an+ninh+mang&searchTypeId=title
 - Nhận diện riêng CyberLaw Search: đỏ burgundy, vàng nhạt, nền sáng, chữ tiếng Việt dễ đọc.
 - Sidebar luôn hiển thị bên trái trên desktop; bố cục responsive trên màn hình nhỏ.

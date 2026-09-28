@@ -1,0 +1,1039 @@
+/* Giao diện Quản trị & Phân quyền Admin - CyberLaw Search */
+/* Đồng bộ màu đỏ burgundy, nền kem nhạt, font Be Vietnam Pro */
+
+.cl-admin-shell {
+  display: flex;
+  min-height: 100vh;
+  background-color: var(--background, #f8f7f4);
+  color: var(--foreground, #30292b);
+  font-family: "Be Vietnam Pro", sans-serif;
+}
+
+/* Sidebar Admin */
+.cl-admin-sidebar {
+  width: 270px;
+  flex-shrink: 0;
+  background: #ffffff;
+  border-right: 1px solid #e7e1dd;
+  display: flex;
+  flex-direction: column;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  z-index: 40;
+}
+
+.cl-admin-sidebar-header {
+  padding: 22px 20px 18px;
+  border-bottom: 1px solid #f2ede8;
+}
+
+.cl-admin-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  color: inherit;
+}
+
+.cl-admin-brand-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 9px;
+  background: linear-gradient(135deg, #800020, #5c0017);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 10px rgba(128, 0, 32, 0.18);
+}
+
+.cl-admin-brand-title {
+  display: flex;
+  flex-direction: column;
+}
+
+.cl-admin-brand-title strong {
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+}
+
+.cl-admin-brand-title strong span {
+  color: #800020;
+}
+
+.cl-admin-brand-title small {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: #8c8280;
+  text-transform: uppercase;
+}
+
+.cl-admin-sidebar-nav {
+  padding: 18px 14px;
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.cl-admin-nav-group-title {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: #9c9190;
+  text-transform: uppercase;
+  padding: 8px 10px 4px;
+}
+
+.cl-admin-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  min-height: 44px;
+  height: 44px;
+  border-radius: 8px;
+  color: #524749;
+  font-size: 14px;
+  font-weight: 500;
+  text-decoration: none;
+  transition: all 0.18s cubic-bezier(0.23, 1, 0.32, 1);
+  border: 1px solid transparent;
+  box-sizing: border-box;
+  white-space: nowrap;
+  width: 100%;
+}
+
+.cl-admin-nav-item:hover {
+  background: #fbf5f5;
+  color: #800020;
+}
+
+.cl-admin-nav-item.active {
+  background: #f7e8ea;
+  color: #800020;
+  font-weight: 600;
+  border-color: #eed5d9;
+}
+
+.cl-admin-nav-item-badge {
+  margin-left: auto;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: #edd5d9;
+  color: #752536;
+}
+
+.cl-admin-sidebar-footer {
+  padding: 16px 14px;
+  border-top: 1px solid #f2ede8;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: #faf8f6;
+}
+
+.cl-admin-user-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px;
+  border-radius: 8px;
+  background: #ffffff;
+  border: 1px solid #e7e1dd;
+}
+
+.cl-admin-user-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: #800020;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 13px;
+  flex-shrink: 0;
+}
+
+.cl-admin-user-info {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  line-height: 1.25;
+}
+
+.cl-admin-user-name {
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  color: #30292b;
+}
+
+.cl-admin-user-role {
+  font-size: 11px;
+  color: #800020;
+  font-weight: 500;
+}
+
+.cl-admin-back-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 9px 12px;
+  border-radius: 8px;
+  border: 1px solid #d9d2ce;
+  background: #ffffff;
+  color: #4a3e40;
+  font-size: 13px;
+  font-weight: 500;
+  text-decoration: none;
+  transition: all 0.16s ease;
+}
+
+.cl-admin-back-btn:hover {
+  background: #f5f0ec;
+  color: #21181d;
+  border-color: #c9c0ba;
+}
+
+/* Main Workspace */
+.cl-admin-workspace {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow-x: hidden;
+}
+
+/* Header Topbar */
+.cl-admin-topbar {
+  height: 64px;
+  background: #ffffff;
+  border-bottom: 1px solid #e7e1dd;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 28px;
+  position: sticky;
+  top: 0;
+  z-index: 30;
+}
+
+.cl-admin-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #716667;
+}
+
+.cl-admin-breadcrumb a {
+  color: #716667;
+  text-decoration: none;
+}
+
+.cl-admin-breadcrumb a:hover {
+  color: #800020;
+}
+
+.cl-admin-breadcrumb-active {
+  color: #30292b;
+  font-weight: 600;
+}
+
+.cl-admin-topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.cl-admin-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 500;
+  background: #f3efe9;
+  color: #55494a;
+  border: 1px solid #e2dad4;
+}
+
+.cl-admin-status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #10b981;
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
+}
+
+/* Content Container */
+.cl-admin-content {
+  padding: 28px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* Page Header */
+.cl-admin-page-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.cl-admin-page-title h1 {
+  font-size: 24px;
+  font-weight: 700;
+  color: #261c1e;
+  letter-spacing: -0.015em;
+  margin: 0 0 4px;
+}
+
+.cl-admin-page-title p {
+  font-size: 14px;
+  color: #6e6466;
+  margin: 0;
+}
+
+/* Stats Cards */
+.cl-admin-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+}
+
+.cl-admin-stat-card {
+  background: #ffffff;
+  border: 1px solid #e7e1dd;
+  border-radius: 12px;
+  padding: 18px 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.cl-admin-stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.cl-admin-stat-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.cl-admin-stat-icon.burgundy {
+  background: #fbf2f3;
+  color: #800020;
+}
+
+.cl-admin-stat-icon.emerald {
+  background: #ecfdf5;
+  color: #059669;
+}
+
+.cl-admin-stat-icon.amber {
+  background: #fffbeb;
+  color: #d97706;
+}
+
+.cl-admin-stat-icon.rose {
+  background: #fef2f2;
+  color: #dc2626;
+}
+
+.cl-admin-stat-content {
+  display: flex;
+  flex-direction: column;
+}
+
+.cl-admin-stat-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: #716769;
+}
+
+.cl-admin-stat-value {
+  font-size: 22px;
+  font-weight: 700;
+  color: #21181d;
+  line-height: 1.2;
+}
+
+/* Toolbar & Filters */
+.cl-admin-toolbar {
+  background: #ffffff;
+  border: 1px solid #e7e1dd;
+  border-radius: 12px;
+  padding: 14px 18px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+}
+
+.cl-admin-toolbar-search {
+  display: flex;
+  align-items: center;
+  position: relative;
+  min-width: 280px;
+  flex: 1;
+  max-width: 440px;
+}
+
+.cl-admin-search-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  flex: 1;
+  min-width: 0;
+}
+
+.cl-admin-search-input-wrapper .cl-search-icon {
+  position: absolute;
+  left: 12px;
+  color: #8b8082;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.cl-admin-search-input-wrapper input {
+  width: 100%;
+  padding: 9px 12px 9px 38px;
+  border-radius: 8px;
+  border: 1px solid #ded6d1;
+  background: #faf8f6;
+  font-size: 13.5px;
+  color: #30292b;
+  outline: none;
+  box-sizing: border-box;
+  transition: all 0.15s ease;
+}
+
+.cl-admin-search-input-wrapper input:focus {
+  border-color: #800020;
+  background: #ffffff;
+  box-shadow: 0 0 0 3px rgba(128, 0, 32, 0.08);
+}
+
+.cl-admin-search-clear-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  margin-left: 8px; /* Cách xa ô tìm kiếm một xíu theo đúng yêu cầu */
+  border-radius: 50%;
+  background: #f0ebe6;
+  border: 1px solid #ded6d1;
+  color: #716667;
+  cursor: pointer;
+  flex-shrink: 0;
+  padding: 0;
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.cl-admin-search-clear-btn:hover {
+  background: #e6dfd8;
+  color: #800020;
+  border-color: #c9bfb8;
+  transform: scale(1.08);
+}
+
+.cl-admin-search-clear-btn:active {
+  transform: scale(0.92);
+}
+
+.cl-admin-search-clear-btn svg {
+  position: static !important;
+  pointer-events: auto !important;
+  color: inherit !important;
+}
+
+.cl-admin-toolbar-filters {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.cl-admin-filter-select {
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid #ded6d1;
+  background: #ffffff;
+  font-size: 13px;
+  color: #4a3e40;
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.15s ease;
+}
+
+.cl-admin-filter-select:focus {
+  border-color: #800020;
+}
+
+/* Tabs */
+.cl-admin-tabs {
+  display: flex;
+  gap: 8px;
+  border-bottom: 1px solid #e7e1dd;
+  padding-bottom: 2px;
+}
+
+.cl-admin-tab-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border: none;
+  background: none;
+  font-size: 14px;
+  font-weight: 500;
+  color: #63585a;
+  border-radius: 8px 8px 0 0;
+  cursor: pointer;
+  position: relative;
+  transition: color 0.18s ease;
+}
+
+.cl-admin-tab-btn:hover {
+  color: #800020;
+}
+
+.cl-admin-tab-btn.active {
+  color: #800020;
+  font-weight: 600;
+}
+
+.cl-admin-tab-btn.active::after {
+  content: "";
+  position: absolute;
+  bottom: -3px;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: #800020;
+  border-radius: 3px 3px 0 0;
+}
+
+/* Table Container */
+.cl-admin-table-card {
+  background: #ffffff;
+  border: 1px solid #e7e1dd;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.03);
+}
+
+.cl-admin-table-responsive {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.cl-admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 13.5px;
+}
+
+.cl-admin-table th {
+  background: #faf8f6;
+  color: #6e6466;
+  font-weight: 600;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 12px 18px;
+  border-bottom: 1px solid #e7e1dd;
+  white-space: nowrap;
+}
+
+.cl-admin-table td {
+  padding: 14px 18px;
+  border-bottom: 1px solid #f2ede8;
+  color: #3d3335;
+  vertical-align: middle;
+}
+
+.cl-admin-table tbody tr {
+  transition: background-color 0.12s ease;
+}
+
+.cl-admin-table tbody tr:hover {
+  background-color: #fdfaf8;
+}
+
+.cl-admin-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* User cell */
+.cl-admin-user-cell {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.cl-admin-avatar-small {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.cl-admin-avatar-small.admin {
+  background: #fbf0f2;
+  color: #800020;
+  border: 1px solid #ebd3d7;
+}
+
+.cl-admin-avatar-small.user {
+  background: #f2ede8;
+  color: #4a3e40;
+  border: 1px solid #dfd8d3;
+}
+
+.cl-admin-user-cell-meta {
+  display: flex;
+  flex-direction: column;
+}
+
+.cl-admin-user-cell-name {
+  font-weight: 600;
+  color: #21181d;
+}
+
+.cl-admin-user-cell-id {
+  font-size: 11px;
+  color: #8b8082;
+}
+
+/* Role Badges */
+.cl-admin-role-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 9px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.cl-admin-role-badge.admin {
+  background: #fbf2f3;
+  color: #800020;
+  border: 1px solid #eed2d7;
+}
+
+.cl-admin-role-badge.user {
+  background: #f4f0ec;
+  color: #524749;
+  border: 1px solid #ded7d1;
+}
+
+/* Status Badges */
+.cl-admin-status-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 104px;
+  height: 42px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.25;
+  text-align: center;
+  box-sizing: border-box;
+}
+
+.cl-admin-status-text {
+  display: inline-block;
+  text-align: center;
+  line-height: 1.25;
+}
+
+.cl-admin-status-badge.active {
+  background: #ecfdf5;
+  color: #047857;
+  border: 1px solid #a7f3d0;
+}
+
+.cl-admin-status-badge.blocked {
+  background: #fef2f2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+}
+
+.cl-admin-status-dot-active {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #10b981;
+  flex-shrink: 0;
+}
+
+.cl-admin-status-dot-blocked {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #ef4444;
+  flex-shrink: 0;
+}
+
+/* Action Buttons */
+.cl-admin-actions-cell {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.cl-admin-action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  border: 1px solid #e2dad4;
+  background: #ffffff;
+  color: #55494b;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+}
+
+.cl-admin-action-btn:hover {
+  transform: translateY(-2px) scale(1.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.cl-admin-action-btn:active {
+  transform: translateY(0) scale(0.92);
+}
+
+.cl-admin-action-btn.view:hover {
+  background: #fbf2f3;
+  color: #800020;
+  border-color: #eed2d7;
+}
+
+.cl-admin-action-btn.edit:hover {
+  background: #eff6ff;
+  color: #1d4ed8;
+  border-color: #bfdbfe;
+}
+
+.cl-admin-action-btn.block:hover {
+  background: #fffbeb;
+  color: #b45309;
+  border-color: #fde68a;
+}
+
+.cl-admin-action-btn.delete:hover {
+  background: #fef2f2;
+  color: #dc2626;
+  border-color: #fecaca;
+}
+
+/* Primary Button in Burgundy */
+.cl-admin-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 18px;
+  border-radius: 8px;
+  background: #800020;
+  color: #ffffff;
+  font-size: 13.5px;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(128, 0, 32, 0.2);
+  transition: all 0.18s cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.cl-admin-btn-primary:hover {
+  background: #6b001b;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(128, 0, 32, 0.28);
+}
+
+.cl-admin-btn-outline {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #4a3e40;
+  font-size: 13.5px;
+  font-weight: 500;
+  border: 1px solid #ded7d1;
+  cursor: pointer;
+  transition: all 0.16s ease;
+}
+
+.cl-admin-btn-outline:hover {
+  background: #f8f6f3;
+  color: #21181d;
+  border-color: #c9c0ba;
+}
+
+/* Permission Matrix Table */
+.cl-admin-matrix-card {
+  background: #ffffff;
+  border: 1px solid #e7e1dd;
+  border-radius: 12px;
+  padding: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.03);
+}
+
+.cl-admin-matrix-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.cl-admin-matrix-header h3 {
+  font-size: 18px;
+  font-weight: 700;
+  color: #261c1e;
+  margin: 0 0 4px;
+}
+
+.cl-admin-matrix-header p {
+  font-size: 13.5px;
+  color: #6e6466;
+  margin: 0;
+}
+
+/* Modal / Form styles */
+.cl-admin-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(33, 24, 29, 0.45);
+  backdrop-filter: blur(3px);
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.cl-admin-modal-container {
+  background: #ffffff;
+  border-radius: 14px;
+  border: 1px solid #ded7d1;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+  width: 100%;
+  max-width: 520px;
+  overflow: hidden;
+  animation: clAdminModalEnter 0.22s cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+@keyframes clAdminModalEnter {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.cl-admin-modal-header {
+  padding: 20px 24px;
+  border-bottom: 1px solid #f0eae5;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.cl-admin-modal-header h3 {
+  font-size: 17px;
+  font-weight: 700;
+  color: #21181d;
+  margin: 0;
+}
+
+.cl-admin-modal-close {
+  background: none;
+  border: none;
+  color: #8b8082;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cl-admin-modal-close:hover {
+  background: #f3efe9;
+  color: #21181d;
+}
+
+.cl-admin-modal-body {
+  padding: 22px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-height: 75vh;
+  overflow-y: auto;
+}
+
+.cl-admin-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.cl-admin-form-group label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #3d3335;
+}
+
+.cl-admin-form-group label span.required {
+  color: #dc2626;
+  margin-left: 2px;
+}
+
+.cl-admin-form-input,
+.cl-admin-form-select {
+  padding: 9px 12px;
+  border-radius: 8px;
+  border: 1px solid #d9d2cd;
+  font-size: 13.5px;
+  color: #21181d;
+  background: #ffffff;
+  outline: none;
+  transition: all 0.15s ease;
+}
+
+.cl-admin-form-input:focus,
+.cl-admin-form-select:focus {
+  border-color: #800020;
+  box-shadow: 0 0 0 3px rgba(128, 0, 32, 0.08);
+}
+
+.cl-admin-form-hint {
+  font-size: 12px;
+  color: #7d7274;
+}
+
+.cl-admin-form-error {
+  font-size: 12px;
+  color: #dc2626;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.cl-admin-modal-footer {
+  padding: 16px 24px;
+  border-top: 1px solid #f0eae5;
+  background: #faf8f6;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+/* Modern Toast Notification is managed via AdminToast.tsx with Framer Motion */
+
+/* Empty state */
+.cl-admin-empty {
+  padding: 48px 20px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  color: #7a6f71;
+}
+
+.cl-admin-empty-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: #f3efe9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #9c9193;
+}
+
+.cl-admin-empty h4 {
+  font-size: 16px;
+  font-weight: 600;
+  color: #3d3335;
+  margin: 0;
+}
+
+.cl-admin-empty p {
+  font-size: 13px;
+  margin: 0;
+  max-width: 320px;
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+  .cl-admin-sidebar {
+    display: none;
+  }
+  .cl-admin-workspace {
+    margin-left: 0;
+  }
+  .cl-admin-topbar {
+    padding: 0 16px;
+  }
+  .cl-admin-content {
+    padding: 16px;
+  }
+}
