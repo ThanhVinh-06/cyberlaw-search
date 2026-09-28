@@ -48,6 +48,7 @@ export default function AdminUsersPage() {
   const getInitialTab = () => {
     if (location.pathname === "/admin/stats") return "stats";
     if (location.pathname === "/admin/matrix") return "matrix";
+    if (location.pathname === "/admin/documents") return "documents";
     return "users";
   };
   const [activeTab, setActiveTab] = useState<string>(getInitialTab);
@@ -414,7 +415,9 @@ export default function AdminUsersPage() {
           {/* Page Title & Add Button */}
           <div className="cl-admin-page-header" data-admin-reveal="0">
             <div className="cl-admin-page-title">
-              <h1>Phân quyền & Quản lý người dùng</h1>
+              <h1 title="Phân quyền & Quản lý người dùng">
+                Phân quyền & Quản lý người dùng
+              </h1>
               <p>
                 Theo dõi, phân quyền (Role-Based Access Control) và quản lý tài
                 khoản trong bảng <code>nguoi_dung</code>

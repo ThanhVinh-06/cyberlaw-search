@@ -71,7 +71,9 @@ export default function AdminStatsPage({ onNavigateTab }: AdminStatsPageProps) {
       {/* Header with Title and Filter Tabs */}
       <div className="cl-stats-header">
         <div className="cl-stats-title-group">
-          <h1>Tổng quan Thống kê & Báo cáo Tri thức</h1>
+          <h1 title="Tổng quan Thống kê & Báo cáo Tri thức">
+            Tổng quan Thống kê & Báo cáo Tri thức
+          </h1>
           <p>
             Phân tích số liệu tra cứu, quy định pháp luật và hoạt động hỏi đáp
             AI theo CSDL <code>cyberlaw_search</code> (MySQL 8.0)

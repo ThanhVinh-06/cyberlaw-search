@@ -1,4 +1,5 @@
-import { ReactNode, useState } from "react";
+import { ReactNode, useRef, useState } from "react";
+import { Dialog } from "radix-ui";
 import { Link, NavLink, useLocation } from "react-router-dom";
 import {
   ShieldCheck,
@@ -27,6 +28,7 @@ export default function AdminLayout({
   onTabChange,
 }: AdminLayoutProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const menuTrigger = useRef<HTMLButtonElement>(null);
   const location = useLocation();
 
   const navItems = [
@@ -51,29 +53,28 @@ export default function AdminLayout({
       icon: FileText,
     },
   ];
+  const currentTabLabel =
+    activeTab === "users"
+      ? "Phân quyền & Quản lý người dùng"
+      : activeTab === "stats"
+        ? "Báo cáo thống kê"
+        : (navItems.find((item) => item.id === activeTab)?.label ?? "Quản trị");
 
   return (
-    <div className="cl-admin-shell">
-      {/* Mobile Drawer Overlay */}
-      {mobileOpen && (
-        <div
-          className="cl-admin-modal-overlay"
-          style={{ zIndex: 60 }}
-          onClick={() => setMobileOpen(false)}
-        >
-          <div
-            className="cl-admin-sidebar"
-            style={{
-              display: "flex",
-              position: "fixed",
-              left: 0,
-              top: 0,
-              bottom: 0,
-              width: "280px",
-              boxShadow: "0 20px 40px rgba(0,0,0,0.3)",
+    <Dialog.Root open={mobileOpen} onOpenChange={setMobileOpen}>
+      <div className="cl-admin-shell">
+        {/* Mobile Drawer Overlay */}
+        <Dialog.Portal>
+          <Dialog.Overlay className="cl-admin-mobile-backdrop" />
+          <Dialog.Content
+            className="cl-admin-sidebar cl-admin-mobile-drawer"
+            aria-describedby={undefined}
+            onCloseAutoFocus={(event) => {
+              event.preventDefault();
+              menuTrigger.current?.focus({ preventScroll: true });
             }}
-            onClick={(e) => e.stopPropagation()}
           >
+            <Dialog.Title className="sr-only">Điều hướng quản trị</Dialog.Title>
             <div className="cl-admin-sidebar-header">
               <div
                 style={{
@@ -112,6 +113,7 @@ export default function AdminLayout({
                   <button
                     key={item.id}
                     className={`cl-admin-nav-item ${isActive ? "active" : ""}`}
+                    title={item.label}
                     onClick={(event) => {
                       if (onTabChange) onTabChange(item.id, event.detail === 0);
                       setMobileOpen(false);
@@ -130,116 +132,136 @@ export default function AdminLayout({
                 <span>Về trang tra cứu</span>
               </Link>
             </div>
-          </div>
-        </div>
-      )}
+          </Dialog.Content>
+        </Dialog.Portal>
 
-      {/* Desktop Sidebar */}
-      <aside className="cl-admin-sidebar" aria-label="Điều hướng quản trị">
-        <div className="cl-admin-sidebar-header">
-          <Link to="/admin" className="cl-admin-brand">
-            <div className="cl-admin-brand-icon">
-              <ShieldCheck size={20} />
-            </div>
-            <div className="cl-admin-brand-title">
-              <strong>
-                Cyber<span>Law</span> Admin
-              </strong>
-              <small>HỆ THỐNG QUẢN TRỊ & PHÂN QUYỀN</small>
-            </div>
-          </Link>
-        </div>
-
-        <div className="cl-admin-sidebar-nav">
-          <div className="cl-admin-nav-group-title">QUẢN TRỊ HỆ THỐNG</div>
-          {navItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = activeTab === item.id;
-            return (
-              <button
-                key={item.id}
-                className={`cl-admin-nav-item ${isActive ? "active" : ""}`}
-                onClick={(event) => onTabChange?.(item.id, event.detail === 0)}
-              >
-                <Icon size={18} />
-                <span>{item.label}</span>
-              </button>
-            );
-          })}
-
-          <div
-            className="cl-admin-nav-group-title"
-            style={{ marginTop: "14px" }}
-          >
-            LIÊN KẾT HỆ THỐNG
-          </div>
-          <Link to="/search" className="cl-admin-nav-item" target="_blank">
-            <ExternalLink size={16} />
-            <span>Xem trang tra cứu</span>
-          </Link>
-          <Link to="/library" className="cl-admin-nav-item" target="_blank">
-            <FileText size={16} />
-            <span>Thư viện văn bản</span>
-          </Link>
-        </div>
-
-        <div className="cl-admin-sidebar-footer">
-          <div className="cl-admin-user-card">
-            <div className="cl-admin-user-avatar">AD</div>
-            <div className="cl-admin-user-info">
-              <span className="cl-admin-user-name">Quản trị viên Hệ thống</span>
-              <span className="cl-admin-user-role">admin@cyberlaw.vn</span>
-            </div>
-          </div>
-          <Link to="/search" className="cl-admin-back-btn">
-            <ArrowLeft size={16} />
-            <span>Quay lại trang tra cứu</span>
-          </Link>
-        </div>
-      </aside>
-
-      {/* Main Workspace */}
-      <div className="cl-admin-workspace">
-        <header className="cl-admin-topbar">
-          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-            <button
-              className="cl-admin-action-btn"
-              style={{ display: "none" }}
-              id="cl-admin-mobile-toggle"
-              onClick={() => setMobileOpen(true)}
-              aria-label="Mở menu quản trị"
-            >
-              <Menu size={18} />
-            </button>
-            <div className="cl-admin-breadcrumb">
-              <Link to="/search">CyberLaw</Link>
-              <span>/</span>
-              <span>Khu vực Quản trị</span>
-              <span>/</span>
-              <span className="cl-admin-breadcrumb-active">
-                {activeTab === "users" && "Phân quyền & Quản lý người dùng"}
-                {activeTab === "matrix" && "Ma trận quyền hạn"}
-                {activeTab === "stats" && "Báo cáo thống kê"}
-                {activeTab === "documents" && "Văn bản & Tri thức"}
-              </span>
-            </div>
-          </div>
-
-          <div className="cl-admin-topbar-actions">
-            <div className="cl-admin-status-pill">
-              <Database size={13} style={{ color: "#800020" }} />
-              <span>MySQL 8.0</span>
-              <span className="cl-admin-status-dot" />
-            </div>
-            <Link to="/search" className="cl-admin-btn-outline">
-              <ArrowLeft size={14} />
-              <span>Giao diện Tra cứu</span>
+        {/* Desktop Sidebar */}
+        <aside className="cl-admin-sidebar" aria-label="Điều hướng quản trị">
+          <div className="cl-admin-sidebar-header">
+            <Link to="/admin" className="cl-admin-brand">
+              <div className="cl-admin-brand-icon">
+                <ShieldCheck size={20} />
+              </div>
+              <div className="cl-admin-brand-title">
+                <strong>
+                  Cyber<span>Law</span> Admin
+                </strong>
+                <small>HỆ THỐNG QUẢN TRỊ & PHÂN QUYỀN</small>
+              </div>
             </Link>
           </div>
-        </header>
 
-        <main className="cl-admin-content">{children}</main>
+          <div className="cl-admin-sidebar-nav">
+            <div className="cl-admin-nav-group-title">QUẢN TRỊ HỆ THỐNG</div>
+            {navItems.map((item) => {
+              const Icon = item.icon;
+              const isActive = activeTab === item.id;
+              return (
+                <button
+                  key={item.id}
+                  className={`cl-admin-nav-item ${isActive ? "active" : ""}`}
+                  title={item.label}
+                  onClick={(event) =>
+                    onTabChange?.(item.id, event.detail === 0)
+                  }
+                >
+                  <Icon size={18} />
+                  <span>{item.label}</span>
+                </button>
+              );
+            })}
+
+            <div
+              className="cl-admin-nav-group-title"
+              style={{ marginTop: "14px" }}
+            >
+              LIÊN KẾT HỆ THỐNG
+            </div>
+            <Link to="/search" className="cl-admin-nav-item" target="_blank">
+              <ExternalLink size={16} />
+              <span>Xem trang tra cứu</span>
+            </Link>
+            <Link to="/library" className="cl-admin-nav-item" target="_blank">
+              <FileText size={16} />
+              <span>Thư viện văn bản</span>
+            </Link>
+          </div>
+
+          <div className="cl-admin-sidebar-footer">
+            <div className="cl-admin-user-card">
+              <div className="cl-admin-user-avatar">AD</div>
+              <div className="cl-admin-user-info">
+                <span className="cl-admin-user-name">
+                  Quản trị viên Hệ thống
+                </span>
+                <span className="cl-admin-user-role">admin@cyberlaw.vn</span>
+              </div>
+            </div>
+            <Link to="/search" className="cl-admin-back-btn">
+              <ArrowLeft size={16} />
+              <span>Quay lại trang tra cứu</span>
+            </Link>
+          </div>
+        </aside>
+
+        {/* Main Workspace */}
+        <div className="cl-admin-workspace">
+          <header className="cl-admin-topbar">
+            <div className="cl-admin-topbar-leading">
+              <button
+                ref={menuTrigger}
+                className="cl-admin-action-btn"
+                id="cl-admin-mobile-toggle"
+                onClick={() => setMobileOpen(true)}
+                aria-label="Mở menu quản trị"
+                aria-expanded={mobileOpen}
+                aria-haspopup="dialog"
+              >
+                <Menu size={18} />
+              </button>
+              <div className="cl-admin-breadcrumb">
+                <Link className="cl-admin-breadcrumb-parent" to="/search">
+                  CyberLaw
+                </Link>
+                <span className="cl-admin-breadcrumb-parent" aria-hidden="true">
+                  /
+                </span>
+                <span className="cl-admin-breadcrumb-parent">
+                  Khu vực Quản trị
+                </span>
+                <span className="cl-admin-breadcrumb-parent" aria-hidden="true">
+                  /
+                </span>
+                <span
+                  className="cl-admin-breadcrumb-active"
+                  title={currentTabLabel}
+                >
+                  {currentTabLabel}
+                </span>
+              </div>
+            </div>
+
+            <div className="cl-admin-topbar-actions">
+              <div className="cl-admin-status-pill cl-admin-database-status">
+                <Database size={13} style={{ color: "#800020" }} />
+                <span>MySQL 8.0</span>
+                <span className="cl-admin-status-dot" />
+              </div>
+              <Link
+                to="/search"
+                className="cl-admin-btn-outline cl-admin-search-link"
+                aria-label="Giao diện Tra cứu"
+                title="Giao diện Tra cứu"
+              >
+                <ArrowLeft size={14} />
+                <span>Giao diện Tra cứu</span>
+              </Link>
+            </div>
+          </header>
+
+          <main className="cl-admin-content">{children}</main>
+        </div>
       </div>
-    </div>
+    </Dialog.Root>
   );
 }

@@ -107,6 +107,18 @@
   box-sizing: border-box;
   white-space: nowrap;
   width: 100%;
+  min-width: 0;
+  text-align: left;
+}
+
+.cl-admin-nav-item > svg {
+  flex-shrink: 0;
+}
+
+.cl-admin-nav-item > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .cl-admin-nav-item:hover {
@@ -220,6 +232,9 @@
 /* Header Topbar */
 .cl-admin-topbar {
   height: 64px;
+  min-height: 64px;
+  flex-shrink: 0;
+  gap: 16px;
   background: #ffffff;
   border-bottom: 1px solid #e7e1dd;
   display: flex;
@@ -231,12 +246,33 @@
   z-index: 30;
 }
 
+.cl-admin-topbar-leading {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  flex: 1;
+}
+
+#cl-admin-mobile-toggle {
+  display: none;
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+}
+
 .cl-admin-breadcrumb {
   display: flex;
   align-items: center;
   gap: 8px;
   font-size: 13px;
   color: #716667;
+  min-width: 0;
+  white-space: nowrap;
+}
+
+.cl-admin-breadcrumb-parent {
+  flex-shrink: 0;
 }
 
 .cl-admin-breadcrumb a {
@@ -251,12 +287,23 @@
 .cl-admin-breadcrumb-active {
   color: #30292b;
   font-weight: 600;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .cl-admin-topbar-actions {
   display: flex;
   align-items: center;
   gap: 12px;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.cl-admin-topbar-actions svg,
+.cl-admin-topbar-actions .cl-admin-status-dot {
+  flex-shrink: 0;
 }
 
 .cl-admin-status-pill {
@@ -303,6 +350,11 @@
   align-items: flex-start;
   justify-content: space-between;
   gap: 16px;
+}
+
+.cl-admin-page-title {
+  min-width: 0;
+  max-width: 100%;
 }
 
 .cl-admin-page-title h1 {
@@ -1030,6 +1082,32 @@
 }
 
 /* Responsive */
+/* The drawer is portaled outside the shell, so its sizing is self-contained. */
+.cl-admin-mobile-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background: rgb(33 24 29 / 45%);
+  backdrop-filter: blur(3px);
+}
+
+.cl-admin-sidebar.cl-admin-mobile-drawer {
+  display: flex;
+  position: fixed;
+  inset: 0 auto 0 0;
+  width: min(300px, calc(100vw - 32px));
+  height: 100dvh;
+  z-index: 61;
+  box-shadow: 0 20px 40px rgb(0 0 0 / 30%);
+  outline: none;
+}
+
+@media (max-width: 1200px) {
+  .cl-admin-breadcrumb-parent {
+    display: none;
+  }
+}
+
 @media (max-width: 900px) {
   .cl-admin-sidebar {
     display: none;
@@ -1039,8 +1117,99 @@
   }
   .cl-admin-topbar {
     padding: 0 16px;
+    gap: 12px;
+  }
+  #cl-admin-mobile-toggle {
+    display: inline-flex;
   }
   .cl-admin-content {
     padding: 16px;
+  }
+}
+
+@media (max-width: 600px) {
+  .cl-admin-topbar {
+    padding: 0 12px;
+    gap: 8px;
+  }
+  .cl-admin-topbar-leading {
+    gap: 8px;
+  }
+  .cl-admin-topbar-actions .cl-admin-database-status,
+  .cl-admin-search-link > span {
+    display: none;
+  }
+  .cl-admin-topbar-actions .cl-admin-search-link {
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    justify-content: center;
+  }
+  .cl-admin-page-title {
+    width: 100%;
+  }
+  .cl-admin-page-title h1 {
+    font-size: 20px;
+    line-height: 1.5;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .cl-admin-page-title p,
+  .cl-admin-matrix-header p {
+    overflow-wrap: anywhere;
+  }
+  .cl-admin-toolbar {
+    padding: 14px;
+  }
+  .cl-admin-toolbar-search {
+    min-width: 0;
+    width: 100%;
+    max-width: none;
+    flex-basis: 100%;
+  }
+  .cl-admin-toolbar-filters {
+    width: 100%;
+  }
+  .cl-admin-filter-select {
+    max-width: 100%;
+    min-width: 0;
+    flex: 1 1 140px;
+  }
+  .cl-admin-tabs {
+    gap: 4px;
+  }
+  .cl-admin-tab-btn {
+    flex: 1;
+    min-width: 0;
+    padding: 12px 8px;
+    font-size: 12px;
+  }
+  .cl-admin-tab-btn > svg {
+    flex-shrink: 0;
+  }
+  .cl-admin-tab-btn > span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .cl-admin-matrix-card {
+    padding: 16px;
+    min-width: 0;
+  }
+  .cl-admin-matrix-header {
+    flex-direction: column;
+    gap: 12px;
+  }
+  .cl-admin-matrix-header > div {
+    min-width: 0;
+    max-width: 100%;
+  }
+  .cl-admin-table-responsive {
+    overscroll-behavior-x: contain;
+  }
+  .cl-admin-page-header .cl-admin-btn-primary {
+    max-width: 100%;
+    font-size: 12px;
   }
 }
