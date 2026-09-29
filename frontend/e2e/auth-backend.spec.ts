@@ -1,5 +1,179 @@
 import { test, expect } from "@playwright/test";
 
+test("real SMTP reset changes password, revokes old cookie and rejects grant replay", async ({
+  page,
+  context,
+  playwright,
+}) => {
+  const email = "reset-browser@example.test";
+  const oldPassword = " Reset-before!123 ";
+  const newPassword = " Reset-after!123 ";
+  const post = async (path: string, data: object) => {
+    const { csrf_token } = await (
+      await context.request.get("/api/auth/csrf")
+    ).json();
+    return context.request.post(`/api/auth/${path}`, {
+      headers: { "X-CSRF-TOKEN": csrf_token },
+      data,
+    });
+  };
+  expect(
+    (
+      await post("register", {
+        name: "Reset Browser",
+        email,
+        password: oldPassword,
+        password_confirmation: oldPassword,
+      })
+    ).status(),
+  ).toBe(201);
+  expect((await post("login", { email, password: oldPassword })).status()).toBe(
+    200,
+  );
+  const oldSession = await context.storageState();
+  await post("logout", {});
+  // Keep another valid session to demonstrate server-side revocation across browsers.
+  const other = await playwright.request.newContext({
+    baseURL: "http://127.0.0.1:5174",
+  });
+  const { csrf_token: otherToken } = await (
+    await other.get("/api/auth/csrf")
+  ).json();
+  expect(
+    (
+      await other.post("/api/auth/login", {
+        headers: { "X-CSRF-TOKEN": otherToken },
+        data: { email, password: oldPassword },
+      })
+    ).status(),
+  ).toBe(200);
+  await page.goto("/forgot-password?next=history");
+  await page.getByLabel("Địa chỉ email").fill(email);
+  const requested = page.waitForResponse((r) =>
+    r.url().endsWith("/password/request"),
+  );
+  await page
+    .getByRole("button", { name: "Gửi mã xác nhận", exact: true })
+    .click();
+  expect((await requested).status()).toBe(202);
+  const inbox = await playwright.request.newContext({
+    baseURL: "http://127.0.0.1:8026",
+  });
+  const message = await (await inbox.get("/api/v1/message/latest")).json();
+  expect(message.To[0].Address).toBe(email);
+  const code = (message.Text || message.HTML).match(/\b[0-9]{6}\b/)?.[0];
+  expect(typeof code).toBe("string");
+  await expect(page.getByTestId("preview-code")).toHaveCount(0);
+  await page.getByLabel("Mã xác nhận", { exact: true }).fill(code);
+  await page.getByRole("button", { name: "Xác nhận mã", exact: true }).click();
+  await expect(page.getByLabel("Mật khẩu mới", { exact: true })).toBeVisible();
+  const grantSession = await context.storageState();
+  await page.getByLabel("Mật khẩu mới", { exact: true }).fill(newPassword);
+  await page
+    .getByLabel("Xác nhận mật khẩu mới", { exact: true })
+    .fill(newPassword);
+  await page
+    .getByRole("button", { name: "Xác nhận mật khẩu mới", exact: true })
+    .click();
+  await expect(page).toHaveURL(/\/login\?next=history$/);
+  await expect(page.getByRole("status")).toContainText(
+    "Đổi mật khẩu thành công",
+  );
+  expect((await other.get("/api/auth/me")).status()).toBe(401);
+  for (const storageState of [oldSession, grantSession]) {
+    const replay = await playwright.request.newContext({
+      baseURL: "http://127.0.0.1:5174",
+      storageState,
+    });
+    const { csrf_token } = await (await replay.get("/api/auth/csrf")).json();
+    expect(
+      (
+        await replay.post("/api/auth/password/complete", {
+          headers: { "X-CSRF-TOKEN": csrf_token },
+          data: {
+            email,
+            password: oldPassword,
+            password_confirmation: oldPassword,
+          },
+        })
+      ).status(),
+    ).toBe(422);
+    await replay.dispose();
+  }
+  expect((await post("login", { email, password: oldPassword })).status()).toBe(
+    401,
+  );
+  await page.getByLabel("Mật khẩu", { exact: true }).fill(newPassword);
+  await page.getByRole("button", { name: "Đăng nhập", exact: true }).click();
+  await expect(page).toHaveURL(/\/history$/);
+  expect(
+    await page.evaluate(() => [localStorage.length, sessionStorage.length]),
+  ).toEqual([0, 0]);
+  await inbox.dispose();
+  await other.dispose();
+});
+
+test("real registration creates a normal user, returns to login and rejects duplicates", async ({
+  page,
+  context,
+}) => {
+  await page.goto("/register?next=history");
+  await page.getByLabel("Họ và tên").fill("Người dùng kiểm thử");
+  await page.getByLabel("Địa chỉ email").fill("new-member@example.test");
+  await page
+    .getByLabel("Mật khẩu", { exact: true })
+    .fill(" Registration-browser!123 ");
+  await page.getByLabel("Xác nhận mật khẩu").fill(" Registration-browser!123 ");
+  const response = page.waitForResponse((r) =>
+    r.url().endsWith("/api/auth/register"),
+  );
+  await page
+    .getByRole("button", { name: "Tạo tài khoản", exact: true })
+    .click();
+  expect((await response).status()).toBe(201);
+  await expect(page).toHaveURL(/\/login\?next=history$/);
+  await expect(page.getByRole("status")).toContainText(
+    "Tạo tài khoản thành công",
+  );
+  await expect(page.getByLabel("Địa chỉ email")).toHaveValue(
+    "new-member@example.test",
+  );
+  await expect(page.getByLabel("Mật khẩu", { exact: true })).toHaveValue("");
+  expect((await context.request.get("/api/auth/me")).status()).toBe(401);
+  await page
+    .getByLabel("Mật khẩu", { exact: true })
+    .fill(" Registration-browser!123 ");
+  await page.getByRole("button", { name: "Đăng nhập", exact: true }).click();
+  await expect(page).toHaveURL(/\/history$/);
+  const me = await context.request.get("/api/auth/me");
+  expect((await me.json()).user.vai_tro).toBe("user");
+  expect(
+    await page.evaluate(() => [localStorage.length, sessionStorage.length]),
+  ).toEqual([0, 0]);
+  await page.goto("/admin");
+  await expect(page.locator(".cl-admin-shell")).toHaveCount(0);
+  const { csrf_token } = await (
+    await context.request.get("/api/auth/csrf")
+  ).json();
+  await context.request.post("/api/auth/logout", {
+    headers: { "X-CSRF-TOKEN": csrf_token },
+  });
+  const { csrf_token: nextToken } = await (
+    await context.request.get("/api/auth/csrf")
+  ).json();
+  const duplicate = await context.request.post("/api/auth/register", {
+    headers: { "X-CSRF-TOKEN": nextToken },
+    data: {
+      name: "Replacement",
+      email: "NEW-MEMBER@example.test",
+      password: "other-password123",
+      password_confirmation: "other-password123",
+      vai_tro: "admin",
+    },
+  });
+  expect(duplicate.status()).toBe(409);
+});
+
 test("real HTTP login, cookies, reload, navigation and logout; stale cookie is rejected", async ({
   page,
   context,

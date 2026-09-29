@@ -26,7 +26,7 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        $exceptions->dontFlash(['password', 'password_confirmation', 'mat_khau']);
+        $exceptions->dontFlash(['password', 'password_confirmation', 'mat_khau', 'code']);
         $exceptions->report(function (Throwable $exception) {
             // API request summary is logged by ApiContext, never SQL bindings or raw exception context.
             if (request()->is('api/*')) {

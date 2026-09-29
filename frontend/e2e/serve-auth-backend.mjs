@@ -28,6 +28,14 @@ const env = {
   CACHE_STORE: "file",
   FRONTEND_ORIGINS: "http://127.0.0.1:5174",
   BCRYPT_ROUNDS: "4",
+  MAIL_MAILER: "smtp",
+  MAIL_HOST: "127.0.0.1",
+  MAIL_PORT: "1026",
+  MAIL_SCHEME: "smtp",
+  MAIL_URL: "null",
+  MAIL_USERNAME: "null",
+  MAIL_PASSWORD: "null",
+  MAIL_FROM_ADDRESS: "cyberlaw@example.test",
   CACHE_FILES: resolve(isolated, `cache-${randomBytes(8).toString("hex")}`),
 };
 const setup = spawnSync(php, ["tests/prepare-browser.php"], {
@@ -37,6 +45,30 @@ const setup = spawnSync(php, ["tests/prepare-browser.php"], {
   windowsHide: true,
 });
 if (setup.status !== 0) process.exit(setup.status ?? 1);
+// Separate local mailbox for synthetic accounts. No access to the developer's inbox or MySQL.
+const mailbox = spawn(
+  resolve("../tmp/tools/mailpit/mailpit.exe"),
+  [
+    "--listen",
+    "127.0.0.1:8026",
+    "--smtp",
+    "127.0.0.1:1026",
+    "--allowed-hosts",
+    "127.0.0.1,localhost",
+    "--smtp-allowed-recipients",
+    "@example.test$",
+    "--smtp-disable-rdns",
+    "--disable-version-check",
+    "--quiet",
+    "--max",
+    "100",
+  ],
+  { windowsHide: true, stdio: "inherit" },
+);
+mailbox.on("error", () => {
+  console.error("Mailpit test binary unavailable; see backend email setup.");
+  process.exit(1);
+});
 const server = spawn(
   php,
   [
@@ -54,6 +86,10 @@ const server = spawn(
 for (const signal of ["SIGINT", "SIGTERM"])
   process.on(signal, () => {
     server.kill();
+    mailbox.kill();
     process.exit();
   });
-server.on("exit", (code) => process.exit(code ?? 1));
+server.on("exit", (code) => {
+  mailbox.kill();
+  process.exit(code ?? 1);
+});

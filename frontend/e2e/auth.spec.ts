@@ -71,16 +71,15 @@ test("registration validates matching passwords, clears on navigation and suppor
   await page
     .getByRole("button", { name: "Tạo tài khoản", exact: true })
     .click();
-  await expect(page.getByRole("status")).toContainText("chưa tạo tài khoản");
-  await expect(
-    page.getByLabel("Xác nhận mật khẩu", { exact: true }),
-  ).toHaveValue("");
-  await page
-    .locator(".auth-switch")
-    .getByRole("link", { name: "Đăng nhập", exact: true })
-    .click();
   await expect(page).toHaveURL(/\/login$/);
-  await page.goBack();
+  await expect(page.getByRole("status")).toContainText(
+    "Tạo tài khoản thành công",
+  );
+  await expect(page.getByLabel("Địa chỉ email")).toHaveValue(
+    "an@example.invalid",
+  );
+  await expect(page.getByLabel("Mật khẩu", { exact: true })).toHaveValue("");
+  await page.goto("/register");
   await expect(
     page.getByRole("heading", { name: "Tạo tài khoản mới" }),
   ).toBeVisible();

@@ -6,6 +6,7 @@ export class AuthApiError extends Error {
   constructor(
     public status: number,
     message: string,
+    public code?: string,
   ) {
     super(message);
   }
@@ -35,14 +36,32 @@ async function request(path: string, init?: RequestInit) {
           ? "Email hoặc mật khẩu không chính xác."
           : "Phiên đăng nhập đã hết hạn. Bạn hãy đăng nhập lại.",
       403: "Bạn không có quyền thực hiện thao tác này.",
+      409:
+        path === "register" && data?.code === "already_authenticated"
+          ? "Bạn hãy đăng xuất trước khi tạo tài khoản mới."
+          : "Không thể đăng ký với email này. Bạn hãy thử đăng nhập hoặc dùng email khác.",
       419: "Phiên bảo vệ đã hết hạn. Bạn hãy thử lại.",
-      422: "Bạn hãy kiểm tra lại email và mật khẩu.",
+      422:
+        path === "register"
+          ? "Bạn hãy kiểm tra lại thông tin đăng ký."
+          : "Bạn hãy kiểm tra lại email và mật khẩu.",
       429: "Bạn đã thử quá nhiều lần. Vui lòng chờ một phút rồi thử lại.",
     };
     throw new AuthApiError(
       response.status,
-      messages[response.status] ??
-        "Dịch vụ tài khoản tạm thời gián đoạn. Bạn hãy thử lại sau.",
+      path.startsWith("password/") && [422, 429].includes(response.status)
+        ? data?.code === "reset_locked"
+          ? "Mã đã hết lượt thử. Bạn hãy gửi lại mã."
+          : data?.code === "reset_invalid"
+            ? "Mã không hợp lệ hoặc đã hết hạn. Bạn hãy kiểm tra lại hoặc gửi mã mới."
+            : data?.code === "reset_cooldown"
+              ? "Bạn hãy chờ 30 giây trước khi gửi lại mã."
+              : response.status === 429
+                ? "Bạn đã thử nhiều lần. Bạn hãy chờ rồi thử lại sau."
+                : "Bạn hãy kiểm tra lại thông tin đã nhập."
+        : (messages[response.status] ??
+            "Dịch vụ tài khoản tạm thời gián đoạn. Bạn hãy thử lại sau."),
+      data?.code,
     );
   }
   return data;
@@ -58,6 +77,37 @@ async function mutate(path: string, data: object = {}) {
 }
 
 export const authApi = {
+  requestPasswordReset: (
+    email: string,
+  ): Promise<{ message: string; expires_in: number; resend_after: number }> =>
+    mutate("password/request", { email }),
+  verifyPasswordReset: (
+    email: string,
+    code: string,
+  ): Promise<{ message: string }> => mutate("password/verify", { email, code }),
+  completePasswordReset: (
+    email: string,
+    password: string,
+    confirmation: string,
+  ): Promise<void> =>
+    mutate("password/complete", {
+      email,
+      password,
+      password_confirmation: confirmation,
+    }),
+  register: async (
+    name: string,
+    email: string,
+    password: string,
+    confirmation: string,
+  ): Promise<void> => {
+    await mutate("register", {
+      name: name.trim(),
+      email: email.trim().toLowerCase(),
+      password,
+      password_confirmation: confirmation,
+    });
+  },
   me: async (): Promise<SessionUser> => (await request("me")).user,
   login: async (email: string, password: string): Promise<SessionUser> =>
     (await mutate("login", { email: email.trim().toLowerCase(), password }))

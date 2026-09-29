@@ -22,13 +22,13 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { authApi, AuthApiError } from "@/lib/auth-api";
+import { useAuth } from "@/lib/auth-context";
 import "./reset-password.css";
 
 type Challenge = {
-  code: string;
   expiresAt: number;
   resendAt: number;
-  attempts: number;
 };
 type Field = "email" | "code" | "password" | "confirm";
 const labels: Record<Field, string> = {
@@ -38,7 +38,6 @@ const labels: Record<Field, string> = {
   confirm: "Xác nhận mật khẩu mới",
 };
 
-// Preview only. Real verification and password updates must run on the PHP server.
 export default function ResetPasswordPage({
   story,
   keyboard,
@@ -48,6 +47,7 @@ export default function ResetPasswordPage({
 }) {
   const location = useLocation();
   const navigate = useNavigate();
+  const auth = useAuth();
   const reduced = useReducedMotion();
   const [values, setValues] = useState<Record<Field, string>>({
     email:
@@ -62,11 +62,14 @@ export default function ResetPasswordPage({
   const [revealed, setRevealed] = useState({ password: false, confirm: false });
   const [now, setNow] = useState(Date.now);
   const [status, setStatus] = useState("");
+  const [pending, setPending] = useState(false);
+  const [locked, setLocked] = useState(false);
+  const busy = useRef(false);
+  const active = useRef(true);
   const formRef = useRef<HTMLFormElement>(null);
   const headingRef = useRef<HTMLHeadingElement>(null);
   const step = verified ? 2 : challenge ? 1 : 0;
   const expired = !!challenge && now >= challenge.expiresAt;
-  const locked = !!challenge && challenge.attempts >= 5;
   const resendSeconds = challenge
     ? Math.max(0, Math.ceil((challenge.resendAt - now) / 1000))
     : 0;
@@ -76,8 +79,12 @@ export default function ResetPasswordPage({
       ?.focus();
 
   useEffect(() => {
+    active.current = true;
     document.title = "Đặt lại mật khẩu · CyberLaw";
     headingRef.current?.focus({ preventScroll: true });
+    return () => {
+      active.current = false;
+    };
   }, []);
   useEffect(() => {
     if (!challenge) return;
@@ -89,6 +96,7 @@ export default function ResetPasswordPage({
   }, [step]);
 
   function update(field: Field, value: string) {
+    if (busy.current) return;
     setValues((previous) => ({
       ...previous,
       [field]: value,
@@ -102,14 +110,16 @@ export default function ResetPasswordPage({
     if (field === "email") {
       setChallenge(null);
       setVerified(false);
+      setLocked(false);
       setRevealed({ password: false, confirm: false });
       setErrors({});
       setStatus("");
     }
   }
 
-  function sendCode() {
-    const email = values.email.trim();
+  async function sendCode() {
+    if (busy.current) return;
+    const email = values.email.trim().toLowerCase();
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 191) {
       setErrors({
         email: email
@@ -120,32 +130,45 @@ export default function ResetPasswordPage({
       return;
     }
     if (challenge && Date.now() < challenge.resendAt) return;
-    const time = Date.now();
-    const code = String(
-      crypto.getRandomValues(new Uint32Array(1))[0] % 1000000,
-    ).padStart(6, "0");
-    setNow(time);
-    setChallenge({
-      code,
-      expiresAt: time + 300000,
-      resendAt: time + 30000,
-      attempts: 0,
-    });
-    setVerified(false);
-    setValues({ email, code: "", password: "", confirm: "" });
-    setRevealed({ password: false, confirm: false });
+    busy.current = true;
+    setPending(true);
     setErrors({});
-    setStatus("Mã dùng thử đã sẵn sàng bên dưới. Chưa có email nào được gửi.");
-    requestAnimationFrame(() => focus("code"));
+    try {
+      const response = await authApi.requestPasswordReset(email);
+      if (!active.current) return;
+      const time = Date.now();
+      setNow(time);
+      setChallenge({
+        expiresAt: time + response.expires_in * 1000,
+        resendAt: time + response.resend_after * 1000,
+      });
+      setVerified(false);
+      setLocked(false);
+      setValues({ email, code: "", password: "", confirm: "" });
+      setRevealed({ password: false, confirm: false });
+      setStatus(response.message);
+    } catch (error) {
+      if (active.current)
+        setErrors({
+          email:
+            error instanceof Error
+              ? error.message
+              : "Chưa gửi được yêu cầu. Bạn hãy thử lại.",
+        });
+    } finally {
+      busy.current = false;
+      if (active.current) setPending(false);
+    }
   }
 
-  function submit(event: FormEvent) {
+  async function submit(event: FormEvent) {
     event.preventDefault();
+    if (busy.current) return;
     if (!challenge) {
       sendCode();
       return;
     }
-    if (Date.now() >= challenge.expiresAt || challenge.attempts >= 5) {
+    if (Date.now() >= challenge.expiresAt || locked) {
       setErrors({
         code: "Mã đã hết hạn hoặc hết lượt thử. Bạn hãy gửi lại mã.",
       });
@@ -160,29 +183,38 @@ export default function ResetPasswordPage({
         focus("code");
         return;
       }
-      if (values.code !== challenge.code) {
-        const attempts = challenge.attempts + 1;
-        setChallenge({ ...challenge, attempts });
-        setErrors({
-          code:
-            attempts >= 5
-              ? "Mã đã hết lượt thử. Bạn hãy gửi lại mã."
-              : `Mã chưa đúng. Bạn còn ${5 - attempts} lượt thử.`,
-        });
-        focus("code");
-        return;
-      }
       setErrors({});
-      setVerified(true);
-      setStatus("Đã xác nhận mã dùng thử. Bạn có thể nhập mật khẩu mới.");
+      busy.current = true;
+      setPending(true);
+      try {
+        const response = await authApi.verifyPasswordReset(
+          values.email,
+          values.code,
+        );
+        if (!active.current) return;
+        setVerified(true);
+        setValues((previous) => ({ ...previous, code: "" }));
+        setStatus(response.message);
+      } catch (error) {
+        if (!active.current) return;
+        setErrors({
+          code: error instanceof Error ? error.message : "Bạn hãy thử lại.",
+        });
+        if (error instanceof AuthApiError && error.code === "reset_locked")
+          setLocked(true);
+      } finally {
+        busy.current = false;
+        if (active.current) setPending(false);
+      }
       return;
     }
     const next = {
       password:
         values.password.length < 8
           ? "Mật khẩu cần có ít nhất 8 ký tự."
-          : values.password.length > 128
-            ? "Mật khẩu tối đa 128 ký tự."
+          : new TextEncoder().encode(values.password).length > 72 ||
+              values.password.includes("\0")
+            ? "Mật khẩu tối đa 72 byte và không chứa ký tự null."
             : "",
       confirm: !values.confirm
         ? "Bạn hãy nhập lại mật khẩu mới."
@@ -195,11 +227,32 @@ export default function ResetPasswordPage({
       focus(next.password ? "password" : "confirm");
       return;
     }
-    // Do not persist passwords or pretend to change an account in a browser-only preview.
-    navigate(`/login${location.search}`, {
-      replace: true,
-      state: { email: values.email, resetPreviewComplete: true },
-    });
+    busy.current = true;
+    setPending(true);
+    try {
+      await authApi.completePasswordReset(
+        values.email,
+        values.password,
+        values.confirm,
+      );
+      auth.clearResetSession();
+      if (!active.current) return;
+      navigate(`/login${location.search}`, {
+        replace: true,
+        state: { email: values.email, resetComplete: true },
+      });
+    } catch (error) {
+      if (!active.current) return;
+      setValues((previous) => ({ ...previous, password: "", confirm: "" }));
+      setStatus(error instanceof Error ? error.message : "Bạn hãy thử lại.");
+      if (error instanceof AuthApiError && error.code === "reset_invalid") {
+        setVerified(false);
+        setChallenge(null);
+      }
+    } finally {
+      busy.current = false;
+      if (active.current) setPending(false);
+    }
   }
 
   function field(name: Field, readOnly = false) {
@@ -216,6 +269,7 @@ export default function ResetPasswordPage({
             name={name}
             value={values[name]}
             readOnly={readOnly}
+            disabled={pending}
             required
             type={
               secret
@@ -242,7 +296,7 @@ export default function ResetPasswordPage({
             }
             autoCapitalize="none"
             spellCheck={false}
-            maxLength={secret ? 128 : name === "email" ? 191 : 6}
+            maxLength={secret ? 72 : name === "email" ? 191 : 6}
             placeholder={
               name === "email"
                 ? "ban@example.com"
@@ -338,10 +392,10 @@ export default function ResetPasswordPage({
             <div className="reset-preview-note">
               <Info size={17} />
               <p>
-                <strong>Bản dùng thử giao diện</strong>
+                <strong>Bảo vệ tài khoản của bạn</strong>
                 <br />
-                Chưa gửi email hoặc thay đổi mật khẩu tài khoản. Bạn có thể thử
-                các bước bằng mã minh họa.
+                Mã xác nhận có hiệu lực trong 5 phút. Bạn không chia sẻ mã này
+                với người khác nhé.
               </p>
             </div>
             <form
@@ -349,16 +403,16 @@ export default function ResetPasswordPage({
               className="auth-form"
               noValidate
               onSubmit={submit}
+              aria-busy={pending}
             >
               {field("email")}
               {challenge && (
                 <>
                   <div className="reset-code-info">
                     <p>
-                      Mã dùng thử:{" "}
-                      <strong data-testid="preview-code">
-                        {challenge.code}
-                      </strong>
+                      {verified
+                        ? "Email đã được xác nhận"
+                        : "Bạn hãy kiểm tra hộp thư"}
                       <span>
                         {expired ? "Mã đã hết hạn" : "Có hiệu lực trong 5 phút"}
                       </span>
@@ -366,7 +420,7 @@ export default function ResetPasswordPage({
                     <button
                       type="button"
                       className="reset-text-button"
-                      disabled={resendSeconds > 0}
+                      disabled={pending || resendSeconds > 0}
                       onClick={sendCode}
                     >
                       {resendSeconds > 0
@@ -375,7 +429,7 @@ export default function ResetPasswordPage({
                     </button>
                   </div>
                   <motion.div key="code" {...reveal}>
-                    {field("code", verified)}
+                    {!verified && field("code")}
                   </motion.div>
                 </>
               )}
@@ -397,13 +451,15 @@ export default function ResetPasswordPage({
               <Button
                 className="submit-button"
                 type="submit"
-                disabled={!!challenge && (expired || locked)}
+                disabled={pending || (!!challenge && (expired || locked))}
               >
-                {step === 0
-                  ? "Gửi mã xác nhận"
-                  : step === 1
-                    ? "Xác nhận mã"
-                    : "Xác nhận mật khẩu mới"}
+                {pending
+                  ? "Đang xử lý…"
+                  : step === 0
+                    ? "Gửi mã xác nhận"
+                    : step === 1
+                      ? "Xác nhận mã"
+                      : "Xác nhận mật khẩu mới"}
                 <ArrowRight size={18} />
               </Button>
             </form>

@@ -1,0 +1,4 @@
+interface:
+  display_name: "CyberLaw Security"
+  short_description: "Secure development and review for CyberLaw"
+  default_prompt: "Use $cyberlaw-security to implement or review this CyberLaw feature, test its security boundaries, and record the findings."

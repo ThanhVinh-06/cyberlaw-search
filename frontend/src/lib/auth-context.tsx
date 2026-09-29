@@ -19,6 +19,7 @@ interface AuthContextType {
     password: string,
   ) => Promise<{ success: boolean; user?: SessionUser; error?: string }>;
   logout: () => Promise<void>;
+  clearResetSession: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -125,6 +126,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           currentUser.trang_thai === "active",
         login,
         logout,
+        clearResetSession: () => {
+          generation.current++;
+          setCurrentUser(null);
+          setSessionError("");
+        },
       }}
     >
       {children}

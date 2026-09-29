@@ -1,4 +1,4 @@
-import { test, expect, type Page } from "./auth-fixtures";
+import { test, expect, mockAuth, type Page } from "./auth-fixtures";
 import AxeBuilder from "@axe-core/playwright";
 
 async function sendCode(page: Page) {
@@ -6,7 +6,8 @@ async function sendCode(page: Page) {
   await page
     .getByRole("button", { name: "Gửi mã xác nhận", exact: true })
     .click();
-  return (await page.getByTestId("preview-code").innerText()).trim();
+  await expect(page.getByLabel("Mã xác nhận", { exact: true })).toBeVisible();
+  return "123456"; // UI fixture only; HTTP integration reads the actual email from Mailpit.
 }
 
 test("login email, invalid code, password validation and automatic return", async ({
@@ -34,7 +35,9 @@ test("login email, invalid code, password validation and automatic return", asyn
     .fill(code === "000000" ? "111111" : "000000");
   await page.getByRole("button", { name: "Xác nhận mã", exact: true }).click();
   await expect(
-    page.getByText("Mã chưa đúng. Bạn còn 4 lượt thử."),
+    page.getByText(
+      "Mã không hợp lệ hoặc đã hết hạn. Bạn hãy kiểm tra lại hoặc gửi mã mới.",
+    ),
   ).toBeVisible();
   await page.getByLabel("Mã xác nhận", { exact: true }).fill(code);
   await page.getByRole("button", { name: "Xác nhận mã", exact: true }).click();
@@ -69,19 +72,19 @@ test("login email, invalid code, password validation and automatic return", asyn
     .click();
   await expect(page).toHaveURL(/\/login\?next=history$/);
   await expect(page.getByRole("status")).toContainText(
-    "Mật khẩu tài khoản chưa thay đổi",
+    "Đổi mật khẩu thành công",
   );
   await expect(page.getByLabel("Địa chỉ email")).toHaveValue(
     "preview@example.invalid",
   );
   await expect(page.getByLabel("Mật khẩu", { exact: true })).toHaveValue("");
-  expect(posts).toEqual([]);
+  expect(posts.filter((url) => url.includes("/password/"))).toHaveLength(4);
   expect(
     await page.evaluate(() => [localStorage.length, sessionStorage.length]),
   ).toEqual([0, 0]);
 });
 
-test("attempt limit, resend, email change and expiry invalidate the preview challenge", async ({
+test("server failure feedback, resend, email change and expiry update the form", async ({
   page,
 }) => {
   await page.clock.install();
@@ -111,9 +114,7 @@ test("attempt limit, resend, email change and expiry invalidate the preview chal
   await expect(
     page.getByRole("button", { name: "Xác nhận mã", exact: true }),
   ).toBeEnabled();
-  await page
-    .getByLabel("Mã xác nhận", { exact: true })
-    .fill((await page.getByTestId("preview-code").innerText()).trim());
+  await page.getByLabel("Mã xác nhận", { exact: true }).fill("123456");
   await page.getByRole("button", { name: "Xác nhận mã", exact: true }).click();
   await page.clock.fastForward(301000);
   await expect(
@@ -134,7 +135,7 @@ test("keyboard and reduced motion keep verification usable and accessible", asyn
   await page.goto("/forgot-password");
   await page.getByLabel("Địa chỉ email").fill("preview@example.invalid");
   await page.getByLabel("Địa chỉ email").press("Enter");
-  const code = (await page.getByTestId("preview-code").innerText()).trim();
+  const code = "123456";
   await page.getByLabel("Mã xác nhận", { exact: true }).fill(code);
   await page.keyboard.press("Enter");
   await expect(page.getByLabel("Mật khẩu mới", { exact: true })).toBeFocused();
@@ -171,9 +172,7 @@ test("all three stages fit phones, tablets, layout boundaries and landscape", as
     for (let stage = 0; stage < 3; stage++) {
       if (stage === 1) await sendCode(page);
       if (stage === 2) {
-        await page
-          .getByLabel("Mã xác nhận", { exact: true })
-          .fill((await page.getByTestId("preview-code").innerText()).trim());
+        await page.getByLabel("Mã xác nhận", { exact: true }).fill("123456");
         await page
           .getByRole("button", { name: "Xác nhận mã", exact: true })
           .click();
@@ -209,7 +208,9 @@ test("all three stages fit phones, tablets, layout boundaries and landscape", as
         "opacity",
         "1",
       );
-      await page.evaluate(() => window.scrollTo({ top: 0, behavior: "instant" }));
+      await page.evaluate(() =>
+        window.scrollTo({ top: 0, behavior: "instant" }),
+      );
       await page.screenshot({
         path: `test-results/reset-password-${width}.png`,
         fullPage: true,
@@ -229,15 +230,14 @@ test("touch on iPhone-sized screen completes code step and opens navigation", as
     deviceScaleFactor: 3,
   });
   const page = await context.newPage();
+  await mockAuth(context);
   await page.goto("http://127.0.0.1:5173/login");
   await page.getByLabel("Địa chỉ email").fill("preview@example.invalid");
   await page.getByRole("button", { name: "Quên mật khẩu?" }).tap();
   await page
     .getByRole("button", { name: "Gửi mã xác nhận", exact: true })
     .tap();
-  await page
-    .getByLabel("Mã xác nhận", { exact: true })
-    .fill((await page.getByTestId("preview-code").innerText()).trim());
+  await page.getByLabel("Mã xác nhận", { exact: true }).fill("123456");
   await page.getByRole("button", { name: "Xác nhận mã", exact: true }).tap();
   await expect(page.getByLabel("Mật khẩu mới", { exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Mở menu điều hướng" }).tap();

@@ -22,6 +22,22 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        RateLimiter::for('reset-send', function (Request $request) {
+            $email = $request->input('email');
+            $email = is_string($email) ? mb_strtolower(trim(mb_substr($email, 0, 191))) : '';
+            $identity = hash_hmac('sha256', $email, config('app.key'));
+            $ip = hash_hmac('sha256', (string) $request->ip(), config('app.key'));
+
+            return [Limit::perMinute(5)->by('reset-send:'.$ip), Limit::perHour(20)->by('reset-hour:'.$ip), Limit::perHour(10)->by('reset-email:'.$identity)];
+        });
+        RateLimiter::for('reset-action', function (Request $request) {
+            return Limit::perMinute(20)->by('reset-action:'.hash_hmac('sha256', (string) $request->ip(), config('app.key')));
+        });
+        RateLimiter::for('registration', function (Request $request) {
+            $ip = hash_hmac('sha256', (string) $request->ip(), config('app.key'));
+
+            return [Limit::perMinute(5)->by('register-minute:'.$ip), Limit::perHour(20)->by('register-hour:'.$ip)];
+        });
         RateLimiter::for('login', function (Request $request) {
             $email = $request->input('email');
             $email = is_string($email) ? mb_strtolower(trim(mb_substr($email, 0, 191))) : '';

@@ -26,6 +26,18 @@ final class AccountSchema
             $table->dateTime('ngay_tao')->nullable();
             $table->dateTime('ngay_cap_nhat')->nullable();
         });
+        Schema::create('yeu_cau_dat_lai_mat_khau', function (Blueprint $table) {
+            $table->id('ma_yeu_cau');
+            $table->foreignId('ma_nguoi_dung')->constrained('nguoi_dung', 'ma_nguoi_dung')->cascadeOnDelete();
+            $table->string('ma_xac_nhan_bam');
+            $table->char('ma_phien_bam', 64)->nullable()->unique();
+            $table->unsignedTinyInteger('so_lan_thu')->default(0);
+            $table->dateTime('ngay_tao');
+            $table->dateTime('ngay_het_han');
+            $table->dateTime('ngay_xac_nhan')->nullable();
+            $table->dateTime('ngay_su_dung')->nullable();
+            $table->dateTime('ngay_huy')->nullable();
+        });
         Schema::create('nhat_ky_quan_tri', function (Blueprint $table) {
             $table->id('ma_nhat_ky');
             $table->unsignedBigInteger('ma_nguoi_thuc_hien')->nullable();

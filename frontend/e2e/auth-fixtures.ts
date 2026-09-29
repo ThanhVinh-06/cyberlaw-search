@@ -11,6 +11,7 @@ export async function mockAuth(
   role: "admin" | "user" | null = null,
 ) {
   let currentRole = role;
+  let resetAttempts = 0;
   const user = () => ({
     ma_nguoi_dung: currentRole === "admin" ? 1 : 2,
     ho_ten: "Tài khoản kiểm thử",
@@ -25,7 +26,29 @@ export async function mockAuth(
     let status = 200;
     let body: object = {};
     if (path.endsWith("/csrf")) body = { csrf_token: "ui-fixture-csrf" };
-    else if (path.endsWith("/logout")) {
+    else if (path.endsWith("/password/request")) {
+      resetAttempts = 0;
+      status = 202;
+      body = {
+        message:
+          "Nếu email thuộc tài khoản đang hoạt động, bạn sẽ nhận được mã xác nhận.",
+        expires_in: 300,
+        resend_after: 30,
+      };
+    } else if (path.endsWith("/password/verify")) {
+      if (route.request().postDataJSON().code !== "123456") {
+        resetAttempts++;
+        status = 422;
+        body = { code: resetAttempts >= 5 ? "reset_locked" : "reset_invalid" };
+      } else
+        body = { message: "Đã xác nhận mã. Bạn có thể nhập mật khẩu mới." };
+    } else if (path.endsWith("/password/complete")) {
+      currentRole = null;
+      body = { message: "Đổi mật khẩu thành công." };
+    } else if (path.endsWith("/register")) {
+      status = 201;
+      body = { message: "Created" };
+    } else if (path.endsWith("/logout")) {
       currentRole = null;
       body = { message: "OK" };
     } else if (path.endsWith("/login")) {

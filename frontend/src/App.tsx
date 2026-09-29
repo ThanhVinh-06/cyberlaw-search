@@ -3,6 +3,7 @@ import ResetPasswordPage from "./pages/ResetPasswordPage";
 import AdminUsersPage from "./pages/admin/AdminUsersPage";
 import AdminAccessDenied from "./pages/admin/AdminAccessDenied";
 import { useAuth } from "./lib/auth-context";
+import { authApi } from "./lib/auth-api";
 import { Brand } from "./components/Brand";
 import { publicNavigation, historyNavigation } from "./lib/navigation";
 import {
@@ -442,12 +443,15 @@ function AuthPage({
   const noticeRef = useRef<HTMLDivElement>(null);
   const headingRef = useRef<HTMLHeadingElement>(null);
   const location = useLocation();
+  const activeLocation = useRef(location.key);
   const fields: FieldName[] = register
     ? ["name", "email", "password", "confirm"]
     : ["email", "password"];
   const historyIntent =
     new URLSearchParams(location.search).get("next") === "history";
   useLayoutEffect(() => {
+    activeLocation.current = location.key;
+    setSubmitting(false);
     setValues({
       ...emptyValues,
       email:
@@ -457,12 +461,17 @@ function AuthPage({
     });
     setErrors({});
     setNotice(
-      !register && location.state?.resetPreviewComplete
-        ? "Bạn đã hoàn tất luồng đặt lại mật khẩu dùng thử. Mật khẩu tài khoản chưa thay đổi vì dịch vụ tài khoản chưa được kết nối."
-        : "",
+      !register && location.state?.registrationComplete
+        ? "Tạo tài khoản thành công. Bạn hãy đăng nhập để tiếp tục."
+        : !register && location.state?.resetComplete
+          ? "Đổi mật khẩu thành công. Bạn hãy đăng nhập bằng mật khẩu mới."
+          : "",
     );
     setRevealed({ password: false, confirm: false });
     setCapsLock(false);
+    return () => {
+      activeLocation.current = "";
+    };
   }, [register, location.key, location.state]);
   useEffect(() => {
     document.title = `${register ? "Đăng ký" : "Đăng nhập"} · CyberLaw`;
@@ -490,11 +499,15 @@ function AuthPage({
     if (field === "password")
       return !value
         ? "Bạn hãy nhập mật khẩu."
-        : register && value.length < 8
-          ? "Mật khẩu cần có ít nhất 8 ký tự."
-          : value.length > 128
-            ? "Mật khẩu tối đa 128 ký tự."
-            : "";
+        : register &&
+            (new TextEncoder().encode(value).length > 72 ||
+              value.includes("\0"))
+          ? "Mật khẩu tối đa 72 byte và không chứa ký tự null."
+          : register && value.length < 8
+            ? "Mật khẩu cần có ít nhất 8 ký tự."
+            : value.length > 128
+              ? "Mật khẩu tối đa 128 ký tự."
+              : "";
     return !value
       ? "Bạn hãy nhập lại mật khẩu."
       : value !== input.password
@@ -530,12 +543,39 @@ function AuthPage({
     }
 
     if (register) {
-      setNotice(
-        "Thông tin đã đúng định dạng. Bản xem trước chưa tạo tài khoản; đăng ký sẽ khả dụng khi dịch vụ tài khoản được kết nối.",
-      );
-      setValues((previous) => ({ ...previous, password: "", confirm: "" }));
-      setRevealed({ password: false, confirm: false });
-      requestAnimationFrame(() => noticeRef.current?.focus());
+      const submittedLocation = location.key;
+      setSubmitting(true);
+      setNotice("");
+      try {
+        await authApi.register(
+          values.name,
+          values.email,
+          values.password,
+          values.confirm,
+        );
+        if (activeLocation.current !== submittedLocation) return;
+        navigate(historyIntent ? "/login?next=history" : "/login", {
+          replace: true,
+          state: {
+            email: values.email.trim().toLowerCase(),
+            registrationComplete: true,
+          },
+        });
+      } catch (error) {
+        if (activeLocation.current !== submittedLocation) return;
+        setNotice(
+          error instanceof Error
+            ? error.message
+            : "Không thể tạo tài khoản. Bạn hãy thử lại.",
+        );
+        requestAnimationFrame(() => noticeRef.current?.focus());
+      } finally {
+        if (activeLocation.current === submittedLocation) {
+          setSubmitting(false);
+          setValues((previous) => ({ ...previous, password: "", confirm: "" }));
+          setRevealed({ password: false, confirm: false });
+        }
+      }
       return;
     }
 
@@ -598,10 +638,16 @@ function AuthPage({
             <span
               className={`auth-switch-indicator ${register ? "register-active" : ""}`}
             />
-            <Link to="/login" aria-current={!register ? "page" : undefined}>
+            <Link
+              to={historyIntent ? "/login?next=history" : "/login"}
+              aria-current={!register ? "page" : undefined}
+            >
               Đăng nhập
             </Link>
-            <Link to="/register" aria-current={register ? "page" : undefined}>
+            <Link
+              to={historyIntent ? "/register?next=history" : "/register"}
+              aria-current={register ? "page" : undefined}
+            >
               Đăng ký
             </Link>
           </nav>
@@ -810,7 +856,9 @@ function AuthPage({
                 aria-busy={submitting}
               >
                 {submitting
-                  ? "Đang đăng nhập…"
+                  ? register
+                    ? "Đang tạo tài khoản…"
+                    : "Đang đăng nhập…"
                   : register
                     ? "Tạo tài khoản"
                     : "Đăng nhập"}
@@ -830,7 +878,9 @@ function AuthPage({
             </Button>
             <p className="form-switch-copy">
               {register ? "Bạn đã có tài khoản?" : "Lần đầu đến với CyberLaw?"}{" "}
-              <Link to={register ? "/login" : "/register"}>
+              <Link
+                to={`${register ? "/login" : "/register"}${historyIntent ? "?next=history" : ""}`}
+              >
                 {register ? "Đăng nhập" : "Tạo tài khoản"}
                 <ArrowRight size={13} />
               </Link>
@@ -838,7 +888,7 @@ function AuthPage({
             <p className="preview-note">
               <Info size={13} />
               {register
-                ? "Bản xem trước · Chưa hỗ trợ tạo tài khoản"
+                ? "Tài khoản mới được cấp quyền người dùng."
                 : "Phiên đăng nhập được bảo vệ bằng cookie và xác thực máy chủ."}
             </p>
           </motion.div>

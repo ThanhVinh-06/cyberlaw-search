@@ -2,7 +2,15 @@
 
 ## Trạng thái
 
-Đăng nhập, lấy phiên và đăng xuất đã dùng Laravel/MySQL. React không đọc tài khoản demo hoặc vai trò từ `sessionStorage` để xác thực. Đăng ký, quên mật khẩu, CRUD quản trị và AI vẫn là giao diện demo; không tạo/đổi dữ liệu thật qua các form đó.
+Đăng ký, đăng nhập, lấy phiên, đăng xuất và quên mật khẩu đã dùng Laravel/MySQL. React không đọc tài khoản demo hoặc vai trò từ `sessionStorage` để xác thực. Quên mật khẩu dùng SMTP Mailpit local; xem [hướng dẫn thử và cấu hình](02-quen-mat-khau.md). CRUD quản trị và AI vẫn demo.
+
+### Đăng ký tài khoản
+
+POST `/api/auth/register` với JSON `{name, email, password, password_confirmation}` và CSRF như đăng nhập. Thành công trả 201 rồi giao diện chuyển về `/login`, điền email và thông báo thành công; chưa tự đăng nhập. Giữ ý định `next=history`. Mật khẩu không lưu vào URL/storage.
+
+Server chỉ nhận bốn trường trên: tên 2–100 ký tự, email hợp lệ tối đa 191 ký tự, mật khẩu tối thiểu 8 ký tự/tối đa 72 byte UTF-8 do bcrypt, xác nhận trùng khớp. Email được trim/chuyển chữ thường; mật khẩu giữ nguyên khoảng trắng, cấm byte null. Luôn gán `vai_tro=user`, `trang_thai=active`. Không cấp quyền admin từ payload.
+
+Chỉ một INSERT, chỉ mục UNIQUE email hiện có ngăn bản ghi trùng; lỗi trùng trả 409 và giữ nguyên tài khoản cũ. Đang đăng nhập cũng trả 409 để không thay phiên đang có. Giới hạn 5 yêu cầu/phút/IP và 20/giờ/IP; lỗi nhập liệu 422, CSRF 419, body quá lớn 413. Log `auth.register` ghi kết quả/request ID và ID tài khoản mới; không ghi dữ liệu form. Đây là đăng ký tự phục vụ, chưa gửi email xác minh quyền sở hữu địa chỉ email. Phản hồi trùng khác thành công nên có thể dùng để suy đoán email đã đăng ký; trước public deployment cần cân nhắc luồng xác minh email và kiểm soát chống bot.
 
 API dùng session guard `web` của Laravel 12, trong nhóm middleware `web` để có cookie, session và CSRF. Frontend và API dùng **cùng origin**: Vite proxy `/api` sang Laravel khi phát triển; khi deploy, reverse proxy `/api` sang `backend/api/public` và phục vụ frontend tại cùng tên miền. Chưa cài Sanctum vì chưa cung cấp bearer token/mobile API hoặc SPA khác origin. Đây là lựa chọn hiện tại thay cho đề xuất Sanctum trước đây.
 
