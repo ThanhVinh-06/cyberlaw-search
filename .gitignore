@@ -55,6 +55,7 @@ secrets.json
 backups/
 *.sql
 !database/schema.sql
+!database/migrations/*.sql
 *.sql.gz
 *.sql.zip
 *.bak

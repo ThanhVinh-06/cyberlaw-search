@@ -4,7 +4,25 @@ Cập nhật ngày 27/09/2026: đã chuyển frontend sang React và thiết k�
 
 Tài liệu này giúp agent mới tiếp tục dự án mà không cần lịch sử chat. Đây là trạng thái tại thời điểm bàn giao; kiểm tra mã và yêu cầu mới của người dùng trước khi thực hiện công việc tiếp theo.
 
-Trạng thái bàn giao mới nhất: người dùng đã duyệt và yêu cầu đưa toàn bộ phần giao diện đang chờ lên `origin/main`, gồm Văn bản & Tri thức, modal dùng chung, sidebar/logo/nút, lịch sử dùng thử và các sửa responsive. Thông điệp commit: `Hoan thien giao dien tri thuc, dong bo menu va kiem tra responsive`. Các ghi chú “chưa commit/push” bên dưới mô tả thời điểm triển khai trước yêu cầu này; đối chiếu `HEAD` và `origin/main` để xác nhận đồng bộ. Build và kiểm tra responsive liên quan đã đạt; đã rà soát file thay đổi, không thêm cấu hình bí mật, database dump, dependencies hoặc dữ liệu runtime.
+Trạng thái mới nhất (29/09/2026): người dùng đã duyệt và yêu cầu commit/push giao diện quên mật khẩu, bảng MySQL hỗ trợ và sửa liên kết quản trị giữ phiên khi chuyển sang trang công khai. Thông điệp commit: `Them giao dien quen mat khau va giu phien dang nhap admin`. Build và các kiểm thử responsive liên quan đã đạt, đã rà soát file nhạy cảm; dump cục bộ và mật khẩu kết nối không đưa vào commit. Đối chiếu `HEAD` với `origin/main` để xác nhận trạng thái đồng bộ. Phần giao diện trước đó ở commit `a7e2b10`. Các ghi chú lịch sử bên dưới cần được đối chiếu với trạng thái mới nhất này.
+
+### Giữ phiên admin khi mở tra cứu/thư viện (29/09/2026)
+
+- Hai liên kết **Xem trang tra cứu** và **Thư viện văn bản** trong `frontend/src/pages/admin/AdminLayout.tsx` trước đây đặt `target="_blank"`. Tab mới không dùng chung `sessionStorage` của phiên demo, nên trang đích hiển thị như khách.
+- Đã bỏ `target="_blank"` ở cả hai liên kết, dùng điều hướng React Router trong cùng tab. Phiên admin được giữ khi sang trang công khai, tải lại trang và quay về quản trị. Không thay đổi cơ chế đăng xuất hoặc mở rộng thời gian lưu phiên.
+- Build đạt; 8 test trong `admin-session-navigation.spec.ts` và `admin-responsive.spec.ts` đạt. Test mới đăng nhập qua form thật của bản demo (không tiêm session), kiểm tra cả hai liên kết, thao tác bàn phím, reload/Back, quay lại admin, đăng xuất và chặn vào admin sau đăng xuất. Responsive/cảm ứng giả lập: 320px, iPhone 16 Pro Max 440px, iPad 834px, desktop 1024/1440px và landscape 844×390, 956×440. Chưa kiểm tra trên thiết bị thật.
+
+### Bổ sung quên mật khẩu ngày 29/09/2026
+
+- Trang đăng nhập có nút **Quên mật khẩu?**, yêu cầu email hợp lệ rồi chuyển `/forgot-password`, giữ email và ý định quay về lịch sử hỏi đáp qua router state/query hiện có. Không đưa email/mật khẩu/mã vào URL.
+- `frontend/src/pages/ResetPasswordPage.tsx` dùng bố cục/ảnh minh họa, màu, input và nút của trang tài khoản. Ba bước email → mã 6 chữ số → mật khẩu mới/xác nhận; mở trường theo Fade In Up 550ms, giảm chuyển động khi người dùng chọn reduced motion, hỗ trợ focus/bàn phím.
+- **Chỉ là bản dùng thử giao diện**: tạo và hiển thị mã minh họa ngay trên form; không gửi email, ghi yêu cầu MySQL hoặc thay mật khẩu thật. Không lưu mật khẩu/mã vào storage. Sau bước cuối tự quay lại đăng nhập với email và thông báo rõ giới hạn này. Backend PHP/email vẫn chưa triển khai.
+- Luồng demo có hạn 5 phút, gửi lại sau 30 giây, khóa sau 5 lần mã sai; gửi lại mã hoặc đổi email xóa xác nhận và mật khẩu đang nhập. Các giới hạn client này phải được triển khai lại ở server khi nối backend.
+- Đã áp dụng trực tiếp trên MySQL 8.0.44 bảng `yeu_cau_dat_lai_mat_khau`: 10 cột lưu FK người dùng, mã OTP đã băm, token phiên đã băm, số lần thử, thời điểm tạo/hết hạn/xác nhận/sử dụng/hủy. Database hiện **10 bảng, 89 cột**. Không thay đổi dữ liệu tài khoản hiện có; `nguoi_dung.mat_khau` đã đủ nên không thêm cột mật khẩu khác.
+- Nguồn SQL: `database/schema.sql` cho cài mới; `database/migrations/20260929_them_dat_lai_mat_khau.sql` chạy một lần cho database cũ. Máy hiện tại đã áp dụng, không chạy lại. `.gitignore` chỉ mở thêm SQL trong `database/migrations/`; dump và bí mật vẫn bị bỏ qua.
+- Đã cập nhật dump **chỉ cấu trúc** tại `database/cyberlaw_search.sql` (ignored), không cập nhật bản Desktop trong đợt này. Cập nhật database README và `docs/design/04-co-so-du-lieu.md` với cách ánh xạ/kiểm tra phía PHP.
+- Kiểm tra DB: 7 trường hợp đạt (luồng trạng thái hợp lệ, FK, số lần thử, hạn dùng, sử dụng trước xác nhận, token thiếu xác nhận, cascade). Dữ liệu kiểm thử trong transaction đã rollback, không giữ tài khoản/mã thử. Kết quả ở `database/reset-password-verification.json`.
+- Kiểm tra frontend: build đạt (cảnh báo bundle >500kB đã có từ trước); 12 test Edge/Playwright đạt cho auth, reset password, sidebar. Test mới `frontend/e2e/reset-password.spec.ts` kiểm tra validation, hạn mã/gửi lại/đổi email, không gửi POST/lưu mật khẩu, bàn phím, reduced motion, Axe, cảm ứng và responsive 16 kích thước (320–1920px, 440px, iPad, landscape, mốc 700/701, 900/901, 1000/1001). Đây là giả lập, chưa thử trên thiết bị thật. Ảnh đăng nhập trong `docs/design/screenshots/` đã cập nhật vì thêm nút quên mật khẩu.
 
 ## 1. Mục tiêu và cách làm việc
 

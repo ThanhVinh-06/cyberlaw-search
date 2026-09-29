@@ -1,6 +1,6 @@
 # Thiết kế MySQL cho đồ án CyberLaw
 
-Ngày thiết kế: 27/09/2026. Phạm vi: thiết kế và xuất cấu trúc cơ sở dữ liệu; chưa tích hợp Laravel, Python hoặc đăng nhập thật.
+Ngày thiết kế: 27/09/2026; cập nhật đặt lại mật khẩu ngày 29/09/2026. Phạm vi: thiết kế và xuất cấu trúc cơ sở dữ liệu; chưa tích hợp Laravel, Python hoặc đăng nhập thật.
 
 ## 1. Yêu cầu cần đáp ứng
 
@@ -8,8 +8,9 @@ Ngày thiết kế: 27/09/2026. Phạm vi: thiết kế và xuất cấu trúc c
 2. Lưu văn bản và nội dung điều/khoản/điểm để tra cứu, mở nguyên văn.
 3. Lưu keyphrase, khái niệm và dạng quy định theo yêu cầu môn học.
 4. Lưu hội thoại cá nhân, câu hỏi, câu trả lời và căn cứ pháp lý.
+5. Lưu yêu cầu đặt lại mật khẩu qua mã xác nhận email, có hạn dùng và trạng thái đã sử dụng.
 
-Thiết kế dùng **9 bảng**, MySQL 8.0.16 trở lên, InnoDB và utf8mb4. Tên bảng và cột dùng **tiếng Việt không dấu**, viết thường và nối bằng `_`, ví dụ `nguoi_dung`, `ma_nguoi_dung`, `ngay_tao`. Tên database vẫn là `cyberlaw_search`.
+Thiết kế dùng **10 bảng, 89 cột**, MySQL 8.0.16 trở lên, InnoDB và utf8mb4. Tên bảng và cột dùng **tiếng Việt không dấu**, viết thường và nối bằng `_`, ví dụ `nguoi_dung`, `ma_nguoi_dung`, `ngay_tao`. Tên database vẫn là `cyberlaw_search`.
 
 Chọn trường `vai_tro` cho phân quyền; không thêm bộ bảng quyền nhiều cấp. Các giá trị ENUM như `user`, `admin` được giữ nguyên và giải thích bên dưới. Không tạo tài khoản hoặc mật khẩu mẫu trong file SQL.
 
@@ -18,6 +19,7 @@ Chọn trường `vai_tro` cho phân quyền; không thêm bộ bảng quyền n
 | Bảng | Dùng để làm gì | Các trường quan trọng |
 |---|---|---|
 | `nguoi_dung` | Tài khoản | ma_nguoi_dung, ho_ten, thu_dien_tu duy nhất, mat_khau băm, vai_tro, trang_thai |
+| `yeu_cau_dat_lai_mat_khau` | Xác nhận email và đặt lại mật khẩu | ma_yeu_cau, ma_nguoi_dung, ma_xac_nhan_bam, ma_phien_bam, so_lan_thu, ngay_tao, ngay_het_han, ngay_xac_nhan, ngay_su_dung, ngay_huy |
 | `van_ban` | Thông tin văn bản luật | ma_van_ban, so_hieu, tieu_de, ngay_ban_hanh, ngay_hieu_luc, phien_ban_noi_dung, trang_thai |
 | `dieu_khoan` | Đơn vị nội dung để tìm kiếm | ma_dieu_khoan, ma_van_ban, chuong, so_dieu, so_khoan, ky_hieu_diem, noi_dung, trang_nguon |
 | `tu_khoa` | Cụm từ và khái niệm | ma_tu_khoa, cum_tu, bien_the, dinh_nghia, ma_dieu_khoan_dinh_nghia |
@@ -35,6 +37,7 @@ Chọn trường `vai_tro` cho phân quyền; không thêm bộ bảng quyền n
 
 ```mermaid
 erDiagram
+    nguoi_dung ||--o{ yeu_cau_dat_lai_mat_khau : khoi_phuc_truy_cap
     nguoi_dung ||--o{ hoi_thoai : so_huu
     hoi_thoai ||--o{ tin_nhan : chua
     tin_nhan ||--o{ trich_dan : co_can_cu
@@ -54,6 +57,18 @@ erDiagram
 - `nguoi_dung.trang_thai`: `active` là hoạt động, `blocked` là bị khóa. Laravel phải kiểm tra trạng thái và quyền trên từng API; cột dữ liệu không tự tạo cơ chế phân quyền.
 - `mat_khau` chỉ lưu giá trị băm do Laravel tạo. Mật khẩu kết nối MySQL không phải mật khẩu tài khoản ứng dụng và không đưa vào SQL.
 - Laravel chuẩn hóa/trim email trước khi lưu vào `thu_dien_tu`. Tạo admin đầu tiên bằng lệnh quản trị khi triển khai backend.
+
+### Đặt lại mật khẩu qua email
+
+`nguoi_dung.thu_dien_tu` và `nguoi_dung.mat_khau` đã đủ để nhận diện tài khoản và lưu mật khẩu mới. Thêm một bảng `yeu_cau_dat_lai_mat_khau`, không thêm mật khẩu xác nhận vào bảng người dùng.
+
+- `ma_xac_nhan_bam`: lưu mã OTP đã băm, không lưu mã gốc. PHP tạo mã ngẫu nhiên; bảo vệ mã ít chữ số bằng khóa bí mật ở server kết hợp hàm băm mật khẩu. Không đưa khóa này vào repository.
+- `ma_phien_bam`: SHA-256 của token ngẫu nhiên đủ dài, chỉ cấp sau khi xác nhận đúng OTP. Backend dùng token này để cho phép bước nhập mật khẩu mới; không tin cờ `verified` do trình duyệt gửi lên. Token gốc chỉ tồn tại tạm thời phía client, không lưu localStorage hoặc URL.
+- `so_lan_thu`: số lần nhập mã sai, tối đa 5. `ngay_het_han`: hạn dùng cả yêu cầu, đề xuất 5 phút. `ngay_xac_nhan`, `ngay_su_dung`, `ngay_huy` ghi lại từng trạng thái; null nghĩa là chưa xảy ra.
+- Gửi lại mã: backend giới hạn tối thiểu 30 giây giữa các lần gửi và giới hạn thêm theo email/IP; hủy yêu cầu cũ trước khi tạo mới. Đổi email phải xác nhận lại. Trả cùng thông báo dù email có tồn tại hay không để tránh lộ danh sách tài khoản.
+- Đổi mật khẩu: backend kiểm tra tài khoản, token, hạn dùng và các trạng thái trong transaction có khóa bản ghi; cập nhật `nguoi_dung.mat_khau` đã băm, đánh dấu `ngay_su_dung`, hủy các yêu cầu còn lại, vô hiệu hóa phiên đăng nhập/`ma_ghi_nho` theo cơ chế auth khi triển khai. Mã/token chỉ được dùng một lần.
+- MySQL kiểm tra FK, tối đa 5 lần thử, hạn sau ngày tạo, token đi cùng thời điểm xác nhận và không cho đánh dấu sử dụng trước khi xác nhận. Việc kiểm tra thời gian hiện tại, giới hạn gửi và sử dụng một lần vẫn phải được thực hiện ở PHP. Dọn các yêu cầu hết hạn định kỳ khi có backend.
+- Frontend hiện là bản dùng thử: hiển thị mã minh họa, không gửi email, không thay đổi mật khẩu hoặc ghi yêu cầu vào MySQL. Cần API PHP và dịch vụ gửi email trước khi sử dụng thật.
 
 ### Văn bản và điều khoản
 
@@ -95,7 +110,7 @@ erDiagram
 ## 6. Những phần để ngoài database ở bản đầu
 
 - Session đăng nhập: dùng file driver của Laravel/Sanctum lúc phát triển. Chuyển sang database session sau này bằng migration nếu cần.
-- Email verification, reset password, token API, hàng đợi: bổ sung bảng chuẩn của Laravel khi thực sự triển khai các tính năng đó.
+- Xác minh email lúc đăng ký, token API, hàng đợi: bổ sung khi triển khai. Đặt lại mật khẩu đã có bảng riêng; cần triển khai luồng PHP tương ứng với tên cột tiếng Việt.
 - Bộ câu hỏi đánh giá AI: `data/evaluation/`.
 - Embedding/chỉ mục: Python quản lý ở `data/indexes/`.
 - PDF: lưu dưới dạng tệp; database giữ đường dẫn và URL nguồn.
@@ -105,7 +120,8 @@ erDiagram
 
 - `database/schema.sql`: mã thiết kế có thứ tự tạo bảng dễ đọc.
 - `database/cyberlaw_search.sql`: bản dump cấu trúc từ MySQL sau khi tạo và kiểm tra.
-- Desktop: bản sao của `cyberlaw_search.sql`.
+- `database/migrations/20260929_them_dat_lai_mat_khau.sql`: bổ sung bảng đặt lại mật khẩu cho database cũ. Đã áp dụng trên máy phát triển; không chạy lại hoặc chạy sau `schema.sql`.
+- Desktop: bản sao cũ từ đợt bàn giao ban đầu; chưa được cập nhật trong lần bổ sung ngày 29/09/2026. Bản dump cấu trúc mới nhất nằm ở `database/cyberlaw_search.sql` trên máy phát triển và được Git bỏ qua.
 
 Tất cả bảng được bàn giao rỗng; không có dữ liệu pháp luật mẫu chưa kiểm duyệt hoặc tài khoản có mật khẩu dựng sẵn. File dump không có lệnh DROP TABLE/DROP DATABASE.
 

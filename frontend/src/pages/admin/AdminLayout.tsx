@@ -159,11 +159,11 @@ export default function AdminLayout({
             >
               LIÊN KẾT HỆ THỐNG
             </div>
-            <Link to="/search" className="cl-admin-nav-item" target="_blank">
+            <Link to="/search" className="cl-admin-nav-item">
               <ExternalLink size={16} />
               <span>Xem trang tra cứu</span>
             </Link>
-            <Link to="/library" className="cl-admin-nav-item" target="_blank">
+            <Link to="/library" className="cl-admin-nav-item">
               <Library size={19} />
               <span>Thư viện văn bản</span>
             </Link>

@@ -1,4 +1,5 @@
 import MainSite from "./MainSite";
+import ResetPasswordPage from "./pages/ResetPasswordPage";
 import AdminUsersPage from "./pages/admin/AdminUsersPage";
 import AdminAccessDenied from "./pages/admin/AdminAccessDenied";
 import { useAuth } from "./lib/auth-context";
@@ -56,7 +57,9 @@ import {
 } from "@/components/ui/dialog";
 
 function Navigation({ close }: { close?: () => void }) {
-  const authRoute = ["/login", "/register"].includes(useLocation().pathname);
+  const authRoute = ["/login", "/register", "/forgot-password"].includes(
+    useLocation().pathname,
+  );
   const { currentUser, isAuthenticated, isAdmin, logout } = useAuth();
 
   return (
@@ -444,12 +447,22 @@ function AuthPage({
   const historyIntent =
     new URLSearchParams(location.search).get("next") === "history";
   useLayoutEffect(() => {
-    setValues(emptyValues);
+    setValues({
+      ...emptyValues,
+      email:
+        !register && typeof location.state?.email === "string"
+          ? location.state.email
+          : "",
+    });
     setErrors({});
-    setNotice("");
+    setNotice(
+      !register && location.state?.resetPreviewComplete
+        ? "Bạn đã hoàn tất luồng đặt lại mật khẩu dùng thử. Mật khẩu tài khoản chưa thay đổi vì dịch vụ tài khoản chưa được kết nối."
+        : "",
+    );
     setRevealed({ password: false, confirm: false });
     setCapsLock(false);
-  }, [register]);
+  }, [register, location.key, location.state]);
   useEffect(() => {
     document.title = `${register ? "Đăng ký" : "Đăng nhập"} · CyberLaw`;
     headingRef.current?.focus({ preventScroll: true });
@@ -746,6 +759,32 @@ function AuthPage({
                   </div>
                 );
               })}
+              {!register && (
+                <div className="forgot-password-row">
+                  <button
+                    type="button"
+                    className="reset-text-button"
+                    onClick={() => {
+                      const error = validate("email");
+                      if (error) {
+                        setErrors((previous) => ({
+                          ...previous,
+                          email: error,
+                        }));
+                        formRef.current
+                          ?.querySelector<HTMLInputElement>("#email")
+                          ?.focus();
+                        return;
+                      }
+                      navigate(`/forgot-password${location.search}`, {
+                        state: { email: values.email.trim() },
+                      });
+                    }}
+                  >
+                    Quên mật khẩu?
+                  </button>
+                </div>
+              )}
               {capsLock && (
                 <p id="caps-lock" className="field-hint">
                   Phím Caps Lock đang bật.
@@ -943,7 +982,9 @@ export default function App() {
   }, []);
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "instant" });
-    if (!["/login", "/register"].includes(location.pathname))
+    if (
+      !["/login", "/register", "/forgot-password"].includes(location.pathname)
+    )
       mainRef.current?.focus({ preventScroll: true });
   }, [location.pathname]);
   const auth = useAuth();
@@ -956,7 +997,9 @@ export default function App() {
     }
     return <AdminUsersPage />;
   }
-  const isAuthRoute = ["/login", "/register"].includes(location.pathname);
+  const isAuthRoute = ["/login", "/register", "/forgot-password"].includes(
+    location.pathname,
+  );
   if (location.pathname === historyNavigation.to && !auth.isAuthenticated)
     return <Navigate to="/login?next=history" replace />;
   if (!isAuthRoute) return <MainSite />;
@@ -989,6 +1032,12 @@ export default function App() {
         </header>
         <main id="main-content" ref={mainRef} tabIndex={-1}>
           <Routes>
+            <Route
+              path="/forgot-password"
+              element={
+                <ResetPasswordPage story={<AuthStory />} keyboard={keyboard} />
+              }
+            />
             <Route
               path="/login"
               element={<AuthPage register={false} keyboard={keyboard} />}
