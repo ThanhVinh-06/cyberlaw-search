@@ -22,6 +22,11 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        RateLimiter::for('email-send', fn (Request $request) => [
+            Limit::perMinute(5)->by('email-send-minute:'.hash_hmac('sha256', (string) $request->ip(), config('app.key'))),
+            Limit::perHour(20)->by('email-send-hour:'.hash_hmac('sha256', (string) $request->ip(), config('app.key'))),
+        ]);
+        RateLimiter::for('email-verify', fn (Request $request) => Limit::perMinute(20)->by('email-verify:'.hash_hmac('sha256', (string) $request->ip(), config('app.key'))));
         RateLimiter::for('reset-send', function (Request $request) {
             $email = $request->input('email');
             $email = is_string($email) ? mb_strtolower(trim(mb_substr($email, 0, 191))) : '';

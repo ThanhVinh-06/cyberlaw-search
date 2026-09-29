@@ -18,7 +18,7 @@ class LoginTest extends TestCase
     {
         parent::setUp();
         AccountSchema::create();
-        config(['logging.channels.application.driver' => 'null', 'logging.channels.security.driver' => 'null']);
+        config(['logging.channels.application' => config('logging.channels.null'), 'logging.channels.security' => config('logging.channels.null')]);
         // Laravel normally bypasses CSRF under PHPUnit. Enable the actual check for these tests.
         $this->app->bind(ValidateCsrfToken::class, RealCsrf::class);
         Route::middleware(['web', 'account.active', 'role.admin'])->get('/api/test/admin', fn () => ['ok' => true])->name('test.admin');
@@ -29,6 +29,7 @@ class LoginTest extends TestCase
         $user = new NguoiDung(['ho_ten' => 'Test Account', 'thu_dien_tu' => 'member@example.test', 'mat_khau' => $password]);
         $user->vai_tro = $role;
         $user->trang_thai = $status;
+        $user->setAttribute('duoc_mien_xac_minh_email', true); // Existing account before verification rollout.
         $user->save();
 
         return $user;

@@ -55,12 +55,14 @@ class CreateAccount extends Command
             $user = new NguoiDung(['ho_ten' => $name, 'thu_dien_tu' => $email, 'mat_khau' => $password]);
             $user->vai_tro = $this->option('admin') ? 'admin' : 'user';
             $user->trang_thai = 'active';
+            // Trusted local provisioning; exempt is distinct from claiming an email was verified.
+            $user->setAttribute('duoc_mien_xac_minh_email', true);
             $user->save();
             DB::table('nhat_ky_quan_tri')->insert([
                 'ma_nguoi_thuc_hien' => null, 'hanh_dong' => 'account.created_cli',
                 'loai_doi_tuong' => 'nguoi_dung', 'ma_doi_tuong' => $user->getKey(),
                 'ma_yeu_cau' => (string) Str::uuid(),
-                'du_lieu_them' => json_encode(['vai_tro' => $user->vai_tro]), 'ngay_tao' => now(),
+                'du_lieu_them' => json_encode(['vai_tro' => $user->vai_tro, 'duoc_mien_xac_minh_email' => true]), 'ngay_tao' => now(),
             ]);
         });
         $this->info('Da tao tai khoan. Ban co the dang nhap tren giao dien.');

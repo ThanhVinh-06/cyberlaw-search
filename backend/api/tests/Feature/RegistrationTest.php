@@ -2,10 +2,12 @@
 
 namespace Tests\Feature;
 
+use App\Mail\EmailVerificationCode;
 use App\Models\NguoiDung;
 use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Schema;
 use Psr\Log\AbstractLogger;
 use Tests\Support\AccountSchema;
@@ -17,8 +19,10 @@ class RegistrationTest extends TestCase
     {
         parent::setUp();
         AccountSchema::create();
-        config(['logging.channels.application.driver' => 'null', 'logging.channels.security.driver' => 'null']);
+        config(['logging.channels.application' => config('logging.channels.null'), 'logging.channels.security' => config('logging.channels.null')]);
         $this->app->bind(ValidateCsrfToken::class, RegistrationCsrf::class);
+        config(['mail.default' => 'smtp']);
+        Mail::fake();
     }
 
     private function payload(array $extra = []): array
@@ -32,7 +36,7 @@ class RegistrationTest extends TestCase
         return $this->withSession(['_token' => 'registration-csrf'])->postJson('/api/auth/register', $this->payload($extra), ['X-CSRF-TOKEN' => 'registration-csrf']);
     }
 
-    public function test_creates_user_with_hashed_untrimmed_password_then_can_login(): void
+    public function test_creates_user_with_hashed_untrimmed_password_then_requires_verification(): void
     {
         $this->register(['vai_tro' => 'admin', 'trang_thai' => 'blocked', 'ma_nguoi_dung' => 99, 'ma_ghi_nho' => 'forged'])->assertCreated()->assertJsonMissingPath('user')->assertHeader('X-Request-ID');
         $user = NguoiDung::sole();
@@ -44,7 +48,10 @@ class RegistrationTest extends TestCase
         $this->assertNull($user->lan_dang_nhap_cuoi);
         $this->assertTrue(Hash::check(' Register-fixture!123 ', $user->mat_khau));
         $this->assertGuest();
-        $this->postJson('/api/auth/login', ['email' => $user->thu_dien_tu, 'password' => ' Register-fixture!123 '], ['X-CSRF-TOKEN' => 'registration-csrf'])->assertOk()->assertJsonPath('user.vai_tro', 'user');
+        $this->assertFalse($user->canUseAccount());
+        Mail::assertSent(EmailVerificationCode::class);
+        $this->postJson('/api/auth/login', ['email' => $user->thu_dien_tu, 'password' => ' Register-fixture!123 '], ['X-CSRF-TOKEN' => session()->token()])->assertForbidden()->assertJsonPath('code', 'email_unverified');
+        $this->assertGuest();
     }
 
     public function test_duplicate_normalized_email_never_overwrites_account(): void

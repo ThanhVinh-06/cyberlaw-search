@@ -1,0 +1,43 @@
+.verify-email-address {
+  display: grid;
+  gap: 8px;
+  padding: 16px;
+  border-radius: 12px;
+  background: #f6f0ee;
+  color: #695358;
+  font-size: 12px;
+  min-width: 0;
+}
+.verify-email-address strong {
+  color: var(--primary);
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+.verify-email-page .preview-note a {
+  color: var(--primary);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* Give the robot its own space so it never covers verification controls. */
+.verify-email-support {
+  position: relative;
+  height: 112px;
+}
+.verify-email-support .cl-chat-dock {
+  position: absolute;
+  right: 28px;
+  bottom: 12px;
+}
+.verify-email-support .cl-chat-dock[data-open="true"] {
+  position: fixed;
+  bottom: 22px;
+}
+@media (max-width: 700px) {
+  .verify-email-support .cl-chat-dock {
+    right: 12px;
+  }
+  .verify-email-support .cl-chat-dock[data-open="true"] {
+    bottom: 16px;
+  }
+}

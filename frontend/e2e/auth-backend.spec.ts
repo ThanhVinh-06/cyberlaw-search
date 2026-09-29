@@ -27,6 +27,16 @@ test("real SMTP reset changes password, revokes old cookie and rejects grant rep
       })
     ).status(),
   ).toBe(201);
+  const verificationMessage = await (
+    await context.request.get("http://127.0.0.1:8026/api/v1/message/latest")
+  ).json();
+  expect(verificationMessage.To[0].Address).toBe(email);
+  const verificationCode = (
+    verificationMessage.Text || verificationMessage.HTML
+  ).match(/\b[0-9]{6}\b/)?.[0];
+  expect(
+    (await post("email/verify", { code: verificationCode })).status(),
+  ).toBe(200);
   expect((await post("login", { email, password: oldPassword })).status()).toBe(
     200,
   );
@@ -131,9 +141,21 @@ test("real registration creates a normal user, returns to login and rejects dupl
     .getByRole("button", { name: "Tạo tài khoản", exact: true })
     .click();
   expect((await response).status()).toBe(201);
+  await expect(page).toHaveURL(/\/verify-email\?next=history$/);
+  expect((await context.request.get("/api/auth/me")).status()).toBe(401);
+  const mail = await (
+    await context.request.get("http://127.0.0.1:8026/api/v1/message/latest")
+  ).json();
+  expect(mail.To[0].Address).toBe("new-member@example.test");
+  const code = (mail.Text || mail.HTML).match(/\b[0-9]{6}\b/)?.[0];
+  await page.reload();
+  await page.getByLabel("Mã xác nhận", { exact: true }).fill(code);
+  await page
+    .getByRole("button", { name: "Xác nhận email", exact: true })
+    .click();
   await expect(page).toHaveURL(/\/login\?next=history$/);
   await expect(page.getByRole("status")).toContainText(
-    "Tạo tài khoản thành công",
+    "Xác minh email thành công",
   );
   await expect(page.getByLabel("Địa chỉ email")).toHaveValue(
     "new-member@example.test",

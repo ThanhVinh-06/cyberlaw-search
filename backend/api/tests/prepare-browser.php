@@ -22,6 +22,7 @@ foreach (['admin', 'user'] as $role) {
     ]);
     $user->vai_tro = $role;
     $user->trang_thai = 'active';
+    $user->setAttribute('duoc_mien_xac_minh_email', true);
     $user->save();
 }
 echo "Isolated browser accounts ready.\n";

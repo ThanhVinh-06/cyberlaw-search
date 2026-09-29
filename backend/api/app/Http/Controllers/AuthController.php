@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\NguoiDung;
+use App\Services\EmailVerification;
 use App\Support\PasswordSession;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Auth\SessionGuard;
@@ -17,7 +18,7 @@ class AuthController extends Controller
         return response()->json(['csrf_token' => $request->session()->token()]);
     }
 
-    public function login(Request $request): JsonResponse
+    public function login(Request $request, EmailVerification $verification): JsonResponse
     {
         $data = $request->validate([
             'email' => ['required', 'string', 'email', 'max:191'],
@@ -38,10 +39,11 @@ class AuthController extends Controller
         if (! $guard instanceof SessionGuard) {
             throw new \LogicException('The web guard must use session authentication.');
         }
+        $pendingUser = null;
         $accepted = $guard->attemptWhen([
             'thu_dien_tu' => mb_strtolower(trim($data['email'])),
             'password' => $data['password'],
-        ], function ($user) use ($request) {
+        ], function ($user) use ($request, &$pendingUser) {
             if (! $user instanceof NguoiDung) {
                 return false;
             }
@@ -51,10 +53,25 @@ class AuthController extends Controller
                 return false;
             }
 
+            if (! $user->canUseAccount()) {
+                $pendingUser = $user;
+
+                return false;
+            }
+
             return true;
         }, false);
 
         if (! $accepted) {
+            if ($pendingUser instanceof NguoiDung) {
+                $guard->logout();
+                $request->session()->invalidate();
+                $verification->begin($request, $pendingUser);
+                $request->attributes->set('auth_reason', 'email_unverified');
+
+                return response()->json(['code' => 'email_unverified', 'message' => 'Bạn hãy xác minh email trước khi đăng nhập.'], 403);
+            }
+
             return response()->json(['message' => 'Email hoặc mật khẩu không chính xác.'], 401);
         }
 

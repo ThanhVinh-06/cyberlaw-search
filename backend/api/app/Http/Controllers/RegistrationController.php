@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\NguoiDung;
+use App\Services\EmailVerification;
+use App\Support\SafeLog;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -10,7 +12,7 @@ use Illuminate\Support\Facades\Validator;
 
 class RegistrationController extends Controller
 {
-    public function store(Request $request): JsonResponse
+    public function store(Request $request, EmailVerification $verification): JsonResponse
     {
         if ($request->user()) {
             return response()->json(['code' => 'already_authenticated', 'message' => 'Bạn hãy đăng xuất trước khi tạo tài khoản mới.'], 409);
@@ -41,6 +43,8 @@ class RegistrationController extends Controller
             ]);
             $user->vai_tro = 'user';
             $user->trang_thai = 'active';
+            $user->setAttribute('duoc_mien_xac_minh_email', false);
+            $user->setAttribute('ngay_xac_minh_email', null);
             $user->save();
         } catch (UniqueConstraintViolationException) {
             $request->attributes->set('auth_reason', 'registration_conflict');
@@ -49,7 +53,16 @@ class RegistrationController extends Controller
         }
         $request->attributes->set('auth_actor', ['ma_nguoi_dung' => $user->getKey(), 'vai_tro' => 'user']);
 
-        // Registration does not replace a session or automatically sign in.
-        return response()->json(['message' => 'Tạo tài khoản thành công. Bạn hãy đăng nhập.'], 201);
+        $verification->begin($request, $user);
+        $mailSent = false;
+        try {
+            $verification->send($request);
+            $mailSent = true;
+        } catch (\Throwable) {
+            // Account already exists; never report an ambiguous failed registration or log mail bodies.
+            SafeLog::write('security', 'auth.email.initial_send_failed', 'failure', ['request_id' => $request->attributes->get('request_id')]);
+        }
+
+        return response()->json(['message' => 'Tài khoản đã được tạo. Bạn hãy xác minh email để đăng nhập.', 'verification_required' => true, 'mail_sent' => $mailSent], 201);
     }
 }

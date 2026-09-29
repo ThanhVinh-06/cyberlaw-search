@@ -55,6 +55,8 @@ Giới hạn: gửi 5/phút/IP, 20/giờ/IP, 10/giờ/email; chờ 30 giây/emai
 
 ## Kiểm thử
 
+Đặt lại mật khẩu không tự xác minh email đăng ký. Tài khoản chưa xác minh vẫn phải qua [bước xác minh](03-xac-minh-email.md); đổi mật khẩu làm phiên chờ xác minh cũ mất hiệu lực.
+
 ```powershell
 cd E:\cyberlaw-search\backend\api
 C:\xampp\php\php.exe vendor/bin/phpunit

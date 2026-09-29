@@ -24,7 +24,12 @@ class NguoiDung extends Authenticatable
 
     protected function casts(): array
     {
-        return ['mat_khau' => 'hashed', 'lan_dang_nhap_cuoi' => 'datetime'];
+        return ['mat_khau' => 'hashed', 'lan_dang_nhap_cuoi' => 'datetime', 'ngay_xac_minh_email' => 'datetime', 'duoc_mien_xac_minh_email' => 'boolean'];
+    }
+
+    public function canUseAccount(): bool
+    {
+        return $this->getAttribute('ngay_xac_minh_email') !== null || $this->getAttribute('duoc_mien_xac_minh_email') === true;
     }
 
     public function getAuthPassword()

@@ -1,5 +1,6 @@
 import MainSite from "./MainSite";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
+import VerifyEmailPage from "./pages/VerifyEmailPage";
 import AdminUsersPage from "./pages/admin/AdminUsersPage";
 import AdminAccessDenied from "./pages/admin/AdminAccessDenied";
 import { useAuth } from "./lib/auth-context";
@@ -58,9 +59,12 @@ import {
 } from "@/components/ui/dialog";
 
 function Navigation({ close }: { close?: () => void }) {
-  const authRoute = ["/login", "/register", "/forgot-password"].includes(
-    useLocation().pathname,
-  );
+  const authRoute = [
+    "/login",
+    "/register",
+    "/forgot-password",
+    "/verify-email",
+  ].includes(useLocation().pathname);
   const { currentUser, isAuthenticated, isAdmin, logout } = useAuth();
 
   return (
@@ -461,11 +465,13 @@ function AuthPage({
     });
     setErrors({});
     setNotice(
-      !register && location.state?.registrationComplete
-        ? "Tạo tài khoản thành công. Bạn hãy đăng nhập để tiếp tục."
-        : !register && location.state?.resetComplete
-          ? "Đổi mật khẩu thành công. Bạn hãy đăng nhập bằng mật khẩu mới."
-          : "",
+      !register && location.state?.emailVerified
+        ? "Xác minh email thành công. Bạn hãy đăng nhập để tiếp tục."
+        : !register && location.state?.registrationComplete
+          ? "Tạo tài khoản thành công. Bạn hãy đăng nhập để tiếp tục."
+          : !register && location.state?.resetComplete
+            ? "Đổi mật khẩu thành công. Bạn hãy đăng nhập bằng mật khẩu mới."
+            : "",
     );
     setRevealed({ password: false, confirm: false });
     setCapsLock(false);
@@ -547,20 +553,23 @@ function AuthPage({
       setSubmitting(true);
       setNotice("");
       try {
-        await authApi.register(
+        const registration = await authApi.register(
           values.name,
           values.email,
           values.password,
           values.confirm,
         );
         if (activeLocation.current !== submittedLocation) return;
-        navigate(historyIntent ? "/login?next=history" : "/login", {
-          replace: true,
-          state: {
-            email: values.email.trim().toLowerCase(),
-            registrationComplete: true,
+        navigate(
+          historyIntent ? "/verify-email?next=history" : "/verify-email",
+          {
+            replace: true,
+            state: {
+              email: values.email.trim().toLowerCase(),
+              mailSent: registration.mail_sent,
+            },
           },
-        });
+        );
       } catch (error) {
         if (activeLocation.current !== submittedLocation) return;
         setNotice(
@@ -581,8 +590,16 @@ function AuthPage({
 
     // Xử lý đăng nhập
     setSubmitting(true);
+    const submittedLocation = location.key;
     const loginRes = await auth.login(values.email, values.password);
+    if (activeLocation.current !== submittedLocation) return;
     setSubmitting(false);
+    if (loginRes.code === "email_unverified") {
+      navigate(historyIntent ? "/verify-email?next=history" : "/verify-email", {
+        replace: true,
+      });
+      return;
+    }
     if (loginRes.success && loginRes.user) {
       // Phân quyền điều hướng
       if (historyIntent) {
@@ -888,7 +905,7 @@ function AuthPage({
             <p className="preview-note">
               <Info size={13} />
               {register
-                ? "Tài khoản mới được cấp quyền người dùng."
+                ? "Bạn cần xác minh email trước khi đăng nhập."
                 : "Phiên đăng nhập được bảo vệ bằng cookie và xác thực máy chủ."}
             </p>
           </motion.div>
@@ -941,7 +958,9 @@ export default function App() {
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "instant" });
     if (
-      !["/login", "/register", "/forgot-password"].includes(location.pathname)
+      !["/login", "/register", "/forgot-password", "/verify-email"].includes(
+        location.pathname,
+      )
     )
       mainRef.current?.focus({ preventScroll: true });
   }, [location.pathname]);
@@ -966,9 +985,12 @@ export default function App() {
     }
     return <AdminUsersPage />;
   }
-  const isAuthRoute = ["/login", "/register", "/forgot-password"].includes(
-    location.pathname,
-  );
+  const isAuthRoute = [
+    "/login",
+    "/register",
+    "/forgot-password",
+    "/verify-email",
+  ].includes(location.pathname);
   if (location.pathname === historyNavigation.to && !auth.isAuthenticated)
     return <Navigate to="/login?next=history" replace />;
   if (!isAuthRoute) return <MainSite />;
@@ -1002,6 +1024,12 @@ export default function App() {
         <main id="main-content" ref={mainRef} tabIndex={-1}>
           <Routes>
             <Route
+              path="/verify-email"
+              element={
+                <VerifyEmailPage story={<AuthStory />} keyboard={keyboard} />
+              }
+            />
+            <Route
               path="/forgot-password"
               element={
                 <ResetPasswordPage story={<AuthStory />} keyboard={keyboard} />
@@ -1017,6 +1045,11 @@ export default function App() {
             />
           </Routes>
         </main>
+        {location.pathname === "/verify-email" && (
+          <div className="verify-email-support">
+            <Companion key={location.pathname} />
+          </div>
+        )}
         <footer className="site-footer">
           <span>© 2026 CyberLaw Search</span>
           <span>Được xây dựng để việc hiểu luật trở nên dễ dàng hơn.</span>
@@ -1026,7 +1059,9 @@ export default function App() {
           </Link>
         </footer>
       </div>
-      <Companion key={location.pathname} />
+      {location.pathname !== "/verify-email" && (
+        <Companion key={location.pathname} />
+      )}
     </div>
   );
 }

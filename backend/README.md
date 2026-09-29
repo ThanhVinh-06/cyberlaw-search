@@ -2,7 +2,7 @@
 
 ## Đăng nhập đã nối server (29/09/2026)
 
-Laravel đã có đăng ký/đăng nhập/me/logout và quên mật khẩu, session cookie + CSRF, kiểm tra tài khoản hoạt động, middleware admin, giới hạn yêu cầu và log JSON. React đã nối các API này. Xem [tài khoản và kiểm thử](../docs/backend/01-dang-nhap.md), [quên mật khẩu và Mailpit local](../docs/backend/02-quen-mat-khau.md). CRUD/AI chưa nối server; chưa xác nhận deploy-ready. Ghi chú khởi tạo bên dưới là lịch sử.
+Laravel đã có đăng ký/đăng nhập/me/logout, quên mật khẩu và xác minh email, session cookie + CSRF, kiểm tra tài khoản hoạt động, middleware admin, giới hạn yêu cầu và log JSON. React đã nối các API này. Xem [tài khoản và kiểm thử](../docs/backend/01-dang-nhap.md), [quên mật khẩu và Mailpit local](../docs/backend/02-quen-mat-khau.md), [xác minh email](../docs/backend/03-xac-minh-email.md). CRUD/AI chưa nối server; chưa xác nhận deploy-ready. Database hiện có 12 bảng/111 cột, migration xác minh đã áp dụng. Ghi chú khởi tạo bên dưới là lịch sử.
 
 **Cập nhật 29/09/2026:** Đọc [chuẩn bị backend theo luật 2025](../docs/requirements/03-chuan-bi-backend.md) trước khi triển khai. Người dùng chọn MySQL và yêu cầu đăng ký/đăng nhập/phân quyền. Kiến trúc đề xuất là Laravel cho API nghiệp vụ và FastAPI cho AI; xem [quyết định công nghệ](../docs/technology-decisions.md) và [yêu cầu tài khoản](../docs/requirements/02-tai-khoan-phan-quyen.md). Cấu trúc `app/` bên dưới vẫn là khung Python ban đầu, chưa thực hiện chuyển đổi.
 

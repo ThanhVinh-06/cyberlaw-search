@@ -12,6 +12,8 @@ export async function mockAuth(
 ) {
   let currentRole = role;
   let resetAttempts = 0;
+  let verificationEmail = "verify@example.test";
+  let verificationAttempts = 0;
   const user = () => ({
     ma_nguoi_dung: currentRole === "admin" ? 1 : 2,
     ho_ten: "Tài khoản kiểm thử",
@@ -26,7 +28,26 @@ export async function mockAuth(
     let status = 200;
     let body: object = {};
     if (path.endsWith("/csrf")) body = { csrf_token: "ui-fixture-csrf" };
-    else if (path.endsWith("/password/request")) {
+    else if (path.endsWith("/email/status") || path.endsWith("/email/send")) {
+      if (path.endsWith("/email/send")) verificationAttempts = 0;
+      body = {
+        email: verificationEmail,
+        expires_in: 300,
+        resend_after: 30,
+        locked: verificationAttempts >= 5,
+      };
+    } else if (path.endsWith("/email/verify")) {
+      if (route.request().postDataJSON().code !== "654321") {
+        verificationAttempts++;
+        status = 422;
+        body = {
+          code:
+            verificationAttempts >= 5
+              ? "verification_locked"
+              : "verification_invalid",
+        };
+      } else body = { message: "Verified" };
+    } else if (path.endsWith("/password/request")) {
       resetAttempts = 0;
       status = 202;
       body = {
@@ -46,8 +67,13 @@ export async function mockAuth(
       currentRole = null;
       body = { message: "Đổi mật khẩu thành công." };
     } else if (path.endsWith("/register")) {
+      verificationEmail = route.request().postDataJSON().email;
       status = 201;
-      body = { message: "Created" };
+      body = {
+        message: "Created",
+        verification_required: true,
+        mail_sent: true,
+      };
     } else if (path.endsWith("/logout")) {
       currentRole = null;
       body = { message: "OK" };

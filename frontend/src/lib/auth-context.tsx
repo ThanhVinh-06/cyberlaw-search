@@ -17,7 +17,12 @@ interface AuthContextType {
   login: (
     email: string,
     password: string,
-  ) => Promise<{ success: boolean; user?: SessionUser; error?: string }>;
+  ) => Promise<{
+    success: boolean;
+    user?: SessionUser;
+    error?: string;
+    code?: string;
+  }>;
   logout: () => Promise<void>;
   clearResetSession: () => void;
 }
@@ -83,8 +88,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setCurrentUser(user);
       return { success: true, user };
     } catch (error) {
+      if (error instanceof AuthApiError && error.code === "email_unverified")
+        setCurrentUser(null);
       return {
         success: false,
+        code: error instanceof AuthApiError ? error.code : undefined,
         error:
           error instanceof Error
             ? error.message

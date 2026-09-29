@@ -1,6 +1,12 @@
 import type { NguoiDung } from "./admin-data";
 
 export type SessionUser = Omit<NguoiDung, "mat_khau" | "ma_ghi_nho">;
+export type EmailVerificationStatus = {
+  email: string;
+  expires_in: number;
+  resend_after: number;
+  locked: boolean;
+};
 
 export class AuthApiError extends Error {
   constructor(
@@ -49,18 +55,32 @@ async function request(path: string, init?: RequestInit) {
     };
     throw new AuthApiError(
       response.status,
-      path.startsWith("password/") && [422, 429].includes(response.status)
-        ? data?.code === "reset_locked"
-          ? "Mã đã hết lượt thử. Bạn hãy gửi lại mã."
-          : data?.code === "reset_invalid"
-            ? "Mã không hợp lệ hoặc đã hết hạn. Bạn hãy kiểm tra lại hoặc gửi mã mới."
-            : data?.code === "reset_cooldown"
-              ? "Bạn hãy chờ 30 giây trước khi gửi lại mã."
-              : response.status === 429
-                ? "Bạn đã thử nhiều lần. Bạn hãy chờ rồi thử lại sau."
-                : "Bạn hãy kiểm tra lại thông tin đã nhập."
-        : (messages[response.status] ??
-            "Dịch vụ tài khoản tạm thời gián đoạn. Bạn hãy thử lại sau."),
+      data?.code === "email_unverified"
+        ? "Bạn hãy xác minh email trước khi đăng nhập."
+        : path.startsWith("email/")
+          ? response.status === 401
+            ? "Phiên xác minh đã hết hạn. Bạn hãy đăng nhập lại để tiếp tục xác minh email."
+            : response.status === 429
+              ? "Bạn đã gửi hoặc thử nhiều lần. Bạn hãy chờ rồi thử lại."
+              : response.status === 422
+                ? data?.code === "verification_locked"
+                  ? "Mã đã hết lượt thử. Bạn hãy gửi lại mã."
+                  : "Mã chưa đúng hoặc đã hết hạn. Bạn hãy kiểm tra lại hoặc gửi mã mới."
+                : response.status === 419
+                  ? "Phiên bảo vệ đã hết hạn. Bạn hãy thử lại."
+                  : "Chưa gửi được email. Bạn hãy thử gửi lại mã sau ít phút."
+          : path.startsWith("password/") && [422, 429].includes(response.status)
+            ? data?.code === "reset_locked"
+              ? "Mã đã hết lượt thử. Bạn hãy gửi lại mã."
+              : data?.code === "reset_invalid"
+                ? "Mã không hợp lệ hoặc đã hết hạn. Bạn hãy kiểm tra lại hoặc gửi mã mới."
+                : data?.code === "reset_cooldown"
+                  ? "Bạn hãy chờ 30 giây trước khi gửi lại mã."
+                  : response.status === 429
+                    ? "Bạn đã thử nhiều lần. Bạn hãy chờ rồi thử lại sau."
+                    : "Bạn hãy kiểm tra lại thông tin đã nhập."
+            : (messages[response.status] ??
+              "Dịch vụ tài khoản tạm thời gián đoạn. Bạn hãy thử lại sau."),
       data?.code,
     );
   }
@@ -77,6 +97,12 @@ async function mutate(path: string, data: object = {}) {
 }
 
 export const authApi = {
+  emailVerificationStatus: (): Promise<EmailVerificationStatus> =>
+    request("email/status"),
+  sendEmailVerification: (): Promise<EmailVerificationStatus> =>
+    mutate("email/send"),
+  verifyEmail: (code: string): Promise<void> =>
+    mutate("email/verify", { code }),
   requestPasswordReset: (
     email: string,
   ): Promise<{ message: string; expires_in: number; resend_after: number }> =>
@@ -100,8 +126,8 @@ export const authApi = {
     email: string,
     password: string,
     confirmation: string,
-  ): Promise<void> => {
-    await mutate("register", {
+  ): Promise<{ verification_required: boolean; mail_sent: boolean }> => {
+    return mutate("register", {
       name: name.trim(),
       email: email.trim().toLowerCase(),
       password,

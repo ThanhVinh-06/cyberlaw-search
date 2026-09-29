@@ -45,9 +45,9 @@ class ApiContext
         ];
         SafeLog::write('application', 'http.completed', $status < 400 ? 'success' : 'failure', $context);
         $route = $context['route'];
-        if (str_starts_with($route, 'auth.reset.') || in_array($route, ['auth.login', 'auth.logout', 'auth.register']) || in_array($status, [401, 403, 419, 429])) {
+        if (str_starts_with($route, 'auth.email.') || str_starts_with($route, 'auth.reset.') || in_array($route, ['auth.login', 'auth.logout', 'auth.register']) || in_array($status, [401, 403, 419, 429])) {
             $event = $status === 429 ? 'auth.rate_limited'
-                : (str_starts_with($route, 'auth.reset.') || in_array($route, ['auth.login', 'auth.logout', 'auth.register']) ? $route : 'auth.denied');
+                : (str_starts_with($route, 'auth.email.') || str_starts_with($route, 'auth.reset.') || in_array($route, ['auth.login', 'auth.logout', 'auth.register']) ? $route : 'auth.denied');
             SafeLog::write('security', $event, $status < 400 ? 'success' : 'failure', $context);
         }
         $response->headers->set('X-Request-ID', $context['request_id']);

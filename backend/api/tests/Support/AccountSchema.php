@@ -23,8 +23,20 @@ final class AccountSchema
             $table->string('trang_thai')->default('active');
             $table->string('ma_ghi_nho', 100)->nullable();
             $table->dateTime('lan_dang_nhap_cuoi')->nullable();
+            $table->dateTime('ngay_xac_minh_email')->nullable();
+            $table->boolean('duoc_mien_xac_minh_email')->default(false);
             $table->dateTime('ngay_tao')->nullable();
             $table->dateTime('ngay_cap_nhat')->nullable();
+        });
+        Schema::create('yeu_cau_xac_minh_email', function (Blueprint $table) {
+            $table->id('ma_yeu_cau');
+            $table->foreignId('ma_nguoi_dung')->constrained('nguoi_dung', 'ma_nguoi_dung')->cascadeOnDelete();
+            $table->string('ma_xac_nhan_bam');
+            $table->unsignedTinyInteger('so_lan_thu')->default(0);
+            $table->dateTime('ngay_tao');
+            $table->dateTime('ngay_het_han');
+            $table->dateTime('ngay_su_dung')->nullable();
+            $table->dateTime('ngay_huy')->nullable();
         });
         Schema::create('yeu_cau_dat_lai_mat_khau', function (Blueprint $table) {
             $table->id('ma_yeu_cau');

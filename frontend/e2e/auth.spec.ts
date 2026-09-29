@@ -71,9 +71,14 @@ test("registration validates matching passwords, clears on navigation and suppor
   await page
     .getByRole("button", { name: "Tạo tài khoản", exact: true })
     .click();
+  await expect(page).toHaveURL(/\/verify-email$/);
+  await page.getByLabel("Mã xác nhận", { exact: true }).fill("654321");
+  await page
+    .getByRole("button", { name: "Xác nhận email", exact: true })
+    .click();
   await expect(page).toHaveURL(/\/login$/);
   await expect(page.getByRole("status")).toContainText(
-    "Tạo tài khoản thành công",
+    "Xác minh email thành công",
   );
   await expect(page.getByLabel("Địa chỉ email")).toHaveValue(
     "an@example.invalid",

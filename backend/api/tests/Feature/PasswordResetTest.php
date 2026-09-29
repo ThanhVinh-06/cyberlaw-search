@@ -20,14 +20,18 @@ class PasswordResetTest extends TestCase
     {
         parent::setUp();
         AccountSchema::create();
-        config(['mail.default' => 'smtp', 'logging.channels.application.driver' => 'null', 'logging.channels.security.driver' => 'null']);
+        config(['mail.default' => 'smtp', 'logging.channels.application' => config('logging.channels.null'), 'logging.channels.security' => config('logging.channels.null')]);
         $this->app->bind(ValidateCsrfToken::class, ResetCsrf::class);
         Mail::fake();
     }
 
     private function account(): NguoiDung
     {
-        return NguoiDung::create(['ho_ten' => 'Reset test', 'thu_dien_tu' => 'reset@example.test', 'mat_khau' => ' Old-password!123 ']);
+        $user = new NguoiDung(['ho_ten' => 'Reset test', 'thu_dien_tu' => 'reset@example.test', 'mat_khau' => ' Old-password!123 ']);
+        $user->setAttribute('duoc_mien_xac_minh_email', true);
+        $user->save();
+
+        return $user;
     }
 
     private function postReset(string $action, array $data = [])

@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\NguoiDung;
 use App\Support\PasswordSession;
 use Closure;
 use Illuminate\Http\Request;
@@ -12,9 +13,9 @@ class ActiveAccount
     public function handle(Request $request, Closure $next)
     {
         $user = $request->user();
-        $currentPassword = $user && hash_equals(PasswordSession::fingerprint($user), (string) $request->session()->get('auth_password_fingerprint', ''));
-        if (! $user || $user->trang_thai !== 'active' || ! $currentPassword) {
-            $request->attributes->set('auth_reason', $user && $user->trang_thai !== 'active' ? 'account_blocked' : 'session_invalid');
+        $currentPassword = $user instanceof NguoiDung && hash_equals(PasswordSession::fingerprint($user), (string) $request->session()->get('auth_password_fingerprint', ''));
+        if (! $user instanceof NguoiDung || $user->getAttribute('trang_thai') !== 'active' || ! $user->canUseAccount() || ! $currentPassword) {
+            $request->attributes->set('auth_reason', $user instanceof NguoiDung && $user->getAttribute('trang_thai') !== 'active' ? 'account_blocked' : 'session_invalid');
             if ($user) {
                 Auth::guard('web')->logout();
                 $request->session()->invalidate();
