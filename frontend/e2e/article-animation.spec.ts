@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./auth-fixtures";
 
 test("page scrollbar stays hidden and opening articles does not shift the page", async ({
   page,

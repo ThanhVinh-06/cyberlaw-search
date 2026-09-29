@@ -1,21 +1,9 @@
-import { test, expect, type Page } from "@playwright/test";
+import { mockAuth } from "./auth-fixtures";
+import { test, expect, type Page } from "./auth-fixtures";
 
 async function openStats(page: Page) {
-  // The dashboard currently uses a local demo session, not a backend login.
-  await page.addInitScript(() =>
-    sessionStorage.setItem(
-      "cyberlaw_current_user",
-      JSON.stringify({
-        ma_nguoi_dung: 1,
-        ho_ten: "Admin Demo",
-        thu_dien_tu: "admin@example.test",
-        vai_tro: "admin",
-        trang_thai: "active",
-        ngay_tao: "2026-01-01",
-        ngay_cap_nhat: "2026-01-01",
-      }),
-    ),
-  );
+  // Mock API responses for dashboard layout tests; server auth is tested separately.
+  await mockAuth(page, "admin");
   await page.goto("/admin/stats");
   await page.evaluate(() => document.fonts.ready);
   await expect(page.locator(".cl-question-card")).toHaveCount(5);

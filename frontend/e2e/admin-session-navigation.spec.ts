@@ -1,8 +1,9 @@
-import { test, expect, type Page } from "@playwright/test";
+import { fillLogin } from "./auth-fixtures";
+import { test, expect, type Page } from "./auth-fixtures";
 
 async function loginAsAdmin(page: Page) {
   await page.goto("/login");
-  await page.getByRole("button", { name: "Điền Admin", exact: true }).click();
+  await fillLogin(page, "admin");
   await page.getByRole("button", { name: "Đăng nhập", exact: true }).click();
   await expect(page).toHaveURL(/\/admin$/);
 }
@@ -15,12 +16,8 @@ async function expectAdminSession(page: Page) {
     page.getByRole("link", { name: "Đăng nhập", exact: true }),
   ).toHaveCount(0);
   expect(
-    await page.evaluate(
-      () =>
-        JSON.parse(sessionStorage.getItem("cyberlaw_current_user") || "null")
-          ?.vai_tro,
-    ),
-  ).toBe("admin");
+    await page.evaluate(() => sessionStorage.getItem("cyberlaw_current_user")),
+  ).toBeNull();
 }
 
 test("system links retain admin session in the current tab, including reload and back", async ({
@@ -56,6 +53,9 @@ test("system links retain admin session in the current tab, including reload and
   expect(
     await page.evaluate(() => sessionStorage.getItem("cyberlaw_current_user")),
   ).toBeNull();
+  await expect(
+    page.getByRole("link", { name: "Đăng nhập", exact: true }),
+  ).toBeVisible();
   await page.goto("/admin");
   await expect(page.locator(".cl-admin-shell")).toHaveCount(0);
 });

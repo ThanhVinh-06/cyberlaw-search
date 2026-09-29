@@ -1558,3 +1558,32 @@ html[data-input="keyboard"] [data-slot="dialog-overlay"] {
     font-size: 9px;
   }
 }
+/* Session feedback also fits small phones; secrets never appear in these notices. */
+.auth-session-alert {
+  position: fixed;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: max-content;
+  max-width: calc(100vw - 32px);
+  padding: 14px 18px;
+  background: #fff7f5;
+  color: #742438;
+  border-radius: 12px;
+  box-shadow: 0 6px 24px #00000014;
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+.auth-session-alert button {
+  flex-shrink: 0;
+  min-width: 32px;
+  min-height: 32px;
+}
+.auth-session-loading {
+  padding: 32px;
+  color: #742438;
+}

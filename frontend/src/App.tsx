@@ -436,6 +436,7 @@ function AuthPage({
   const [errors, setErrors] = useState<Partial<Values>>({});
   const [revealed, setRevealed] = useState({ password: false, confirm: false });
   const [notice, setNotice] = useState("");
+  const [submitting, setSubmitting] = useState(false);
   const [capsLock, setCapsLock] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
   const noticeRef = useRef<HTMLDivElement>(null);
@@ -515,8 +516,9 @@ function AuthPage({
   const auth = useAuth();
   const navigate = useNavigate();
 
-  function submit(event: FormEvent) {
+  async function submit(event: FormEvent) {
     event.preventDefault();
+    if (submitting) return;
     const next = Object.fromEntries(
       fields.map((field) => [field, validate(field)]),
     );
@@ -538,7 +540,9 @@ function AuthPage({
     }
 
     // Xử lý đăng nhập
-    const loginRes = auth.login(values.email, values.password);
+    setSubmitting(true);
+    const loginRes = await auth.login(values.email, values.password);
+    setSubmitting(false);
     if (loginRes.success && loginRes.user) {
       // Phân quyền điều hướng
       if (historyIntent) {
@@ -552,13 +556,7 @@ function AuthPage({
     }
 
     // Nếu không khớp tài khoản
-    if (values.email.toLowerCase() === "demo@example.invalid") {
-      setNotice(
-        "Bản xem trước chưa kết nối dịch vụ tài khoản. Thông tin của bạn chưa được gửi hoặc lưu. Bạn vẫn có thể tra cứu mà không cần đăng nhập.",
-      );
-    } else {
-      setNotice(loginRes.error || "Email hoặc mật khẩu không chính xác.");
-    }
+    setNotice(loginRes.error || "Email hoặc mật khẩu không chính xác.");
     setValues((previous) => ({ ...previous, password: "", confirm: "" }));
     setRevealed({ password: false, confirm: false });
     requestAnimationFrame(() => noticeRef.current?.focus());
@@ -665,6 +663,7 @@ function AuthPage({
                       <Icon size={18} className="input-leading" />
                       <Input
                         id={field}
+                        disabled={submitting}
                         name={field}
                         type={
                           isPassword
@@ -804,8 +803,17 @@ function AuthPage({
                   </>
                 )}
               </div>
-              <Button className="submit-button" type="submit">
-                {register ? "Tạo tài khoản" : "Đăng nhập"}
+              <Button
+                className="submit-button"
+                type="submit"
+                disabled={submitting || auth.isLoading}
+                aria-busy={submitting}
+              >
+                {submitting
+                  ? "Đang đăng nhập…"
+                  : register
+                    ? "Tạo tài khoản"
+                    : "Đăng nhập"}
                 <ArrowRight size={18} />
               </Button>
             </form>
@@ -827,111 +835,11 @@ function AuthPage({
                 <ArrowRight size={13} />
               </Link>
             </p>
-            {!register && (
-              <div
-                style={{
-                  marginTop: "16px",
-                  padding: "12px 14px",
-                  backgroundColor: "#faf8f6",
-                  border: "1px dashed #d9d2cd",
-                  borderRadius: "8px",
-                  fontSize: "12px",
-                  color: "#5c4d50",
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "8px",
-                  textAlign: "left",
-                }}
-              >
-                <div
-                  style={{
-                    fontWeight: 600,
-                    color: "#800020",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "5px",
-                  }}
-                >
-                  <ShieldCheck size={14} />
-                  <span>Tài khoản thử nghiệm phân quyền:</span>
-                </div>
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                  }}
-                >
-                  <div>
-                    <strong>Admin:</strong> <code>admin@cyberlaw.vn</code>{" "}
-                    (pass: <code>admin12345</code>)
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setValues((prev) => ({
-                        ...prev,
-                        email: "admin@cyberlaw.vn",
-                        password: "admin12345",
-                      }));
-                      setErrors({});
-                      setNotice("");
-                    }}
-                    style={{
-                      fontSize: "11px",
-                      padding: "3px 8px",
-                      borderRadius: "4px",
-                      backgroundColor: "var(--primary)",
-                      color: "#fff",
-                      border: "none",
-                      cursor: "pointer",
-                      fontWeight: 600,
-                    }}
-                  >
-                    Điền Admin
-                  </button>
-                </div>
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                  }}
-                >
-                  <div>
-                    <strong>User:</strong> <code>mai.nguyen@gmail.com</code>{" "}
-                    (pass: <code>user12345</code>)
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setValues((prev) => ({
-                        ...prev,
-                        email: "mai.nguyen@gmail.com",
-                        password: "user12345",
-                      }));
-                      setErrors({});
-                      setNotice("");
-                    }}
-                    style={{
-                      fontSize: "11px",
-                      padding: "3px 8px",
-                      borderRadius: "4px",
-                      backgroundColor: "var(--primary)",
-                      color: "#fff",
-                      border: "none",
-                      cursor: "pointer",
-                      fontWeight: 600,
-                    }}
-                  >
-                    Điền User
-                  </button>
-                </div>
-              </div>
-            )}
             <p className="preview-note">
               <Info size={13} />
-              Bản xem trước giao diện · Chưa kết nối tài khoản
+              {register
+                ? "Bản xem trước · Chưa hỗ trợ tạo tài khoản"
+                : "Phiên đăng nhập được bảo vệ bằng cookie và xác thực máy chủ."}
             </p>
           </motion.div>
         </div>
@@ -988,6 +896,17 @@ export default function App() {
       mainRef.current?.focus({ preventScroll: true });
   }, [location.pathname]);
   const auth = useAuth();
+  if (
+    auth.isLoading &&
+    (location.pathname.startsWith("/admin") ||
+      location.pathname === historyNavigation.to)
+  ) {
+    return (
+      <div className="auth-session-loading" role="status">
+        Đang kiểm tra phiên đăng nhập…
+      </div>
+    );
+  }
   if (location.pathname.startsWith("/admin")) {
     if (!auth.isAuthenticated) {
       return <AdminAccessDenied reason="unauthenticated" />;

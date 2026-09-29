@@ -1,4 +1,4 @@
-import { test, expect, type Page } from "@playwright/test";
+import { test, expect, type Page } from "./auth-fixtures";
 import AxeBuilder from "@axe-core/playwright";
 
 async function sendCode(page: Page) {

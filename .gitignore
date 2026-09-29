@@ -1,11 +1,12 @@
 # Local agent tools
-.agent/
+.agent/*
+!.agent/cyberlaw-security/
 .kilo/
 
 # Local secrets
 .env
 .env.*
-!.env.example
+# Environment templates are also kept local at the owner's request.
 
 # Python
 .venv/
@@ -65,3 +66,10 @@ backups/
 backend/api/vendor/
 backend/api/storage/logs/
 backend/api/storage/framework/sessions/
+backend/api/storage/framework/testing/
+backend/ai/logs/
+reports/security/raw/
+
+# Local database configuration and new schema exports are not published.
+backend/api/config/database.php
+backend/api/database/

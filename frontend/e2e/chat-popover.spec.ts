@@ -1,4 +1,4 @@
-import { test, expect, type Page } from "@playwright/test";
+import { test, expect, type Page } from "./auth-fixtures";
 
 async function settle(page: Page) {
   await expect

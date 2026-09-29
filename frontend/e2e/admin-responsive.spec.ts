@@ -1,4 +1,5 @@
-import { test, expect, type Page } from "@playwright/test";
+import { mockAuth } from "./auth-fixtures";
+import { test, expect, type Page } from "./auth-fixtures";
 
 test("phone touch menu switches all four tabs and releases scroll lock", async ({
   browser,
@@ -34,18 +35,7 @@ test("phone touch menu switches all four tabs and releases scroll lock", async (
 });
 
 async function openAdmin(page: Page) {
-  await page.addInitScript(() =>
-    sessionStorage.setItem(
-      "cyberlaw_current_user",
-      JSON.stringify({
-        ma_nguoi_dung: 1,
-        ho_ten: "Demo",
-        thu_dien_tu: "admin@example.test",
-        vai_tro: "admin",
-        trang_thai: "active",
-      }),
-    ),
-  );
+  await mockAuth(page, "admin");
   await page.goto("/admin");
   await page.evaluate(() => document.fonts.ready);
 }

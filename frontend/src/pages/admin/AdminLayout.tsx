@@ -16,6 +16,7 @@ import {
   Library,
 } from "lucide-react";
 import { Brand } from "@/components/Brand";
+import { useAuth } from "@/lib/auth-context";
 import "@/admin.css";
 
 interface AdminLayoutProps {
@@ -29,6 +30,7 @@ export default function AdminLayout({
   activeTab = "users",
   onTabChange,
 }: AdminLayoutProps) {
+  const { currentUser } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
   const menuTrigger = useRef<HTMLButtonElement>(null);
   const location = useLocation();
@@ -174,9 +176,11 @@ export default function AdminLayout({
               <div className="cl-admin-user-avatar">AD</div>
               <div className="cl-admin-user-info">
                 <span className="cl-admin-user-name">
-                  Quản trị viên Hệ thống
+                  {currentUser?.ho_ten}
                 </span>
-                <span className="cl-admin-user-role">admin@cyberlaw.vn</span>
+                <span className="cl-admin-user-role">
+                  {currentUser?.thu_dien_tu}
+                </span>
               </div>
             </div>
             <Link to="/search" className="cl-admin-back-btn">

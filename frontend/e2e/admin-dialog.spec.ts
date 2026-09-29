@@ -1,17 +1,9 @@
-import { test, expect, type Page } from "@playwright/test";
+import { mockAuth } from "./auth-fixtures";
+import { test, expect, type Page } from "./auth-fixtures";
 
 async function openAdmin(page: Page, route = "/admin") {
+  await mockAuth(page, "admin");
   await page.addInitScript(() => {
-    sessionStorage.setItem(
-      "cyberlaw_current_user",
-      JSON.stringify({
-        ma_nguoi_dung: 1,
-        ho_ten: "Demo",
-        thu_dien_tu: "admin@example.test",
-        vai_tro: "admin",
-        trang_thai: "active",
-      }),
-    );
     const state = window as typeof window & {
       fieldEntrances: {
         id: string;

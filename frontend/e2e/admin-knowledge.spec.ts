@@ -1,20 +1,10 @@
+import { mockAuth } from "./auth-fixtures";
 import { Buffer } from "node:buffer";
-import { test, expect, type Page } from "@playwright/test";
+import { test, expect, type Page } from "./auth-fixtures";
 import AxeBuilder from "@axe-core/playwright";
 
 async function openKnowledge(page: Page) {
-  await page.addInitScript(() =>
-    sessionStorage.setItem(
-      "cyberlaw_current_user",
-      JSON.stringify({
-        ma_nguoi_dung: 1,
-        ho_ten: "Demo",
-        thu_dien_tu: "admin@example.test",
-        vai_tro: "admin",
-        trang_thai: "active",
-      }),
-    ),
-  );
+  await mockAuth(page, "admin");
   await page.goto("/admin/documents");
   await page.evaluate(() => document.fonts.ready);
   await expect(

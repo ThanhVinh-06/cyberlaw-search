@@ -1,18 +1,9 @@
-import { test, expect, type Page } from "@playwright/test";
+import { fillLogin } from "./auth-fixtures";
+import { mockAuth } from "./auth-fixtures";
+import { test, expect, type Page } from "./auth-fixtures";
 
 async function useAdmin(page: Page) {
-  await page.addInitScript(() =>
-    sessionStorage.setItem(
-      "cyberlaw_current_user",
-      JSON.stringify({
-        ma_nguoi_dung: 1,
-        ho_ten: "Demo",
-        thu_dien_tu: "admin@example.test",
-        vai_tro: "admin",
-        trang_thai: "active",
-      }),
-    ),
-  );
+  await mockAuth(page, "admin");
 }
 
 async function settle(page: Page) {
@@ -134,7 +125,7 @@ test("history follows login intent, shows current demo exchanges and clears on l
   ).toHaveCount(0);
   await page.goto("/history");
   await expect(page).toHaveURL(/\/login\?next=history$/);
-  await page.getByRole("button", { name: "Điền User", exact: true }).click();
+  await fillLogin(page, "user");
   await page.getByRole("button", { name: "Đăng nhập", exact: true }).click();
   await expect(page).toHaveURL(/\/history$/);
   await expect(
@@ -155,7 +146,7 @@ test("history follows login intent, shows current demo exchanges and clears on l
   await expect(page.locator(".cl-history-item")).toContainText("Phản hồi mẫu");
   await page.getByRole("button", { name: "Đăng xuất", exact: true }).click();
   await expect(page).toHaveURL(/\/login\?next=history$/);
-  await page.getByRole("button", { name: "Điền User", exact: true }).click();
+  await fillLogin(page, "user");
   await page.getByRole("button", { name: "Đăng nhập", exact: true }).click();
   await expect(page.locator(".cl-history-item")).toHaveCount(0);
   await expect(
@@ -163,28 +154,27 @@ test("history follows login intent, shows current demo exchanges and clears on l
   ).toBeVisible();
 });
 
-test("account and public navigation fit phone and tablet widths", async ({
-  page,
-}) => {
-  test.setTimeout(60000);
-  for (const [width, height] of [
-    [320, 568],
-    [360, 800],
-    [390, 844],
-    [440, 956],
-    [760, 956],
-    [761, 956],
-    [768, 1024],
-    [834, 1194],
-    [900, 1000],
-    [901, 1000],
-    [1024, 1366],
-    [1280, 800],
-    [1440, 900],
-    [1920, 1080],
-    [844, 390],
-    [956, 440],
-  ]) {
+for (const [width, height] of [
+  [320, 568],
+  [360, 800],
+  [390, 844],
+  [440, 956],
+  [760, 956],
+  [761, 956],
+  [768, 1024],
+  [834, 1194],
+  [900, 1000],
+  [901, 1000],
+  [1024, 1366],
+  [1280, 800],
+  [1440, 900],
+  [1920, 1080],
+  [844, 390],
+  [956, 440],
+]) {
+  test(`account and public navigation fit ${width}x${height}`, async ({
+    page,
+  }) => {
     await page.setViewportSize({ width, height });
     for (const route of [
       "/login",
@@ -225,8 +215,8 @@ test("account and public navigation fit phone and tablet widths", async ({
         ).toBeVisible();
       }
     }
-  }
-});
+  });
+}
 
 test("signed-in history and menu fit touch screens and short landscape viewports", async ({
   browser,
@@ -240,8 +230,9 @@ test("signed-in history and menu fit touch screens and short landscape viewports
   });
   try {
     const page = await context.newPage();
+    await mockAuth(page);
     await page.goto("/login");
-    await page.getByRole("button", { name: "Điền User", exact: true }).tap();
+    await fillLogin(page, "user");
     await page.getByRole("button", { name: "Đăng nhập", exact: true }).tap();
     await expect(page).toHaveURL(/\/search$/);
     await page

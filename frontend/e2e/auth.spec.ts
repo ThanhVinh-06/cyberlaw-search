@@ -1,7 +1,7 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./auth-fixtures";
 import AxeBuilder from "@axe-core/playwright";
 
-test("login validates, reveals password and never submits credentials in preview", async ({
+test("login validates, reveals password and handles rejected API credentials", async ({
   page,
 }) => {
   const errors: string[] = [];
@@ -35,10 +35,10 @@ test("login validates, reveals password and never submits credentials in preview
   );
   await page.getByRole("button", { name: "Đăng nhập", exact: true }).click();
   await expect(page.getByRole("status")).toContainText(
-    "chưa kết nối dịch vụ tài khoản",
+    "Email hoặc mật khẩu không chính xác.",
   );
   await expect(page.getByLabel("Mật khẩu", { exact: true })).toHaveValue("");
-  expect(posts).toEqual([]);
+  expect(posts).toEqual(["http://127.0.0.1:5173/api/auth/login"]);
   expect(
     await page.evaluate(() => [localStorage.length, sessionStorage.length]),
   ).toEqual([0, 0]);

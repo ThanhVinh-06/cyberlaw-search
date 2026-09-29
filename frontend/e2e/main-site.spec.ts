@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./auth-fixtures";
 
 test("original public views retain filters, article references and sample chat", async ({
   page,

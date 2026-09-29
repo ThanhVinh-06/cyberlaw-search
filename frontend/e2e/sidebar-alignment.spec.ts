@@ -1,4 +1,4 @@
-import { test, expect, type Page } from "@playwright/test";
+import { test, expect, type Page } from "./auth-fixtures";
 
 async function menuGeometry(page: Page) {
   return page.locator("aside:visible").evaluate((sidebar) => {
