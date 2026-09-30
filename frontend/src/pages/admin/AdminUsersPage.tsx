@@ -51,7 +51,7 @@ import { adminUsersApi, AdminUserError, type AdminUser as NguoiDung, type UserPa
 export default function AdminUsersPage() {
   const {currentUser} = useAuth();
   const location = useLocation();
-  const userRevealDuration = 950;
+  const adminTabDuration = 1200;
   const getInitialTab = () => {
     if (location.pathname === "/admin/stats") return "stats";
     if (location.pathname === "/admin/matrix") return "matrix";
@@ -331,7 +331,7 @@ export default function AdminUsersPage() {
       ) : activeTab === "documents" ? (
         <AdminDocumentsPage instant={instantTabReveal} />
       ) : (
-        <AdminTabReveal tab={activeTab} instant={instantTabReveal} duration={activeTab === 'users' ? userRevealDuration : 350}>
+        <AdminTabReveal tab={activeTab} instant={instantTabReveal} duration={adminTabDuration}>
           {/* Page Title & Add Button */}
           <div className="cl-admin-page-header" data-admin-reveal="0">
             <div className="cl-admin-page-title">
@@ -373,7 +373,7 @@ export default function AdminUsersPage() {
               </div>
             </div>
 
-            <div className="cl-admin-stat-card" data-admin-reveal="100">
+            <div className="cl-admin-stat-card" data-admin-reveal="90">
               <div className="cl-admin-stat-icon burgundy">
                 <ShieldCheck size={22} />
               </div>
@@ -385,7 +385,7 @@ export default function AdminUsersPage() {
               </div>
             </div>
 
-            <div className="cl-admin-stat-card" data-admin-reveal="150">
+            <div className="cl-admin-stat-card" data-admin-reveal="130">
               <div className="cl-admin-stat-icon emerald">
                 <UserCheck size={22} />
               </div>
@@ -397,7 +397,7 @@ export default function AdminUsersPage() {
               </div>
             </div>
 
-            <div className="cl-admin-stat-card" data-admin-reveal="200">
+            <div className="cl-admin-stat-card" data-admin-reveal="170">
               <div className="cl-admin-stat-icon rose">
                 <UserX size={22} />
               </div>
@@ -413,7 +413,7 @@ export default function AdminUsersPage() {
           </div>
 
           {/* Tabs Switcher: Users CRUD vs Permission Matrix */}
-          <div className="cl-admin-tabs" data-admin-reveal="225">
+          <div className="cl-admin-tabs" data-admin-reveal="210">
             <button
               className={`cl-admin-tab-btn ${activeTab === "users" ? "active" : ""}`}
               onClick={(event) => changeTab("users", event.detail === 0)}
@@ -527,13 +527,13 @@ export default function AdminUsersPage() {
               </div>
 
               {/* Table Card */}
-              <AdminTabReveal tab="users-table" instant={instantTabReveal} ready={usersLoaded} duration={userRevealDuration}>
               <div className="cl-user-table-region" aria-busy={loading}>
               <div className="cl-user-table-status" role="status">{loading ? 'Đang tải tài khoản…' : ''}</div>
-              {!usersLoaded ? <div className="cl-user-table-placeholder" aria-hidden="true" /> :
-              <div className="cl-admin-table-card" data-admin-reveal="0">
+              <div className="cl-admin-table-card" data-admin-reveal="290">
                 {loadError && <p className="cl-admin-form-error" role="alert">{loadError}</p>}
-                {filteredUsers.length === 0 ? (
+                {!usersLoaded ? (
+                  <div className="cl-user-table-placeholder" aria-hidden="true" style={{ border: 'none', minHeight: '300px' }} />
+                ) : filteredUsers.length === 0 ? (
                   <div className="cl-admin-empty">
                     <div className="cl-admin-empty-icon">
                       <Search size={28} />
@@ -716,10 +716,8 @@ export default function AdminUsersPage() {
                   </div>
                 )}
               </div>
-              }
               </div>
-              </AdminTabReveal>
-              <nav className="cl-user-pagination" aria-label="Phân trang tài khoản">
+              <nav className="cl-user-pagination" aria-label="Phân trang tài khoản" data-admin-reveal="330">
                 <span>{total} tài khoản · Trang {page}/{Math.max(1, Math.ceil(total / 10))}</span>
                 <button className="cl-admin-btn-outline" disabled={loading || page <= 1} onClick={() => setPage(page - 1)}>Trang trước</button>
                 <button className="cl-admin-btn-outline" disabled={loading || page >= Math.ceil(total / 10)} onClick={() => setPage(page + 1)}>Trang sau</button>

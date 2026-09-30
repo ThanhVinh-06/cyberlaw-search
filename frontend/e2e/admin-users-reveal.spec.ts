@@ -12,8 +12,9 @@ test('user table waits for first data and does not jump or replay during reload'
     (window as any).tableReveals = [];
     const original = Element.prototype.animate;
     Element.prototype.animate = function(frames, options) {
-      if (this.matches('.cl-admin-table-card')) (window as any).tableReveals.push({frames, options});
-      return original.call(this, frames, options);
+      const animation = original.call(this, frames, options);
+      if (this.matches('.cl-admin-table-card')) (window as any).tableReveals.push({frames, options, animation});
+      return animation;
     };
   });
   await page.goto('/search');
@@ -21,13 +22,13 @@ test('user table waits for first data and does not jump or replay during reload'
   await expect(page).toHaveURL(/\/admin$/);
   await expect(page.getByText('Đang tải tài khoản…')).toBeVisible();
   await expect(page.getByText('Không tìm thấy người dùng nào')).toHaveCount(0);
-  expect(await page.evaluate(() => (window as any).tableReveals.length)).toBe(0);
+  await expect.poll(() => page.evaluate(() => (window as any).tableReveals.filter((r: any) => r.animation.playState !== 'idle').length)).toBe(1);
+  const entrance = await page.evaluate(() => (window as any).tableReveals.find((r: any) => r.animation.playState !== 'idle'));
+  expect(entrance.options.duration).toBe(1200);
+  expect(entrance.options.delay).toBe(290);
   release();
   await expect(page.locator('.cl-admin-table tbody tr')).not.toHaveCount(0);
-  await expect.poll(() => page.evaluate(() => (window as any).tableReveals.length)).toBe(1);
-  const entrance = await page.evaluate(() => (window as any).tableReveals[0]);
-  expect(entrance.options.duration).toBe(950);
-  expect(entrance.options.delay).toBe(0);
+  expect(await page.evaluate(() => (window as any).tableReveals.filter((r: any) => r.animation.playState !== 'idle').length)).toBe(1);
   // No moving ancestor adds a second entrance to the table.
   expect(await page.locator('.cl-admin-table-card').evaluate(el => {
     let parent = el.parentElement;
@@ -54,7 +55,7 @@ test('user table waits for first data and does not jump or replay during reload'
   expect(during.height).toBeCloseTo(before.height, 0);
   finishReload();
   await expect(page.getByText('Đang tải tài khoản…')).toHaveCount(0);
-  expect(await page.evaluate(() => (window as any).tableReveals.length)).toBe(1);
+  expect(await page.evaluate(() => (window as any).tableReveals.filter((r: any) => r.animation.playState !== 'idle').length)).toBe(1);
 });
 
 test('reload and internal user-tab entries use a single slower synchronized entrance', async ({page}) => {
@@ -80,7 +81,7 @@ test('reload and internal user-tab entries use a single slower synchronized entr
     // Only count animations that actually run/finish, not canceled probes.
     const calls = await page.evaluate(() => (window as any).entries.filter((c: any) => c.animation.playState !== 'idle').map((c: any) => ({table:c.table,options:c.options})));
     expect(calls.filter((c: any) => c.table)).toHaveLength(1);
-    expect(calls.every((c: any) => c.options.duration === 950)).toBe(true);
+    expect(calls.every((c: any) => c.options.duration === 1200)).toBe(true);
   };
   await check();
   for (const tab of ['Ma trận quyền hạn', 'Thống kê & Báo cáo', 'Văn bản & Tri thức']) {

@@ -634,7 +634,7 @@ export default function AdminDocumentsPage({
         }
         className="cl-knowledge-page"
       >
-        <AdminTabReveal tab="documents" instant={instant}>
+        <AdminTabReveal tab="documents" instant={instant} duration={1200}>
           <header className="cl-admin-page-header" data-admin-reveal="0">
             <div className="cl-admin-page-title">
               <h1 title="Văn bản & Tri thức">Văn bản & Tri thức</h1>
@@ -657,7 +657,7 @@ export default function AdminDocumentsPage({
               <div
                 className="cl-admin-stat-card"
                 key={item.id}
-                data-admin-reveal={50 + i * 50}
+                data-admin-reveal={50 + i * 40}
               >
                 <div className={`cl-admin-stat-icon ${item.color}`}>
                   <item.icon size={22} />
@@ -682,46 +682,47 @@ export default function AdminDocumentsPage({
               </div>
             ))}
           </div>
-          <div className="cl-knowledge-demo" data-admin-reveal="225">
+          <div className="cl-knowledge-demo" data-admin-reveal="210">
             <Info size={17} />
             <p>
               <strong>Kho tri thức pháp luật.</strong> Nội dung sửa đổi được lưu
               ở bản nháp để đối chiếu nguồn trước khi công bố.
             </p>
           </div>
+          <Tabs.List
+            className="cl-knowledge-tabs"
+            data-admin-reveal="250"
+            aria-label="Các phần của kho tri thức"
+            onPointerDownCapture={() => {
+              tabInput.current = false;
+            }}
+            onKeyDownCapture={() => {
+              tabInput.current = true;
+            }}
+          >
+            {tabs.map((item) => (
+              <Tabs.Trigger
+                key={item.id}
+                value={item.id}
+                className="cl-knowledge-tab"
+                aria-label={item.label}
+                title={item.label}
+              >
+                <item.icon size={17} />
+                <span className="cl-knowledge-tab-full">{item.label}</span>
+                <span className="cl-knowledge-tab-short" aria-hidden="true">
+                  {item.short}
+                </span>
+                <small>{data[item.id].length}</small>
+              </Tabs.Trigger>
+            ))}
+          </Tabs.List>
         </AdminTabReveal>
-        <Tabs.List
-          className="cl-knowledge-tabs"
-          aria-label="Các phần của kho tri thức"
-          onPointerDownCapture={() => {
-            tabInput.current = false;
-          }}
-          onKeyDownCapture={() => {
-            tabInput.current = true;
-          }}
-        >
-          {tabs.map((item) => (
-            <Tabs.Trigger
-              key={item.id}
-              value={item.id}
-              className="cl-knowledge-tab"
-              aria-label={item.label}
-              title={item.label}
-            >
-              <item.icon size={17} />
-              <span className="cl-knowledge-tab-full">{item.label}</span>
-              <span className="cl-knowledge-tab-short" aria-hidden="true">
-                {item.short}
-              </span>
-              <small>{data[item.id].length}</small>
-            </Tabs.Trigger>
-          ))}
-        </Tabs.List>
         <Tabs.Content value={tab} className="cl-knowledge-tab-panel">
-          <AdminTabReveal tab={tab} instant={instantTab} duration={450}>
+          <AdminTabReveal tab={tab} instant={instantTab} duration={1200}>
             <div
               className="cl-admin-toolbar cl-knowledge-toolbar"
-              data-admin-reveal="0"
+              data-admin-reveal="50"
             >
               <div className="cl-admin-toolbar-search">
                 <div className="cl-admin-search-input-wrapper">
@@ -834,7 +835,7 @@ export default function AdminDocumentsPage({
             <section
               className="cl-knowledge-list-card"
               aria-busy={listLoading}
-              data-admin-reveal="50"
+              data-admin-reveal="90"
               aria-label={`Danh sách ${config.singular}`}
             >
               <div className="cl-knowledge-list-header">
@@ -988,7 +989,7 @@ export default function AdminDocumentsPage({
               </footer>
             </section>
             {tab === "van_ban" && (
-              <div className="cl-knowledge-workflow" data-admin-reveal="100">
+              <div className="cl-knowledge-workflow" data-admin-reveal="130">
                 <span>TỪ VĂN BẢN ĐẾN TRI THỨC</span>
                 <ol>
                   {[

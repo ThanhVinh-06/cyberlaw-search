@@ -1,5 +1,24 @@
 # Bàn giao dự án CyberLaw Search
 
+### Đồng bộ Fade In Up 1200ms chuẩn tab Thống kê cho toàn bộ các tab Quản trị — 01/10/2026
+
+- Đồng bộ chuẩn thời lượng Fade In Up **1200ms** (chuẩn của tab Thống kê & Báo cáo) cho toàn bộ 4 tab trong khu vực Quản trị Admin (`users`, `matrix`, `stats`, `documents`):
+  - **Trang Người dùng & Phân quyền (`AdminUsersPage`)**:
+    - Khắc phục triệt để lỗi animation bị ngược/tách nhịp (thanh tìm kiếm Fade In Up trước box thông tin user). Nguyên nhân do bảng user trước đây bị bọc riêng trong `AdminTabReveal` lồng nhau có `ready={usersLoaded}`, khiến bảng phải đợi API fetch xong mới bắt đầu animate, lệch pha so với toolbar phía trên.
+    - Đưa `.cl-admin-table-card` vào cùng luồng reveal thống nhất của trang với `data-admin-reveal="290"`, phân trang `data-admin-reveal="330"`. Khi đang tải dữ liệu lần đầu, placeholder skeleton giữ nguyên khung thẻ, giúp Header (0ms) → 4 Stat cards (50, 90, 130, 170ms) → Tabs switcher (210ms) → Toolbar tìm kiếm (250ms) → Bảng user (290ms) → Phân trang (330ms) trồi lên liền mạch, nối tiếp 40ms êm dịu, không giật cục.
+    - Cả 2 tab `users` và `matrix` dùng chung biến `const adminTabDuration = 1200;` (thay vì 950ms / 350ms cũ).
+  - **Tab Văn bản & Tri thức (`AdminDocumentsPage`)**:
+    - Khắc phục lỗi khối thông báo tri thức (`cl-knowledge-demo`) Fade In Up vội vã trước các box khác. Nâng toàn bộ vỏ `AdminTabReveal tab="documents"` và tab con lên `duration={1200}` (thay vì 350ms và 450ms).
+    - Đưa `Tabs.List` vào bên trong luồng reveal của vỏ trang với `data-admin-reveal="250"` ngay sau thông báo tri thức (`data-admin-reveal="210"`). Các khối tab con trồi lên tuần tự từ Toolbar (50ms) → List card (90ms) → Workflow (130ms).
+  - **Tab Ma trận quyền hạn (`matrix`)**: Nâng từ 350ms lên 1200ms, đồng bộ nhịp chuyển êm dịu.
+- **Kiểm thử và xác minh toàn diện**:
+  - `npm run build`: PASS 100% (`tsc -b && vite build`).
+  - `e2e/admin-users-reveal.spec.ts`: 2/2 PASS (chuẩn 1200ms, delay 290ms, lọc bỏ probe calls của React StrictMode, reload không replay, không giật chiều cao).
+  - `e2e/admin-stats.spec.ts`: 6/6 PASS (chuẩn 1200ms giữ vững).
+  - `e2e/admin-responsive.spec.ts`: 9/9 PASS (320px, 440px iPhone 16 Pro Max, 834px iPad/tablet, 900px, 901px, 956×440px xoay ngang, 1024px, 1440px desktop).
+  - `e2e/admin-knowledge.spec.ts`: 11/11 PASS (toàn bộ 11 tests nghiệp vụ và responsive đa kích thước).
+- **Rà soát an toàn**: Tuyệt đối không stage các file `.env`, mật khẩu cá nhân, file dump database MySQL hay migration chưa được duyệt. Sẵn sàng push lên GitHub.
+
 ### Đã push đồng bộ animation frontend và không gian tra cứu — 01/10/2026
 
 - Đồng bộ Fade In Up 950ms cho không gian tra cứu (tìm kiếm, thư viện, thuật ngữ, lịch sử) và chốt một nhịp 950ms thống nhất cho tab Người dùng & Phân quyền.
