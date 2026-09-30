@@ -46,6 +46,8 @@ return Application::configure(basePath: dirname(__DIR__))
                 403 => 'Bạn không có quyền thực hiện thao tác này.',
                 404 => 'Không tìm thấy chức năng này.',
                 405 => 'Phương thức yêu cầu không hợp lệ.',
+                409 => 'Dữ liệu đã thay đổi hoặc còn liên kết. Bạn tải lại danh sách và kiểm tra trước khi thử lại.',
+                413 => 'Dữ liệu vượt giới hạn cho phép. Bạn giảm kích thước hoặc liên hệ quản trị hệ thống.',
                 419 => 'Phiên bảo vệ đã hết hạn. Bạn hãy thử lại.',
                 422 => 'Bạn hãy kiểm tra lại email và mật khẩu.',
                 429 => 'Bạn đã thử quá nhiều lần. Vui lòng chờ một phút rồi thử lại.',
@@ -56,6 +58,11 @@ return Application::configure(basePath: dirname(__DIR__))
                 ? ($exception instanceof QueryException ? 'database_error' : 'internal_error')
                 : 'http_'.$status);
 
-            return response()->json(['message' => $messages[$status] ?? 'Dịch vụ tạm thời gián đoạn. Bạn hãy thử lại sau.'], $status, $headers);
+            $body = ['message' => $messages[$status] ?? 'Dịch vụ tạm thời gián đoạn. Bạn hãy thử lại sau.'];
+            if ($request->is('api/admin/knowledge*') && $exception instanceof ValidationException) {
+                $body = ['message' => 'Bạn kiểm tra lại các trường được đánh dấu nhé.', 'errors' => $exception->errors()];
+            }
+
+            return response()->json($body, $status, $headers);
         });
     })->create();

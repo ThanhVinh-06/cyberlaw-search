@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\EmailVerificationController;
+use App\Http\Controllers\KnowledgeController;
 use App\Http\Controllers\PasswordResetController;
 use App\Http\Controllers\RegistrationController;
 use Illuminate\Support\Facades\Route;
@@ -19,6 +20,15 @@ Route::prefix('api/auth')->group(function () {
     Route::post('login', [AuthController::class, 'login'])->middleware('throttle:login')->block(15, 15)->name('auth.login');
     Route::get('me', [AuthController::class, 'me'])->middleware('account.active')->name('auth.me');
     Route::post('logout', [AuthController::class, 'logout'])->name('auth.logout');
+});
+
+Route::prefix('api/admin/knowledge')->middleware(['account.active', 'role.admin'])->group(function () {
+    Route::get('/', [KnowledgeController::class, 'index'])->middleware('throttle:knowledge-read')->name('knowledge.index');
+    Route::get('/list/{table}', [KnowledgeController::class, 'listing'])->whereIn('table', ['van_ban', 'dieu_khoan', 'tu_khoa', 'quy_dinh'])->middleware('throttle:knowledge-read')->name('knowledge.list');
+    Route::get('/van_ban/{id}/pdf', [KnowledgeController::class, 'pdf'])->whereNumber('id')->middleware('throttle:knowledge-read')->name('knowledge.pdf');
+    Route::post('/van_ban/{id}/status', [KnowledgeController::class, 'status'])->whereNumber('id')->middleware('throttle:knowledge-write')->block(15, 15)->name('knowledge.status');
+    Route::post('/{table}/{id?}', [KnowledgeController::class, 'write'])->whereIn('table', ['van_ban', 'dieu_khoan', 'tu_khoa', 'quy_dinh'])->whereNumber('id')->middleware('throttle:knowledge-write')->block(15, 15)->name('knowledge.write');
+    Route::delete('/{table}/{id}', [KnowledgeController::class, 'destroy'])->whereIn('table', ['van_ban', 'dieu_khoan', 'tu_khoa', 'quy_dinh'])->whereNumber('id')->middleware('throttle:knowledge-write')->block(15, 15)->name('knowledge.delete');
 });
 
 Route::get('/', function () {

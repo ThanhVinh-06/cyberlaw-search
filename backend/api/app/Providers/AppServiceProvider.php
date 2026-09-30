@@ -22,6 +22,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        RateLimiter::for('knowledge-read', fn (Request $request) => Limit::perMinute(120)->by('knowledge-read:'.$request->user()?->getAuthIdentifier()));
+        RateLimiter::for('knowledge-write', fn (Request $request) => Limit::perMinute(30)->by('knowledge-write:'.$request->user()?->getAuthIdentifier()));
         RateLimiter::for('email-send', fn (Request $request) => [
             Limit::perMinute(5)->by('email-send-minute:'.hash_hmac('sha256', (string) $request->ip(), config('app.key'))),
             Limit::perHour(20)->by('email-send-hour:'.hash_hmac('sha256', (string) $request->ip(), config('app.key'))),

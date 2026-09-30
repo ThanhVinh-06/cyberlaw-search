@@ -20,9 +20,11 @@ class ApiContext
         // All API errors must be JSON, including requests missing Accept.
         $request->headers->set('Accept', 'application/json');
         $origin = $request->header('Origin');
+        $knowledge = $request->is('api/admin/knowledge/*') || $request->is('api/admin/knowledge');
+        $limit = $knowledge ? ($request->isMethod('POST') && str_starts_with($request->header('Content-Type', ''), 'multipart/form-data') ? 21 * 1024 * 1024 : 512 * 1024) : 8192;
         if ($origin !== null && ! in_array($origin, config('cyberlaw.frontend_origins'), true)) {
             $response = response()->json(['message' => 'Nguồn yêu cầu không được phép.'], 403);
-        } elseif ((int) $request->header('Content-Length', 0) > 8192 || strlen($request->getContent()) > 8192) {
+        } elseif ((int) $request->header('Content-Length', 0) > $limit || strlen($request->getContent()) > $limit) {
             $response = response()->json(['message' => 'Dữ liệu gửi lên quá lớn.'], 413);
         } else {
             $response = $next($request);

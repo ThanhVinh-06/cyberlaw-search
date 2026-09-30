@@ -307,8 +307,8 @@ export function validateKnowledge(
           normalizeSearch(item.so_dieu) === normalizeSearch(value("so_dieu")) &&
           normalizeSearch(item.so_khoan) ===
             normalizeSearch(value("so_khoan")) &&
-          normalizeSearch(item.ky_hieu_diem) ===
-            normalizeSearch(value("ky_hieu_diem")),
+          item.ky_hieu_diem.normalize("NFC").toLocaleLowerCase("vi") ===
+            value("ky_hieu_diem").normalize("NFC").toLocaleLowerCase("vi"),
       )
     )
       errors.so_dieu = "Vị trí điều/khoản/điểm này đã tồn tại trong văn bản.";

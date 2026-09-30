@@ -11,7 +11,7 @@ final class SafeLog
     {
         $allowed = array_intersect_key($context, array_flip([
             'request_id', 'route', 'method', 'status', 'duration_ms',
-            'actor_id', 'actor_role', 'error_code',
+            'actor_id', 'actor_role', 'error_code', 'target_type', 'target_id',
         ]));
         // No request/model/exception object is ever serialized by this logger.
         foreach ($allowed as $key => $value) {

@@ -17,6 +17,7 @@ export function KnowledgeForm({
   onSubmit,
   onFile,
   fileError,
+  disabled = false,
 }: {
   tab: KnowledgeTab;
   data: KnowledgeStore;
@@ -26,6 +27,7 @@ export function KnowledgeForm({
   onSubmit: (event: FormEvent) => void;
   onFile: (file: File | null) => void;
   fileError: string;
+  disabled?: boolean;
 }) {
   const fileInput = useRef<HTMLInputElement>(null);
   function field(
@@ -59,6 +61,7 @@ export function KnowledgeForm({
           ? `${id}-hint`
           : undefined,
       className: "cl-admin-form-input",
+      disabled,
     };
     return (
       <div
@@ -132,8 +135,8 @@ export function KnowledgeForm({
       <div className="cl-knowledge-form-note is-full" data-dialog-reveal>
         <Info size={16} />
         <span>
-          Thao tác dùng thử. Dữ liệu được giữ trong lần mở trang này, chưa lưu
-          lên hệ thống.
+          Dữ liệu được lưu vào hệ thống. Văn bản liên quan được đưa về nháp khi
+          nội dung thay đổi.
         </span>
       </div>
       {Object.keys(errors).length > 0 && (
@@ -167,6 +170,7 @@ export function KnowledgeForm({
               ref={fileInput}
               id="knowledge-file"
               type="file"
+              disabled={disabled}
               accept="application/pdf,.pdf"
               className="cl-knowledge-file-input"
               onChange={(event) => {
@@ -180,10 +184,11 @@ export function KnowledgeForm({
                   <FileText size={24} />
                   <span>
                     <strong>{values.duong_dan_tep}</strong>
-                    <small>Đã chọn trên thiết bị · chưa tải lên máy chủ</small>
+                    <small>Tệp hiện tại hoặc tệp đã chọn để lưu</small>
                   </span>
                   <button
                     type="button"
+                    disabled={disabled}
                     className="cl-knowledge-icon-button"
                     aria-label="Bỏ tệp PDF đã chọn"
                     onClick={() => onFile(null)}
@@ -194,12 +199,13 @@ export function KnowledgeForm({
               ) : (
                 <button
                   type="button"
+                  disabled={disabled}
                   onClick={() => fileInput.current?.click()}
                 >
                   <FileUp size={25} />
                   <span>
                     <strong>Chọn tệp PDF</strong>
-                    <small>Tối đa 20 MB · xem thử trên thiết bị</small>
+                    <small>Tối đa 20 MB · lưu cùng văn bản</small>
                   </span>
                 </button>
               )}
@@ -259,7 +265,11 @@ export function KnowledgeForm({
             wide: true,
             children: clauseOptions,
           })}
-          <fieldset className="cl-knowledge-links is-full" data-dialog-reveal>
+          <fieldset
+            className="cl-knowledge-links is-full"
+            data-dialog-reveal
+            disabled={disabled}
+          >
             <legend>Điều khoản liên quan</legend>
             <p>Chọn những nội dung có thể tra cứu bằng từ khóa này.</p>
             <div>
@@ -340,6 +350,7 @@ export function KnowledgeForm({
                 <button
                   className="cl-knowledge-text-button"
                   type="button"
+                  disabled={disabled}
                   onClick={() => onChange("trich_nguyen_van", source.noi_dung)}
                 >
                   Dùng nguyên văn

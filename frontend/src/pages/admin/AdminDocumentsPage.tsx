@@ -33,17 +33,13 @@ import { KnowledgeForm } from "@/components/admin/KnowledgeForm";
 import { KnowledgeDetail } from "@/components/admin/KnowledgeDetail";
 import {
   clauseLabel,
-  createDemoKnowledge,
-  deleteKnowledge,
   deletionBlock,
   findRecord,
   formFor,
   formatDate,
-  normalizeSearch,
   recordId,
   recordTitle,
   ruleLabels,
-  saveKnowledge,
   statusLabels,
   validateKnowledge,
   type DocumentStatus,
@@ -52,6 +48,12 @@ import {
   type KnowledgeTab,
   type RecordSelection,
 } from "@/lib/knowledge-data";
+import {
+  emptyKnowledge,
+  knowledgeApi,
+  KnowledgeApiError,
+  type KnowledgeSnapshot,
+} from "@/lib/knowledge-api";
 import "@/components/admin/knowledge.css";
 
 const tabs = [
@@ -105,7 +107,14 @@ export default function AdminDocumentsPage({
 }: {
   instant?: boolean;
 }) {
-  const [data, setData] = useState(createDemoKnowledge);
+  const [data, setData] = useState<KnowledgeSnapshot>(emptyKnowledge);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [actionError, setActionError] = useState("");
+  const [reviewed, setReviewed] = useState(false);
+  const busy = useRef(false);
+  const mounted = useRef(true);
   const [tab, setTab] = useState<KnowledgeTab>("van_ban");
   const [instantTab, setInstantTab] = useState(instant);
   const [query, setQuery] = useState("");
@@ -123,11 +132,31 @@ export default function AdminDocumentsPage({
   const trigger = useRef<HTMLElement | null>(null);
   const searchInput = useRef<HTMLInputElement>(null);
   const tabInput = useRef(false);
-  const urls = useRef(new Map<number, string>());
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
+  useEffect(() => {
+    mounted.current = true;
+    let active = true;
+    knowledgeApi
+      .list()
+      .then((value) => {
+        if (active) {
+          setData(value);
+          setLoading(false);
+        }
+      })
+      .catch((error: Error) => {
+        if (active) {
+          setLoadError(error.message);
+          setLoading(false);
+        }
+      });
+    return () => {
+      active = false;
+      mounted.current = false;
+    };
+  }, []);
   useEffect(
     () => () => {
-      urls.current.forEach((url) => URL.revokeObjectURL(url));
       timers.current.forEach(clearTimeout);
     },
     [],
@@ -148,6 +177,7 @@ export default function AdminDocumentsPage({
     );
   }
   function changeTab(value: KnowledgeTab, isInstant = false, docId?: number) {
+    setListing({ items: [], total: 0, page: 1 });
     setInstantTab(isInstant);
     setTab(value);
     setQuery("");
@@ -162,6 +192,7 @@ export default function AdminDocumentsPage({
     setPage(1);
   }
   function showModal(next: Modal, event?: MouseEvent<HTMLButtonElement>) {
+    if (busy.current || loading || loadError) return;
     // A footer button can become a submit button after switching to edit mode.
     // Cancel the original click's default action so it cannot submit the new form.
     event?.preventDefault();
@@ -171,6 +202,8 @@ export default function AdminDocumentsPage({
     setInstantAction(event ? event.detail === 0 : true);
     setModal(next);
     setErrors({});
+    setActionError("");
+    setReviewed(false);
     setFileError("");
     setPendingFile(undefined);
     setValues(
@@ -183,6 +216,7 @@ export default function AdminDocumentsPage({
     setOpen(true);
   }
   function close() {
+    if (busy.current) return;
     setOpen(false);
   }
   function updateField(key: string, value: string) {
@@ -212,6 +246,7 @@ export default function AdminDocumentsPage({
   }
   function save(event: FormEvent) {
     event.preventDefault();
+    if (busy.current || loading || loadError) return;
     const validation = validateKnowledge(data, modal.tab, values, modal.id);
     setErrors(validation);
     if (Object.keys(validation).length) {
@@ -222,64 +257,78 @@ export default function AdminDocumentsPage({
       );
       return;
     }
-    const next = saveKnowledge(data, modal.tab, values, modal.id);
-    if (modal.tab === "van_ban" && pendingFile !== undefined) {
-      const id =
-        modal.id ?? Math.max(...next.van_ban.map((doc) => doc.ma_van_ban));
-      const previous = urls.current.get(id);
-      if (previous) URL.revokeObjectURL(previous);
-      if (pendingFile) urls.current.set(id, URL.createObjectURL(pendingFile));
-      else urls.current.delete(id);
-    }
-    setData(next);
-    resetFilters();
-    close();
-    notify(
-      modal.mode === "add"
-        ? "Đã thêm vào bản dùng thử"
-        : "Đã cập nhật bản dùng thử",
-      "Thay đổi chỉ giữ trong lần mở trang này. Văn bản liên quan được đưa về nháp nếu đang công bố.",
+    if (fileError) return;
+    void perform(() =>
+      knowledgeApi.save(
+        modal.tab,
+        values,
+        data.revision,
+        modal.id,
+        pendingFile,
+      ),
     );
   }
-  function confirmAction() {
-    if (!modal.id) return;
-    if (modal.mode === "delete") {
-      const selection = { tab: modal.tab, id: modal.id };
-      if (deletionBlock(data, selection)) return;
-      setData((previous) => deleteKnowledge(previous, selection));
-      if (modal.tab === "van_ban") {
-        const url = urls.current.get(modal.id);
-        if (url) URL.revokeObjectURL(url);
-        urls.current.delete(modal.id);
-      }
+  async function refresh() {
+    if (busy.current) return;
+    setLoading(true);
+    setLoadError("");
+    setOpen(false);
+    try {
+      const next = await knowledgeApi.list();
+      if (mounted.current) setData(next);
+    } catch (error) {
+      if (mounted.current)
+        setLoadError(
+          error instanceof Error ? error.message : "Không thể tải dữ liệu.",
+        );
+    } finally {
+      if (mounted.current) setLoading(false);
+    }
+  }
+  async function perform(operation: () => Promise<KnowledgeSnapshot>) {
+    if (busy.current) return;
+    busy.current = true;
+    setSaving(true);
+    setActionError("");
+    try {
+      const next = await operation();
+      if (!mounted.current) return;
+      setData(next);
+      resetFilters();
+      setOpen(false);
       notify(
-        "Đã xóa khỏi bản dùng thử",
-        "Dữ liệu trên máy chủ không bị thay đổi.",
+        "Đã lưu thay đổi",
+        "Dữ liệu và nhật ký thao tác đã được ghi vào hệ thống.",
+      );
+    } catch (error) {
+      if (!mounted.current) return;
+      setActionError(
+        error instanceof Error ? error.message : "Không thể lưu thay đổi.",
+      );
+      if (error instanceof KnowledgeApiError) {
+        setErrors(error.errors);
+        if (error.status === 409 || error.status === 0)
+          setLoadError(
+            "Bạn tải lại dữ liệu trước khi tiếp tục để tránh ghi đè hoặc gửi trùng thao tác.",
+          );
+      }
+    } finally {
+      busy.current = false;
+      if (mounted.current) setSaving(false);
+    }
+  }
+  function confirmAction() {
+    if (!modal.id || loadError) return;
+    if (modal.mode === "delete") {
+      if (deletionBlock(data, { tab: modal.tab, id: modal.id })) return;
+      void perform(() =>
+        knowledgeApi.remove(modal.tab, modal.id!, data.revision),
       );
     } else if (modal.status) {
-      if (
-        modal.status === "published" &&
-        !data.dieu_khoan.some((clause) => clause.ma_van_ban === modal.id)
-      )
-        return;
-      setData((previous) => ({
-        ...previous,
-        van_ban: previous.van_ban.map((doc) =>
-          doc.ma_van_ban === modal.id
-            ? {
-                ...doc,
-                trang_thai: modal.status!,
-                ngay_cap_nhat: new Date().toISOString(),
-              }
-            : doc,
-        ),
-      }));
-      notify(
-        "Đã đổi trạng thái minh họa",
-        "Chưa công bố dữ liệu thật hoặc cập nhật kho AI.",
+      void perform(() =>
+        knowledgeApi.status(modal.id!, modal.status!, data.revision, reviewed),
       );
     }
-    close();
   }
   function sourceDocIds(item: KnowledgeRecord): number[] {
     if ("ma_quy_dinh" in item)
@@ -299,40 +348,53 @@ export default function AdminDocumentsPage({
     }
     return [item.ma_van_ban];
   }
-  const filtered = data[tab].filter((item) => {
-    const docIds = sourceDocIds(item);
-    if (documentFilter !== "all" && !docIds.includes(Number(documentFilter)))
-      return false;
-    if (typeFilter !== "all") {
-      if ("trang_thai" in item && item.trang_thai !== typeFilter) return false;
-      if ("loai_quy_dinh" in item && item.loai_quy_dinh !== typeFilter)
-        return false;
-      if (
-        "dinh_nghia" in item &&
-        (typeFilter === "defined") !== !!item.dinh_nghia
-      )
-        return false;
-    }
-    const sourceText = data.van_ban
-      .filter((doc) => docIds.includes(doc.ma_van_ban))
-      .map((doc) => `${doc.so_hieu} ${doc.tieu_de}`)
-      .join(" ");
-    const locationText =
-      "so_dieu" in item
-        ? clauseLabel(item)
-        : "ma_quy_dinh" in item
-          ? ruleLabels[item.loai_quy_dinh]
-          : "";
-    return normalizeSearch(
-      `${Object.values(item).join(" ")} ${sourceText} ${locationText}`,
-    ).includes(normalizeSearch(query.trim()));
-  });
-  const pages = Math.max(1, Math.ceil(filtered.length / pageSize));
-  const currentPage = Math.min(page, pages);
-  const visible = filtered.slice(
-    (currentPage - 1) * pageSize,
-    currentPage * pageSize,
-  );
+  const [listing, setListing] = useState<{
+    items: KnowledgeRecord[];
+    total: number;
+    page: number;
+  }>({ items: [], total: 0, page: 1 });
+  const [listLoading, setListLoading] = useState(false);
+  useEffect(() => {
+    if (!data.revision || loading || loadError) return;
+    let active = true;
+    setListLoading(true);
+    const timer = setTimeout(() => {
+      knowledgeApi
+        .page(tab, query, documentFilter, typeFilter, page)
+        .then((result) => {
+          if (!active) return;
+          if (result.revision !== data.revision) {
+            setLoadError(
+              "Kho tri thức đã thay đổi. Bạn tải lại dữ liệu để tiếp tục nhé.",
+            );
+            return;
+          }
+          setListing(result);
+        })
+        .catch((error: Error) => {
+          if (active) setLoadError(error.message);
+        })
+        .finally(() => {
+          if (active) setListLoading(false);
+        });
+    }, 180);
+    return () => {
+      active = false;
+      clearTimeout(timer);
+    };
+  }, [
+    tab,
+    query,
+    documentFilter,
+    typeFilter,
+    page,
+    data.revision,
+    loading,
+    loadError,
+  ]);
+  const pages = Math.max(1, Math.ceil(listing.total / pageSize));
+  const currentPage = listing.page;
+  const visible = listing.items;
   const config = tabs.find((item) => item.id === tab)!;
   const modalConfig = tabs.find((item) => item.id === modal.tab)!;
   const selected = modal.id
@@ -582,6 +644,7 @@ export default function AdminDocumentsPage({
             </div>
             <button
               data-knowledge-add
+              disabled={loading || !!loadError || saving}
               className="cl-admin-btn-primary"
               onClick={(event) => showModal({ mode: "add", tab }, event)}
             >
@@ -622,8 +685,8 @@ export default function AdminDocumentsPage({
           <div className="cl-knowledge-demo" data-admin-reveal="225">
             <Info size={17} />
             <p>
-              <strong>Dữ liệu minh họa.</strong> Nội dung mẫu không phải căn cứ
-              pháp lý. Thay đổi sẽ đặt lại khi rời trang hoặc tải lại.
+              <strong>Kho tri thức pháp luật.</strong> Nội dung sửa đổi được lưu
+              ở bản nháp để đối chiếu nguồn trước khi công bố.
             </p>
           </div>
         </AdminTabReveal>
@@ -676,6 +739,7 @@ export default function AdminDocumentsPage({
                             : "Tìm hành vi, chủ thể, căn cứ…"
                     }
                     value={query}
+                    maxLength={120}
                     onChange={(event) => {
                       setQuery(event.target.value);
                       setPage(1);
@@ -697,6 +761,14 @@ export default function AdminDocumentsPage({
                 )}
               </div>
               <div className="cl-admin-toolbar-filters">
+                <button
+                  className="cl-admin-btn-outline cl-knowledge-refresh"
+                  disabled={loading || saving || (listLoading && !loadError)}
+                  onClick={() => void refresh()}
+                >
+                  <RotateCcw size={15} />
+                  <span>Tải lại dữ liệu</span>
+                </button>
                 {tab !== "van_ban" && (
                   <select
                     className="cl-admin-filter-select"
@@ -758,19 +830,21 @@ export default function AdminDocumentsPage({
                 )}
               </div>
             </div>
+            {loadError && <p role="alert" className="cl-knowledge-form-alert">{loadError}</p>}
             <section
               className="cl-knowledge-list-card"
+              aria-busy={listLoading}
               data-admin-reveal="50"
               aria-label={`Danh sách ${config.singular}`}
             >
               <div className="cl-knowledge-list-header">
                 <div>
                   <h2>
-                    {config.label} <span>{filtered.length}</span>
+                    {config.label} <span>{listing.total}</span>
                   </h2>
                   <p>{config.description}</p>
                 </div>
-                <span className="cl-knowledge-caption">Kho minh họa</span>
+                <span className="cl-knowledge-caption">Kho tri thức</span>
               </div>
               {visible.length ? (
                 <>
@@ -858,9 +932,13 @@ export default function AdminDocumentsPage({
                     <Search size={25} />
                   </div>
                   <h4>
-                    {hasFilters
-                      ? "Không tìm thấy nội dung phù hợp"
-                      : `Chưa có ${config.singular}`}
+                    {loading || listLoading
+                      ? "Đang tải dữ liệu…"
+                      : loadError
+                        ? "Chưa tải được dữ liệu"
+                        : hasFilters
+                          ? "Không tìm thấy nội dung phù hợp"
+                          : `Chưa có ${config.singular}`}
                   </h4>
                   <p>
                     {hasFilters
@@ -868,6 +946,7 @@ export default function AdminDocumentsPage({
                       : `Thêm ${config.singular} đầu tiên để bắt đầu xây dựng kho tri thức.`}
                   </p>
                   <button
+                    disabled={loading || !!loadError}
                     className="cl-admin-btn-outline"
                     onClick={(event) =>
                       hasFilters
@@ -881,15 +960,15 @@ export default function AdminDocumentsPage({
               )}
               <footer className="cl-knowledge-list-footer">
                 <span role="status" aria-live="polite">
-                  {filtered.length
-                    ? `${(currentPage - 1) * pageSize + 1}–${Math.min(currentPage * pageSize, filtered.length)} trong ${filtered.length} mục`
+                  {listing.total
+                    ? `${(currentPage - 1) * pageSize + 1}–${Math.min(currentPage * pageSize, listing.total)} trong ${listing.total} mục`
                     : "0 mục"}
                 </span>
                 <nav aria-label="Phân trang">
                   <button
                     className="cl-knowledge-icon-button"
                     aria-label="Trang trước"
-                    disabled={currentPage === 1}
+                    disabled={listLoading || currentPage === 1}
                     onClick={() => setPage(currentPage - 1)}
                   >
                     <ChevronLeft size={17} />
@@ -900,7 +979,7 @@ export default function AdminDocumentsPage({
                   <button
                     className="cl-knowledge-icon-button"
                     aria-label="Trang sau"
-                    disabled={currentPage === pages}
+                    disabled={listLoading || currentPage === pages}
                     onClick={() => setPage(currentPage + 1)}
                   >
                     <ChevronRight size={17} />
@@ -942,8 +1021,8 @@ export default function AdminDocumentsPage({
         title={modalTitle}
         description={
           modal.mode === "view"
-            ? "Kho kiến thức · Dữ liệu minh họa giao diện"
-            : "Thao tác trên bản dùng thử của kho tri thức"
+            ? "Kho kiến thức · Dữ liệu hệ thống"
+            : "Thay đổi được lưu cùng nhật ký quản trị"
         }
         instant={instantAction}
         trigger={trigger.current}
@@ -1017,7 +1096,11 @@ export default function AdminDocumentsPage({
               </>
             ) : (
               <>
-                <button className="cl-admin-btn-outline" onClick={close}>
+                <button
+                  className="cl-admin-btn-outline"
+                  disabled={saving}
+                  onClick={close}
+                >
                   Hủy
                 </button>
                 {modal.mode === "edit" || modal.mode === "add" ? (
@@ -1025,6 +1108,7 @@ export default function AdminDocumentsPage({
                     className="cl-admin-btn-primary"
                     type="submit"
                     form="knowledge-editor"
+                    disabled={saving || !!loadError}
                   >
                     <Check size={16} />
                     Lưu {modal.tab === "van_ban" ? "bản nháp" : "thay đổi"}
@@ -1046,7 +1130,12 @@ export default function AdminDocumentsPage({
                   )
                 ) : (
                   <button
-                    disabled={emptyPublish}
+                    disabled={
+                      saving ||
+                      !!loadError ||
+                      emptyPublish ||
+                      (modal.status === "published" && !reviewed)
+                    }
                     className="cl-admin-btn-primary"
                     onClick={confirmAction}
                   >
@@ -1058,6 +1147,24 @@ export default function AdminDocumentsPage({
           </>
         }
       >
+        {actionError && (
+          <div className="cl-knowledge-form-alert" role="alert">
+            {actionError}
+            {Object.values(errors).map((message, i) => (
+              <p key={i}>{message}</p>
+            ))}
+            {!!loadError && (
+              <button
+                type="button"
+                className="cl-admin-btn-outline"
+                disabled={saving}
+                onClick={() => void refresh()}
+              >
+                Tải lại dữ liệu
+              </button>
+            )}
+          </div>
+        )}
         {modal.mode === "add" || modal.mode === "edit" ? (
           <KnowledgeForm
             tab={modal.tab}
@@ -1068,6 +1175,7 @@ export default function AdminDocumentsPage({
             onSubmit={save}
             onFile={chooseFile}
             fileError={fileError}
+            disabled={saving}
           />
         ) : modal.mode === "view" && selected ? (
           <KnowledgeDetail
@@ -1081,7 +1189,11 @@ export default function AdminDocumentsPage({
               changeTab("dieu_khoan", true, id);
             }}
             pdfUrl={
-              modal.tab === "van_ban" ? urls.current.get(modal.id!) : undefined
+              modal.tab === "van_ban" &&
+              "duong_dan_tep" in selected &&
+              selected.duong_dan_tep
+                ? `/api/admin/knowledge/van_ban/${modal.id}/pdf`
+                : undefined
             }
           />
         ) : (
@@ -1099,15 +1211,27 @@ export default function AdminDocumentsPage({
             <p>
               {modal.mode === "delete"
                 ? blocked ||
-                  "Mục này sẽ được xóa khỏi dữ liệu dùng thử. Các liên kết từ khóa của mục cũng được gỡ."
+                  "Mục này sẽ được xóa khỏi hệ thống. Các liên kết từ khóa của mục cũng được gỡ."
                 : emptyPublish
-                  ? "Văn bản chưa có điều khoản. Bạn bổ sung nội dung trước khi thử công bố nhé."
+                  ? "Văn bản chưa có điều khoản. Bạn bổ sung nội dung trước khi công bố nhé."
                   : modal.status === "published"
-                    ? "Mô phỏng công bố văn bản sau khi đã kiểm tra nội dung và căn cứ. Thao tác này chưa đưa dữ liệu lên hệ thống tra cứu hoặc AI."
+                    ? "Chỉ công bố sau khi đã đối chiếu nội dung, căn cứ và tình trạng hiệu lực. Chức năng này chưa tạo chỉ mục AI."
                     : modal.status === "archived"
-                      ? "Văn bản và các điều khoản vẫn được giữ lại để đối chiếu. Trạng thái này chỉ áp dụng trên bản dùng thử."
+                      ? "Văn bản và các điều khoản vẫn được giữ lại để đối chiếu."
                       : "Đưa văn bản về bản nháp để tiếp tục chỉnh sửa và kiểm tra."}
             </p>
+            {modal.mode === "status" && modal.status === "published" && (
+              <label className="cl-knowledge-review">
+                <input
+                  type="checkbox"
+                  checked={reviewed}
+                  disabled={saving}
+                  onChange={(event) => setReviewed(event.target.checked)}
+                />
+                Tôi đã đối chiếu đầy đủ nội dung, nguồn và tình trạng hiệu lực
+                của văn bản.
+              </label>
+            )}
           </div>
         )}
       </KnowledgeDialog>

@@ -148,6 +148,14 @@
 .cl-knowledge-toolbar .cl-admin-filter-select {
   min-height: 42px;
 }
+.cl-knowledge-refresh {
+  min-height: 42px;
+  gap: 7px;
+  white-space: nowrap;
+}
+.cl-knowledge-refresh:disabled {
+  opacity: 0.65;
+}
 .cl-knowledge-list-card {
   background: #fff;
   border: 1px solid #e7e1dd;
@@ -155,6 +163,10 @@
   overflow: hidden;
   min-width: 0;
   box-shadow: 0 1px 4px rgb(0 0 0 / 3%);
+}
+.cl-knowledge-desktop-list {
+  /* Keep absolute screen-reader labels inside the table's scroll container. */
+  position: relative;
 }
 .cl-knowledge-list-header {
   display: flex;
@@ -1087,4 +1099,16 @@
   .cl-knowledge-dialog .cl-admin-btn-primary {
     transform: none !important;
   }
+}
+.cl-knowledge-review {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  text-align: left;
+  line-height: 1.6;
+  margin-top: 18px;
+}
+.cl-knowledge-review input {
+  margin-top: 6px;
+  flex-shrink: 0;
 }

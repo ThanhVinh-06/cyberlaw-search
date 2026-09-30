@@ -2,7 +2,7 @@ import { defineConfig } from "@playwright/test";
 
 export default defineConfig({
   testDir: "./e2e",
-  testIgnore: "auth-backend.spec.ts",
+  testIgnore: ["auth-backend.spec.ts", "knowledge-backend.spec.ts"],
   fullyParallel: false,
   workers: 1,
   reporter: "list",

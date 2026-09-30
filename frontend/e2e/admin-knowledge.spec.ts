@@ -1,15 +1,21 @@
 import { mockAuth } from "./auth-fixtures";
+import { mockKnowledge } from "./knowledge-fixtures";
 import { Buffer } from "node:buffer";
 import { test, expect, type Page } from "./auth-fixtures";
 import AxeBuilder from "@axe-core/playwright";
 
 async function openKnowledge(page: Page) {
   await mockAuth(page, "admin");
+  await mockKnowledge(page);
   await page.goto("/admin/documents");
   await page.evaluate(() => document.fonts.ready);
   await expect(
     page.getByRole("heading", { level: 1, name: "Văn bản & Tri thức" }),
   ).toBeVisible();
+  await expect(page.locator(".cl-knowledge-list-card")).toHaveAttribute(
+    "aria-busy",
+    "false",
+  );
 }
 async function settle(page: Page) {
   await page.waitForFunction(() =>
@@ -24,9 +30,40 @@ async function settle(page: Page) {
 }
 async function tab(page: Page, name: string) {
   await page.getByRole("tab", { name, exact: true }).click();
+  await expect(page.locator(".cl-knowledge-list-card")).toHaveAttribute(
+    "aria-busy",
+    "false",
+  );
 }
 const desktopRows = (page: Page) =>
   page.locator(".cl-knowledge-desktop-list tbody tr");
+
+test("API failures never show demo data and stale writes require reload", async ({page}) => {
+  await mockAuth(page, "admin");
+  await page.route("**/api/admin/knowledge**", route => route.fulfill({status: 503, json: {message: "Không thể kết nối kho tri thức."}}));
+  await page.goto("/admin/documents");
+  await expect(page.getByRole("alert")).toContainText("Không thể kết nối");
+  await expect(page.locator("[data-knowledge-add]")).toBeDisabled();
+  await expect(page.getByText("VB-MAU-01", {exact: true})).toHaveCount(0);
+  await page.unroute("**/api/admin/knowledge**");
+  await mockKnowledge(page);
+  await page.getByRole("button", {name: "Tải lại dữ liệu", exact: true}).click();
+  await expect(desktopRows(page)).toHaveCount(3);
+  await page.route("**/api/admin/knowledge/van_ban", async route => {
+    if (route.request().method() === "POST") return route.fulfill({status: 409, json: {message: "Dữ liệu đã thay đổi."}});
+    return route.fallback();
+  });
+  await page.locator("[data-knowledge-add]").click();
+  const dialog = page.getByRole("dialog");
+  await dialog.getByLabel("Tên văn bản").fill("Thử xung đột");
+  await dialog.getByLabel(/^Số hiệu/).fill("CONFLICT");
+  await dialog.getByRole("button", {name: "Lưu bản nháp"}).click();
+  await expect(dialog.getByRole("alert")).toContainText("Dữ liệu đã thay đổi");
+  await expect(dialog.getByRole("button", {name: "Lưu bản nháp"})).toBeDisabled();
+  await dialog.getByRole("button", {name: "Tải lại dữ liệu"}).click();
+  await expect(dialog).toHaveCount(0);
+  await expect(desktopRows(page)).toHaveCount(3);
+});
 
 test("documents: search, draft validation, PDF preview, safe delete and archive", async ({
   page,
@@ -75,7 +112,7 @@ test("documents: search, draft validation, PDF preview, safe delete and archive"
   dialog = page.getByRole("dialog");
   await expect(
     dialog.getByRole("link", { name: "Xem PDF đã chọn" }),
-  ).toHaveAttribute("href", /^blob:/);
+  ).toHaveAttribute("href", /^\/api\/admin\/knowledge\/van_ban\/\d+\/pdf$/);
   await dialog.getByRole("button", { name: "Công bố", exact: true }).click();
   await expect(
     dialog.getByRole("button", { name: "Công bố", exact: true }),
@@ -205,9 +242,19 @@ test("knowledge links: create clause, keyword and rule; validate citations and d
   ).toHaveCount(0);
 });
 
-for (const width of [320, 440, 834]) {
-  test(`four knowledge tabs and forms fit ${width}px`, async ({ page }) => {
-    await page.setViewportSize({ width, height: 956 });
+for (const [width, height] of [
+  [320, 956],
+  [440, 956],
+  [834, 956],
+  [900, 700],
+  [901, 700],
+  [956, 440],
+  [1440, 1000],
+]) {
+  test(`four knowledge tabs and forms fit ${width}x${height}px`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width, height });
     await openKnowledge(page);
     for (const [index, name] of [
       "Văn bản",
@@ -229,7 +276,7 @@ for (const width of [320, 440, 834]) {
       const rect = (await dialog.boundingBox())!;
       expect(rect.x).toBeGreaterThanOrEqual(0);
       expect(rect.x + rect.width).toBeLessThanOrEqual(width);
-      expect(rect.y + rect.height).toBeLessThanOrEqual(956);
+      expect(rect.y + rect.height).toBeLessThanOrEqual(height);
       expect(
         await dialog.evaluate((el) => el.scrollWidth <= el.clientWidth),
       ).toBe(true);

@@ -2,7 +2,9 @@
 
 use App\Models\NguoiDung;
 use Illuminate\Contracts\Console\Kernel;
-use Tests\Support\AccountSchema;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+use Tests\Support\KnowledgeSchema;
 
 // Called only by the browser-test launcher with a dedicated SQLite file under storage.
 require __DIR__.'/../vendor/autoload.php';
@@ -13,7 +15,11 @@ $actual = str_replace('\\', '/', (string) config('database.connections.sqlite.da
 if (config('database.default') !== 'sqlite' || $actual !== $expected) {
     throw new RuntimeException('Refusing to prepare a database outside the isolated browser fixture.');
 }
-AccountSchema::create();
+KnowledgeSchema::create(true);
+Schema::create('trich_dan', function (Blueprint $t) {
+    $t->id();
+    $t->unsignedBigInteger('ma_dieu_khoan');
+});
 foreach (['admin', 'user'] as $role) {
     $user = new NguoiDung([
         'ho_ten' => 'Browser Test '.$role,
