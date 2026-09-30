@@ -1167,3 +1167,18 @@
     font-size: 12px;
   }
 }
+.cl-user-dialog-fields {
+  display: contents;
+}
+.cl-user-dialog-fields > form {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+  padding: 0;
+  margin: 0;
+  border: 0;
+  overflow: hidden;
+}
+.cl-user-pagination { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; font-size: 13px; }
+.cl-user-pagination > span { flex: 1 1 180px; }

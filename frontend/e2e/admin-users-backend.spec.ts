@@ -1,0 +1,60 @@
+import {test, expect} from '@playwright/test';
+
+test('admin accounts: real create, edit, lock, unlock, delete, validation and responsive', async ({page, context}) => {
+  test.setTimeout(180000);
+  const csrf = async () => (await (await context.request.get('/api/auth/csrf')).json()).csrf_token;
+  expect((await context.request.post('/api/auth/login', {headers:{'X-CSRF-TOKEN':await csrf()},data:{email:'admin@example.test',password:'Browser-fixture!123'}})).status()).toBe(200);
+  await page.goto('/admin');
+  await expect(page.getByRole('button',{name:'Thêm tài khoản & Phân quyền'})).toBeEnabled();
+  await page.getByRole('button',{name:'Thêm tài khoản & Phân quyền'}).click();
+  let dialog = page.getByRole('dialog');
+  await dialog.locator('#add_ho_ten').fill('Tài khoản HTTP');
+  await dialog.locator('#add_thu_dien_tu').fill('admin-crud@example.test');
+  await dialog.locator('#add_mat_khau').fill(' Browser-user!123 ');
+  await dialog.getByRole('button',{name:'Lưu tài khoản'}).click();
+  await expect(dialog).toHaveCount(0);
+  await page.reload();
+  await page.getByLabel('Tìm tài khoản').fill('admin-crud@example.test');
+  const row = page.locator('.cl-admin-table tbody tr').filter({hasText:'admin-crud@example.test'});
+  await expect(row).toHaveCount(1);
+  await row.getByTitle('Chỉnh sửa thông tin & phân quyền').click();
+  await dialog.locator('#edit_ho_ten').fill('Tài khoản đã sửa');
+  await dialog.locator('#edit_vai_tro').selectOption('admin');
+  await dialog.getByRole('button',{name:/Lưu|Cập nhật/}).click();
+  await expect(dialog).toHaveCount(0);
+  await expect(row).toContainText('Tài khoản đã sửa');
+  await row.getByTitle('Khóa tài khoản',{exact:true}).click();
+  await dialog.getByRole('button',{name:'Xác nhận khóa'}).click();
+  await expect(dialog).toHaveCount(0);
+  await expect(row.getByTitle('Mở khóa tài khoản')).toBeVisible();
+  await row.getByTitle('Mở khóa tài khoản').click();
+  await dialog.getByRole('button',{name:'Mở khóa tài khoản'}).click();
+  await expect(dialog).toHaveCount(0);
+  // Public API output contains neither password hashes nor session revocation markers.
+  const list = await (await context.request.get('/api/admin/users?q=admin-crud')).json();
+  expect(list.users).toHaveLength(1);
+  expect(list.users[0].mat_khau).toBeUndefined();
+  expect(list.users[0].ma_ghi_nho).toBeUndefined();
+  expect(list.users[0].duoc_mien_xac_minh_email).toBe(false);
+  expect((await context.request.post('/api/admin/users', {data:{}})).status()).toBe(419);
+  for (const [width,height] of [[320,956],[440,956],[834,956],[900,700],[901,700],[956,440],[1440,1000]]) {
+    await page.setViewportSize({width,height});
+    await page.getByRole('button',{name:'Thêm tài khoản & Phân quyền'}).click();
+    await expect(dialog).toBeVisible();
+    expect(await dialog.evaluate(el=>el.scrollWidth<=el.clientWidth)).toBe(true);
+    await expect(dialog.getByRole('button',{name:'Lưu tài khoản'})).toBeInViewport();
+    await page.keyboard.press('Escape');
+    await expect(dialog).toHaveCount(0);
+    expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
+    await row.getByTitle('Chỉnh sửa thông tin & phân quyền').click();
+    await expect(dialog).toBeVisible();
+    expect(await dialog.evaluate(el=>el.scrollWidth<=el.clientWidth)).toBe(true);
+    await page.screenshot({path:`test-results/admin-users-http-${width}.png`});
+    await page.keyboard.press('Escape');
+    await expect(dialog).toHaveCount(0);
+  }
+  await row.getByTitle('Xóa tài khoản vĩnh viễn').click();
+  await dialog.getByRole('button',{name:'Xác nhận xóa vĩnh viễn'}).click();
+  await expect(dialog).toHaveCount(0);
+  await expect(row).toHaveCount(0);
+});

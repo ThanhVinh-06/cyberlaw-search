@@ -1,0 +1,3 @@
+# Dataset digests must remain identical on Windows and Linux.
+data/processed/luat-116-2025-v1/*.json text eol=lf
+data/processed/luat-116-2025-v1/*.jsonl text eol=lf

@@ -19,6 +19,7 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        $middleware->trimStrings(except: ['mat_khau']);
         $middleware->append(ApiContext::class);
         $middleware->alias([
             'account.active' => ActiveAccount::class,
@@ -59,7 +60,7 @@ return Application::configure(basePath: dirname(__DIR__))
                 : 'http_'.$status);
 
             $body = ['message' => $messages[$status] ?? 'Dịch vụ tạm thời gián đoạn. Bạn hãy thử lại sau.'];
-            if ($request->is('api/admin/knowledge*') && $exception instanceof ValidationException) {
+            if ($request->is('api/admin/*') && $exception instanceof ValidationException) {
                 $body = ['message' => 'Bạn kiểm tra lại các trường được đánh dấu nhé.', 'errors' => $exception->errors()];
             }
 

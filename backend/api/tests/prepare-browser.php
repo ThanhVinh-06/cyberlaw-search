@@ -16,6 +16,10 @@ if (config('database.default') !== 'sqlite' || $actual !== $expected) {
     throw new RuntimeException('Refusing to prepare a database outside the isolated browser fixture.');
 }
 KnowledgeSchema::create(true);
+Schema::create('hoi_thoai', function (Blueprint $t) {
+    $t->id('ma_hoi_thoai');
+    $t->foreignId('ma_nguoi_dung')->constrained('nguoi_dung', 'ma_nguoi_dung')->cascadeOnDelete();
+});
 Schema::create('trich_dan', function (Blueprint $t) {
     $t->id();
     $t->unsignedBigInteger('ma_dieu_khoan');

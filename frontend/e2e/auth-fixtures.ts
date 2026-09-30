@@ -4,12 +4,14 @@ import {
   type Page,
   type BrowserContext,
 } from "@playwright/test";
+import {mockAdminUsers} from './admin-user-fixtures';
 
 // UI-only fixtures. Real cookie/CSRF integration has its own config and never imports this file.
 export async function mockAuth(
   target: Page | BrowserContext,
   role: "admin" | "user" | null = null,
 ) {
+  if (role === 'admin') await mockAdminUsers(target);
   let currentRole = role;
   let resetAttempts = 0;
   let verificationEmail = "verify@example.test";

@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef, type MouseEvent } from "react";
+import { useState, useEffect, useRef, type MouseEvent } from "react";
 import {
   Users,
   ShieldCheck,
@@ -27,6 +27,7 @@ import {
   Layers,
 } from "lucide-react";
 import { useLocation } from "react-router-dom";
+import { useAuth } from "@/lib/auth-context";
 import AdminLayout from "./AdminLayout";
 import AdminStatsPage from "./AdminStatsPage";
 import AdminDocumentsPage from "./AdminDocumentsPage";
@@ -38,14 +39,17 @@ import {
   ToastType,
 } from "@/components/AdminToast";
 import {
-  NguoiDung,
+
   VaiTro,
   TrangThai,
-  initialNguoiDungList,
+
   maTranPhanQuyen,
 } from "@/lib/admin-data";
 
+import { adminUsersApi, AdminUserError, type AdminUser as NguoiDung, type UserPage } from "@/lib/admin-users-api";
+
 export default function AdminUsersPage() {
+  const {currentUser} = useAuth();
   const location = useLocation();
   const getInitialTab = () => {
     if (location.pathname === "/admin/stats") return "stats";
@@ -60,7 +64,7 @@ export default function AdminUsersPage() {
     setInstantTabReveal(instant);
     setActiveTab(tab);
   };
-  const [users, setUsers] = useState<NguoiDung[]>(initialNguoiDungList);
+  const [users, setUsers] = useState<NguoiDung[]>([]);
 
   // Search and Filters
   const [searchQuery, setSearchQuery] = useState("");
@@ -109,8 +113,12 @@ export default function AdminUsersPage() {
     event.preventDefault();
     if (dialogMode === "closed") dialogTrigger.current = event.currentTarget;
     setInstantDialog(event.detail === 0);
+    setActionError("");
+    setFormErrors({});
   }
   function closeUserDialog() {
+    if (busy.current) return;
+    setFormData(current => ({...current, mat_khau: ''}));
     setIsAddModalOpen(false);
     setEditingUser(null);
     setViewingUser(null);
@@ -161,39 +169,63 @@ export default function AdminUsersPage() {
     setFormErrors({});
   };
 
-  // Quick stats calculation
-  const stats = useMemo(() => {
-    const total = users.length;
-    const adminCount = users.filter((u) => u.vai_tro === "admin").length;
-    const activeCount = users.filter((u) => u.trang_thai === "active").length;
-    const blockedCount = users.filter((u) => u.trang_thai === "blocked").length;
-    return { total, adminCount, activeCount, blockedCount };
-  }, [users]);
-
-  // Filtered users list
-  const filteredUsers = useMemo(() => {
-    const normalize = (text: string) =>
-      text
-        .toLowerCase()
-        .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "")
-        .replace(/đ/g, "d");
-
-    const query = normalize(searchQuery.trim());
-
-    return users.filter((u) => {
-      // Role filter
-      if (roleFilter !== "all" && u.vai_tro !== roleFilter) return false;
-      // Status filter
-      if (statusFilter !== "all" && u.trang_thai !== statusFilter) return false;
-      // Search query
-      if (!query) return true;
-      const nameNorm = normalize(u.ho_ten);
-      const emailNorm = normalize(u.thu_dien_tu);
-      return nameNorm.includes(query) || emailNorm.includes(query);
-    });
-  }, [users, searchQuery, roleFilter, statusFilter]);
-
+  const [stats, setStats] = useState<UserPage['stats']>({total: 0, adminCount: 0, activeCount: 0, blockedCount: 0});
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
+  const [actionError, setActionError] = useState('');
+  const [saving, setSaving] = useState(false);
+  const busy = useRef(false);
+  const mounted = useRef(true);
+  const [reload, setReload] = useState(0);
+  useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
+  useEffect(() => { setPage(1); }, [searchQuery, roleFilter, statusFilter]);
+  useEffect(() => {
+    if (activeTab !== 'users' && activeTab !== 'matrix') return;
+    let active = true;
+    setLoading(true);
+    setLoadError('');
+    const timer = setTimeout(() => {
+      adminUsersApi.list(searchQuery, roleFilter, statusFilter, page).then(result => {
+        if (!active) return;
+        setUsers(result.users);
+        setStats(result.stats);
+        setTotal(result.total);
+        setPage(result.page);
+      }).catch((error: Error) => {
+        if (active) { setLoadError(error.message); setUsers([]); }
+      }).finally(() => { if (active) setLoading(false); });
+    }, 180);
+    return () => { active = false; clearTimeout(timer); };
+  }, [searchQuery, roleFilter, statusFilter, page, reload, activeTab]);
+  const filteredUsers = users;
+  async function perform(operation: () => Promise<unknown>, message: string) {
+    if (busy.current || loadError) return;
+    busy.current = true;
+    setSaving(true);
+    setActionError('');
+    try {
+      await operation();
+      if (!mounted.current) return;
+      busy.current = false;
+      closeUserDialog();
+      resetForm();
+      setReload(value => value + 1);
+      addToast('Đã lưu thay đổi', message, 'success');
+    } catch (error) {
+      if (!mounted.current) return;
+      setActionError(error instanceof Error ? error.message : 'Không thể lưu tài khoản.');
+      if (error instanceof AdminUserError) {
+        setFormErrors(error.fields);
+        if ([0, 401, 403, 409].includes(error.status)) setLoadError('Bạn tải lại danh sách trước khi tiếp tục nhé.');
+      }
+      setFormData(current => ({...current, mat_khau: ''}));
+    } finally {
+      busy.current = false;
+      if (mounted.current) setSaving(false);
+    }
+  }
   // Validate form
   const validateForm = (isEdit = false) => {
     const errors: Record<string, string> = {};
@@ -243,37 +275,8 @@ export default function AdminUsersPage() {
     e.preventDefault();
     if (!validateForm(false)) return;
 
-    const now = new Date()
-      .toISOString()
-      .replace("T", " ")
-      .replace(/\.\d+Z$/, "");
-
-    const newId =
-      users.length > 0 ? Math.max(...users.map((u) => u.ma_nguoi_dung)) + 1 : 1;
-
-    const newUser: NguoiDung = {
-      ma_nguoi_dung: newId,
-      ho_ten: formData.ho_ten.trim(),
-      thu_dien_tu: formData.thu_dien_tu.trim(),
-      vai_tro: formData.vai_tro,
-      trang_thai: formData.trang_thai,
-      ma_ghi_nho: null,
-      ngay_tao: now,
-      ngay_cap_nhat: now,
-      so_hoi_thoai: 0,
-      lan_dang_nhap_cuoi: "Chưa đăng nhập",
-    };
-
-    setUsers([newUser, ...users]);
-    setIsAddModalOpen(false);
-    resetForm();
-    addToast(
-      "Tạo tài khoản thành công",
-      `Đã thêm "${newUser.ho_ten}" với quyền ${newUser.vai_tro === "admin" ? "Quản trị viên" : "Người dùng"}.`,
-      "success",
-    );
+    void perform(() => adminUsersApi.save(formData), 'Tài khoản mới cần xác minh email khi đăng nhập lần đầu.');
   };
-
   // Open Edit Modal
   const openEditModal = (user: NguoiDung) => {
     setEditingUser(user);
@@ -293,154 +296,14 @@ export default function AdminUsersPage() {
     if (!editingUser) return;
     if (!validateForm(true)) return;
 
-    // Safety rule: Cannot downgrade the only active admin
-    if (
-      editingUser.vai_tro === "admin" &&
-      formData.vai_tro === "user" &&
-      stats.adminCount <= 1
-    ) {
-      addToast(
-        "Thao tác bị từ chối",
-        "Không thể hạ quyền Quản trị viên hoạt động duy nhất của hệ thống!",
-        "error",
-      );
-      return;
-    }
-
-    const now = new Date()
-      .toISOString()
-      .replace("T", " ")
-      .replace(/\.\d+Z$/, "");
-
-    setUsers((prev) =>
-      prev.map((u) => {
-        if (u.ma_nguoi_dung === editingUser.ma_nguoi_dung) {
-          return {
-            ...u,
-            ho_ten: formData.ho_ten.trim(),
-            thu_dien_tu: formData.thu_dien_tu.trim(),
-            vai_tro: formData.vai_tro,
-            trang_thai: formData.trang_thai,
-            ngay_cap_nhat: now,
-          };
-        }
-        return u;
-      }),
-    );
-
-    setEditingUser(null);
-    resetForm();
-    addToast(
-      "Cập nhật thành công",
-      `Thông tin và phân quyền của "${formData.ho_ten}" đã được lưu.`,
-      "success",
-    );
+    void perform(() => adminUsersApi.save(formData, editingUser), 'Thông tin tài khoản đã được cập nhật.');
   };
-
-  // Handle Toggle Status (Active / Blocked)
   const handleConfirmToggleStatus = () => {
-    if (!statusToggleUser) return;
-
-    // Safety rule: Cannot block admin #1 (System Admin) or only admin
-    if (
-      statusToggleUser.ma_nguoi_dung === 1 &&
-      statusToggleUser.trang_thai === "active"
-    ) {
-      addToast(
-        "Thao tác bị từ chối",
-        "Không được phép khóa Quản trị viên Hệ thống chính!",
-        "error",
-      );
-      setStatusToggleUser(null);
-      return;
-    }
-
-    if (
-      statusToggleUser.vai_tro === "admin" &&
-      statusToggleUser.trang_thai === "active" &&
-      stats.adminCount <= 1
-    ) {
-      addToast(
-        "Thao tác bị từ chối",
-        "Không thể khóa Quản trị viên duy nhất đang hoạt động!",
-        "error",
-      );
-      setStatusToggleUser(null);
-      return;
-    }
-
-    const newStatus: TrangThai =
-      statusToggleUser.trang_thai === "active" ? "blocked" : "active";
-
-    const now = new Date()
-      .toISOString()
-      .replace("T", " ")
-      .replace(/\.\d+Z$/, "");
-
-    setUsers((prev) =>
-      prev.map((u) => {
-        if (u.ma_nguoi_dung === statusToggleUser.ma_nguoi_dung) {
-          return {
-            ...u,
-            trang_thai: newStatus,
-            ngay_cap_nhat: now,
-          };
-        }
-        return u;
-      }),
-    );
-
-    if (newStatus === "active") {
-      addToast(
-        "Đã mở khóa tài khoản",
-        `Người dùng "${statusToggleUser.ho_ten}" đã có thể đăng nhập bình thường.`,
-        "unlock",
-      );
-    } else {
-      addToast(
-        "Đã tạm khóa tài khoản",
-        `Tài khoản "${statusToggleUser.ho_ten}" đã bị tạm ngừng quyền truy cập.`,
-        "lock",
-      );
-    }
-    setStatusToggleUser(null);
+    if (statusToggleUser) void perform(() => adminUsersApi.status(statusToggleUser), 'Đã cập nhật trạng thái tài khoản và thu hồi phiên cũ.');
   };
-
-  // Handle Delete User
   const handleConfirmDelete = () => {
-    if (!deletingUser) return;
-
-    if (deletingUser.ma_nguoi_dung === 1) {
-      addToast(
-        "Thao tác bị từ chối",
-        "Không được phép xóa Quản trị viên Hệ thống chính!",
-        "error",
-      );
-      setDeletingUser(null);
-      return;
-    }
-
-    if (deletingUser.vai_tro === "admin" && stats.adminCount <= 1) {
-      addToast(
-        "Thao tác bị từ chối",
-        "Không thể xóa Quản trị viên duy nhất trong hệ thống!",
-        "error",
-      );
-      setDeletingUser(null);
-      return;
-    }
-
-    setUsers((prev) =>
-      prev.filter((u) => u.ma_nguoi_dung !== deletingUser.ma_nguoi_dung),
-    );
-    addToast(
-      "Đã xóa vĩnh viễn",
-      `Tài khoản "${deletingUser.ho_ten}" đã được gỡ khỏi cơ sở dữ liệu.`,
-      "delete",
-    );
-    setDeletingUser(null);
+    if (deletingUser) void perform(() => adminUsersApi.remove(deletingUser), 'Tài khoản đã được xóa.');
   };
-
   return (
     <AdminLayout activeTab={activeTab} onTabChange={changeTab}>
       {/* Modern Smooth Toast Notifications (animations.dev style) */}
@@ -467,6 +330,7 @@ export default function AdminUsersPage() {
             <div style={{ display: "flex", gap: "10px" }}>
               <button
                 data-admin-user-add
+                disabled={loading || !!loadError || saving}
                 className="cl-admin-btn-primary"
                 onClick={(event) => {
                   captureDialogTrigger(event);
@@ -538,7 +402,7 @@ export default function AdminUsersPage() {
               onClick={(event) => changeTab("users", event.detail === 0)}
             >
               <Users size={16} />
-              <span>Danh sách tài khoản ({filteredUsers.length})</span>
+              <span>Danh sách tài khoản ({total})</span>
             </button>
             <button
               className={`cl-admin-tab-btn ${activeTab === "matrix" ? "active" : ""}`}
@@ -560,6 +424,8 @@ export default function AdminUsersPage() {
                       ref={searchInputRef}
                       type="text"
                       placeholder="Tìm theo họ tên hoặc email..."
+                      aria-label="Tìm tài khoản"
+                      maxLength={120}
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                     />
@@ -578,6 +444,7 @@ export default function AdminUsersPage() {
                 </div>
 
                 <div className="cl-admin-toolbar-filters">
+                  <button className="cl-admin-btn-outline" disabled={loading || saving} onClick={() => { closeUserDialog(); setReload(value => value + 1); }}><RefreshCw size={14} />Tải lại dữ liệu</button>
                   <div
                     style={{
                       display: "flex",
@@ -591,6 +458,7 @@ export default function AdminUsersPage() {
                     </span>
                     <select
                       className="cl-admin-filter-select"
+                      aria-label="Lọc vai trò"
                       value={roleFilter}
                       onChange={(e) => setRoleFilter(e.target.value)}
                     >
@@ -612,6 +480,7 @@ export default function AdminUsersPage() {
                     </span>
                     <select
                       className="cl-admin-filter-select"
+                      aria-label="Lọc trạng thái tài khoản"
                       value={statusFilter}
                       onChange={(e) => setStatusFilter(e.target.value)}
                     >
@@ -642,6 +511,8 @@ export default function AdminUsersPage() {
 
               {/* Table Card */}
               <div className="cl-admin-table-card" data-admin-reveal="300">
+                {loadError && <p className="cl-admin-form-error" role="alert">{loadError}</p>}
+                {loading && <p role="status">Đang tải tài khoản…</p>}
                 {filteredUsers.length === 0 ? (
                   <div className="cl-admin-empty">
                     <div className="cl-admin-empty-icon">
@@ -755,7 +626,7 @@ export default function AdminUsersPage() {
                               <td
                                 style={{ color: "#716667", fontSize: "13px" }}
                               >
-                                {user.ngay_tao.split(" ")[0]}
+                                {user.ngay_tao?.slice(0, 10) || "Chưa ghi nhận"}
                               </td>
                               <td style={{ textAlign: "right" }}>
                                 <div
@@ -825,6 +696,11 @@ export default function AdminUsersPage() {
                   </div>
                 )}
               </div>
+              <nav className="cl-user-pagination" aria-label="Phân trang tài khoản">
+                <span>{total} tài khoản · Trang {page}/{Math.max(1, Math.ceil(total / 10))}</span>
+                <button className="cl-admin-btn-outline" disabled={loading || page <= 1} onClick={() => setPage(page - 1)}>Trang trước</button>
+                <button className="cl-admin-btn-outline" disabled={loading || page >= Math.ceil(total / 10)} onClick={() => setPage(page + 1)}>Trang sau</button>
+              </nav>
             </>
           )}
 
@@ -950,9 +826,11 @@ export default function AdminUsersPage() {
         revealKey={dialogMode}
       >
         {/* Modal: Thêm người dùng mới (Create) */}
+        {actionError && <div className="cl-admin-modal-body" role="alert"><p className="cl-admin-form-error">{actionError}</p>{Object.entries(formErrors).map(([key, value]) => <p key={key}>{value}</p>)}{loadError && <button className="cl-admin-btn-outline" disabled={saving} onClick={() => { closeUserDialog(); setReload(value => value + 1); }}>Tải lại danh sách</button>}</div>}
+        <fieldset disabled={saving || !!loadError} className="cl-user-dialog-fields">
         {isAddModalOpen && (
           <>
-            <form onSubmit={handleAddSubmit}>
+            <form onSubmit={handleAddSubmit} noValidate>
               <div className="cl-admin-modal-body">
                 <div className="cl-admin-form-group">
                   <label htmlFor="add_ho_ten">
@@ -1101,7 +979,7 @@ export default function AdminUsersPage() {
                 <button
                   type="button"
                   className="cl-admin-btn-outline"
-                  onClick={() => setIsAddModalOpen(false)}
+                  onClick={closeUserDialog}
                 >
                   Hủy bỏ
                 </button>
@@ -1117,7 +995,7 @@ export default function AdminUsersPage() {
         {/* Modal: Chỉnh sửa người dùng & Phân quyền (Update) */}
         {editingUser && (
           <>
-            <form onSubmit={handleEditSubmit}>
+            <form onSubmit={handleEditSubmit} noValidate>
               <div className="cl-admin-modal-body">
                 <div className="cl-admin-form-group">
                   <label htmlFor="edit_ho_ten">
@@ -1145,7 +1023,7 @@ export default function AdminUsersPage() {
                     Thư điện tử (Email) <span className="required">*</span>
                   </label>
                   <input
-                    id="edit_thu_dien_tu"
+                    id="edit_thu_dien_tu" disabled={editingUser.ma_nguoi_dung === currentUser?.ma_nguoi_dung}
                     type="email"
                     className="cl-admin-form-input"
                     value={formData.thu_dien_tu}
@@ -1164,7 +1042,7 @@ export default function AdminUsersPage() {
                 <div className="cl-admin-form-group">
                   <label htmlFor="edit_mat_khau">Đặt lại mật khẩu mới</label>
                   <input
-                    id="edit_mat_khau"
+                    id="edit_mat_khau" disabled={editingUser.ma_nguoi_dung === currentUser?.ma_nguoi_dung}
                     type="password"
                     className="cl-admin-form-input"
                     placeholder="Để trống nếu không muốn thay đổi mật khẩu"
@@ -1196,10 +1074,7 @@ export default function AdminUsersPage() {
                           vai_tro: e.target.value as VaiTro,
                         })
                       }
-                      disabled={
-                        editingUser.ma_nguoi_dung === 1 &&
-                        editingUser.vai_tro === "admin"
-                      }
+                      disabled={editingUser.ma_nguoi_dung === currentUser?.ma_nguoi_dung}
                     >
                       <option value="user">Người dùng (user)</option>
                       <option value="admin">Quản trị viên (admin)</option>
@@ -1220,7 +1095,7 @@ export default function AdminUsersPage() {
                           trang_thai: e.target.value as TrangThai,
                         })
                       }
-                      disabled={editingUser.ma_nguoi_dung === 1}
+                      disabled={editingUser.ma_nguoi_dung === currentUser?.ma_nguoi_dung}
                     >
                       <option value="active">Đang hoạt động</option>
                       <option value="blocked">Đã bị khóa</option>
@@ -1228,7 +1103,7 @@ export default function AdminUsersPage() {
                   </div>
                 </div>
 
-                {editingUser.ma_nguoi_dung === 1 && (
+                {editingUser.ma_nguoi_dung === currentUser?.ma_nguoi_dung && (
                   <div
                     style={{
                       background: "#fef3c7",
@@ -1243,8 +1118,7 @@ export default function AdminUsersPage() {
                   >
                     <AlertTriangle size={14} style={{ flexShrink: 0 }} />
                     <span>
-                      Tài khoản Quản trị viên Hệ thống chính được bảo vệ, không
-                      thể thay đổi vai trò hoặc chuyển sang bị khóa.
+                      Bạn đang sửa tài khoản của chính mình. Chỉ có thể cập nhật họ tên ở trang này.
                     </span>
                   </div>
                 )}
@@ -1254,7 +1128,7 @@ export default function AdminUsersPage() {
                 <button
                   type="button"
                   className="cl-admin-btn-outline"
-                  onClick={() => setEditingUser(null)}
+                  onClick={closeUserDialog}
                 >
                   Hủy
                 </button>
@@ -1608,9 +1482,7 @@ export default function AdminUsersPage() {
                   <p
                     style={{ margin: 0, fontSize: "12.5px", color: "#b91c1c" }}
                   >
-                    Cảnh báo: Toàn bộ dữ liệu hội thoại (<code>hoi_thoai</code>)
-                    và lịch sử liên quan sẽ bị xóa theo ràng buộc CASCADE. Thao
-                    tác này không thể hoàn tác.
+                    Chỉ xóa được tài khoản chưa có hội thoại hoặc nhật ký quản trị. Nếu đã có lịch sử, bạn khóa tài khoản để giữ dữ liệu. Thao tác xóa không thể hoàn tác.
                   </p>
                 </div>
               </div>
@@ -1633,6 +1505,7 @@ export default function AdminUsersPage() {
             </div>
           </>
         )}
+        </fieldset>
       </AdminDialog>
     </AdminLayout>
   );

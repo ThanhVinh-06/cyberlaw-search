@@ -2,7 +2,7 @@ import { defineConfig } from "@playwright/test";
 
 export default defineConfig({
   testDir: "./e2e",
-  testMatch: ["auth-backend.spec.ts", "knowledge-backend.spec.ts"],
+  testMatch: ["auth-backend.spec.ts", "knowledge-backend.spec.ts", "admin-users-backend.spec.ts"],
   workers: 1,
   reporter: "list",
   use: {

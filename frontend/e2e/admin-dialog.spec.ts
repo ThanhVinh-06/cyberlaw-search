@@ -245,6 +245,7 @@ test("keyboard and reduced motion skip scale and stagger; knowledge uses the sam
 }) => {
   await openAdmin(page);
   const add = page.locator("[data-admin-user-add]");
+  await expect(add).toBeEnabled();
   await add.focus();
   await page.keyboard.press("Enter");
   const dialog = page.getByRole("dialog");

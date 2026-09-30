@@ -22,6 +22,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        RateLimiter::for('admin-users-read', fn (Request $request) => Limit::perMinute(120)->by('admin-users-read:'.$request->user()?->getAuthIdentifier()));
+        RateLimiter::for('admin-users-write', fn (Request $request) => Limit::perMinute(30)->by('admin-users-write:'.$request->user()?->getAuthIdentifier()));
         RateLimiter::for('knowledge-read', fn (Request $request) => Limit::perMinute(120)->by('knowledge-read:'.$request->user()?->getAuthIdentifier()));
         RateLimiter::for('knowledge-write', fn (Request $request) => Limit::perMinute(30)->by('knowledge-write:'.$request->user()?->getAuthIdentifier()));
         RateLimiter::for('email-send', fn (Request $request) => [

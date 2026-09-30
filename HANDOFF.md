@@ -1,10 +1,147 @@
 # Bàn giao dự án CyberLaw Search
 
+### Sắp xếp tài khoản theo ID tăng dần — 30/09/2026
+
+- API danh sách dùng `ma_nguoi_dung ASC` trước phân trang; ID 1 đứng đầu khi không lọc. Fixture UI đồng bộ thứ tự.
+- AdminUserTest 6/107 PASS, gồm thứ tự liên tục qua hai trang; CRUD HTTP và responsive giả lập 320/440/834/900/901/956×440/1440 PASS. Không thay đổi dữ liệu MySQL.
+
+### Backend tab Người dùng & Phân quyền — 30/09/2026
+
+- Đã nối `AdminUsersPage` với API Laravel thật: phân trang, tìm kiếm, lọc vai trò/trạng thái, thêm/sửa, khóa/mở khóa, xem và xóa có kiểm tra lịch sử.
+- API kiểm tra quyền admin ở server, CSRF/origin, revision chống ghi đè, khóa giao dịch bảo vệ admin cuối cùng, thu hồi phiên sau thay đổi nhạy cảm, hủy OTP chờ và audit cùng transaction. Không trả password/hash/mã phiên.
+- Tài khoản mới hoặc đổi email phải xác minh email; admin không tự khóa/xóa/đổi quyền truy cập của mình. Xem `docs/security/reviews/2026-09-30-admin-users.md`.
+- PHPUnit: 77 tests, 802 assertions PASS. Playwright HTTP CRUD: PASS. UI modal/responsive 12/12 PASS ở 320, 440, 834, 1024, 1440 và màn hình ngang. Build frontend PASS, còn cảnh báo bundle >500KB.
+
+### Đã push quản trị kho tri thức — 30/09/2026
+
+- Commit `92f0be13fedf0af946c8a914b5d3bb6db823eaac`, `Hoan thien quan tri van ban va tri thuc, kiem thu bao mat va responsive`; push origin/main thành công, ls-remote khớp HEAD.
+- 26 file chức năng, model, fixture SQLite giả, test và review. Không kèm env/SQL/database thật/PDF/dataset/importer hoặc thay đổi ngoài phạm vi. Clone mới cần cấu trúc DB và nguồn PDF được cấp riêng. HANDOFF giữ cục bộ.
+- Trước push PHPUnit71/698 PASS; npm audit0; scan26 staged files đối chiếu secret env trong bộ nhớ và pattern key không có kết quả; diff check đạt. Không chạy Gitleaks lịch sử/Composer audit đợt push này. Build và responsive8/8 của thanh công cụ đạt ở lượt trước, không đổi UI sau kiểm tra. Giới hạn deploy và dữ liệu vẫn như các review.
+
+### Thanh công cụ kho tri thức — 30/09/2026
+
+- Bỏ chữ “Đã kết nối dữ liệu hệ thống”; chuyển nút “Tải lại dữ liệu” vào thanh tìm kiếm, đứng trước các bộ lọc. Giữ lỗi API dạng alert và khả năng tải lại khi lỗi, không đổi backend hoặc trạng thái draft trong DB.
+- Build/TypeScript đạt; responsive và phục hồi API lỗi 8/8 PASS bằng Edge giả lập 320/440/834/900/901/956×440/1440. Review phạm vi UI tại `docs/security/reviews/2026-09-30-knowledge-toolbar.md`. Nháp là trạng thái duyệt dữ liệu của ứng dụng, không phải tình trạng hiệu lực pháp lý.
+
+### Backend tab Văn bản & Tri thức — 30/09/2026
+
+- Đã nối `/admin/documents` với Laravel thật, không còn fallback demo khi API lỗi. API dùng `KnowledgeAdmin` cho snapshot bounded, phân trang/lọc từng tab, revision chống ghi đè, CRUD 4 nhóm `van_ban/dieu_khoan/tu_khoa/quy_dinh`, liên kết từ khóa, tăng phiên bản và đưa văn bản công bố về nháp khi nội dung đổi.
+- Công bố yêu cầu admin xác nhận đối chiếu, nguồn, ngày ban hành, ngày hiệu lực, điều khoản và trang nguồn. Xóa bị chặn nếu còn điều khoản/quy định/trích dẫn. Audit ghi trong cùng transaction; read/write rate limit tách riêng.
+- PDF dùng local private storage, kiểm tra đuôi/MIME/chữ ký `%PDF-`, tối đa20MB, đường dẫn server sinh; route tải attachment có `nosniff`, CSP sandbox và chặn path traversal. PDF nguồn chính thức hiện được allowlist theo đường dẫn cố định.
+- Security review: `docs/security/reviews/2026-09-30-knowledge-admin.md`. Test `KnowledgeAdminTest` 8/8, 148 assertions; toàn bộ PHPUnit 70/70, 630 assertions; HTTP `knowledge-backend.spec.ts` 6/6 với SQLite riêng; UI/admin responsive 10/10 ở 320/440/834/900/901/956×440/1440; build/typecheck/Pint/lint đạt.
+- MySQL thật chỉ đọc xác nhận 1 văn bản draft, 434 điều khoản, 60 từ khóa, 434 quy định, 1326 liên kết; không sửa DB thật trong test. Chưa deploy-ready: còn parse/antivirus PDF, staging/collector log, backup/restore, dependency/deploy review và workflow duyệt nhiều người.
+
+### Chuẩn hóa và nạp nguyên bản 116/2025 — 30/09/2026, chưa commit/push
+
+- Người dùng yêu cầu phân tích kỹ, chuẩn hóa đúng trường DB và chuẩn bị AI; đã đọc security/PDF skill, giữ toàn bộ thay đổi cũ. Tham khảo `docs/data/01-du-lieu-luat-116.md`, review `docs/security/reviews/2026-09-30-knowledge-import.md`.
+- Nguồn chính mới: PDF Công báo 37 trang `data/raw/laws/2025/official/116-2025-qh15-congbao.pdf`, hash `8e19e14fd57666baec8f16b7ca2832cbf7f24030a5e6ee0c574e15d0d48ad971`. Đã xem 37 ảnh scan; so từng điều với web-export có 71 diff (nhãn web, viết hoa/dấu, đảo khoản 16/17 Điều 43). Giữ nguyên nguồn; luật 2018 và 143 (chỉ kiểm tra lịch sử) không vào kho mặc định.
+- Bộ `data/processed/luat-116-2025-v1/`: bundle nạp, toàn văn cấu trúc, ai-chunks.jsonl, manifest, validation. 8 chương/45 điều/207 khoản/282 điểm/494 đoạn → 434 đơn vị, 60 từ khóa (23 định nghĩa Điều 2), 1326 liên kết, 434 bản ghi phân loại. Khóa nguồn ổn định, ngữ cảnh/số trang/coords/hash đầy đủ. 28 QA chỉ tập phát triển, chưa đo AI.
+- **Đã nạp MySQL draft**, đọc lại từng trường và nạp lại trả unchanged. Tài khoản/hội thoại/tin nhắn/trích dẫn/reset/xác minh email không đổi theo kiểm tra fingerprint trong bộ nhớ. Audit request `a10ae512-6b3e-43b0-8e5c-f1c658c330bb`, báo cáo `data/interim/verification/law116/mysql-import.json`.
+- Phát hiện collation `ky_hieu_diem` ai_ci coi d=đ gây duplicate1062; các lần thử rollback toàn bộ, 5 bảng về 0. **Chủ dự án đã chạy** `database/migrations/20260930_phan_biet_diem_d_va_dd.sql`; kiểm tra thật as_ci và d=đ là0. Không chạy lại hoặc cấp ALTER cho app. Schema giữ12 bảng/111 cột, chỉ đổi collation một cột.
+- Lệnh `php artisan cyberlaw:import-knowledge` (cwd backend/api) chỉ đối chiếu; `--apply` nạp draft. Pinned path/hash, MySQL lock, transaction + audit, không overwrite/merge. Tệp đổi phải chạy validator rồi review lại digest trong `app/Services/KnowledgeImport.php`; hiện bundle SHA `da64cec303b01741bc4e7773e7a470dfcd636faf632040486b2e21ebca1457ad`. LF cố định qua .gitattributes. Rebuild dùng scripts/knowledge/ và PyMuPDF1.28.2.
+- **Giới hạn:** nguyên bản ban hành, chưa hợp nhất lịch sử sửa đổi; VBPL liên hệ 143 chưa giải quyết chắc chắn. Giữ draft/AI duoc_phuc_vu=false. Quy định mới là nguyên văn+nhãn chính; NULL điều kiện/ngoại lệ = chưa tách riêng, không phải không tồn tại. Chưa nối API CRUD/thư viện/AI hoặc dữ liệu thật lên frontend.
+- PHPUnit63/550 PASS (8 test importer/48 assertions), Python6/6 + validator PASS, MySQL import/reimport PASS; build/typecheck/Pint/PHP lint PASS, cảnh báo bundle500kB cũ. Responsive ban đầu12/12; thêm956×440 phát hiện nhãn sr-only tràn ngang1012px, sửa `.cl-knowledge-desktop-list {position:relative}`. Chạy lại **10/10 test kho tri thức PASS** tại 320/440/834/900/901/956×440/1440; kiểm tra form/modal, keyboard, reduced motion/Axe. Chỉ giả lập Edge, không thiết bị thật. Diff check đạt; canary lỗi SQL không xuất hiện trong log. Giữ giới hạn bảo mật/deploy trong review.
+- Không commit/push, không xuất dump Desktop; tiếp tục yêu cầu không đưa env/SQL/DB riêng lên GitHub. Tài liệu backend cũ có ghi dữ liệu trống là lịch sử; ưu tiên phần này.
+
+### Đã push xác minh email — 30/09/2026
+
+- Commit `2c9e8d9`: `Hoan thien xac minh email dang ky va kiem thu bao mat`, đã push `origin/main` theo yêu cầu chủ dự án.
+- 34 file chức năng/test giả/tài liệu; đã đối chiếu staged khớp bản rà. Không kèm env/config database/SQL/migration/dump/log/mailbox/HANDOFF hoặc thay đổi ngoài chức năng. Các file cục bộ còn lại giữ nguyên; clone mới cần nhận cấu trúc DB riêng.
+- Trước push chạy lại PHPUnit55/502 và xác minh/responsive18/18 đạt; kiểm tra43 file liên quan không trùng bí mật env/email riêng/pattern khóa phổ biến; diff check đạt. Build/HTTP/audit và giới hạn theo review xác minh. Các ghi chú chưa push bên dưới là lịch sử trước commit này.
+
+### Xác minh email đăng ký — 30/09/2026, chưa commit/push
+
+- Đã triển khai đăng ký → SMTP mã6 số → `/verify-email` → đăng nhập. Unverified login trả403 chỉ sau khi đúng password; account.active chặn tài khoản chưa xác minh. OTP bcrypt/5 phút/5 lần sai, cooldown30s/10 lần gửi mỗi giờ theo tài khoản; CSRF/Origin/IP limits, session binding30 phút + fingerprint, one-time transaction, log che dữ liệu. Reset không tự xác minh email. Xem `docs/backend/03-xac-minh-email.md` và review `docs/security/reviews/2026-09-30-email-verification.md`.
+- Migration `database/migrations/20260930_xac_minh_email.sql` **đã được anh chạy trong Workbench**, sau khi app user thiếu quyền DDL và thông tin root trước đó không được MySQL chấp nhận. Không chạy lại. Đã đối chiếu chỉ đọc: 2 tài khoản cũ giữ truy cập bằng exemption=true/ngày xác minh NULL; default exemption cho mới=0; bảng mới8 cột/0 dòng. Schema tổng12 bảng111 cột, schema.sql/docs thiết kế đã đồng bộ; chưa dump lại bản Desktop. CLI tin cậy cũng cấp exemption kèm audit, public registration luôn false.
+- Form đồng bộ trang tài khoản, Fade In Up550ms, reduced motion/keyboard, reload/resend/error/late-response handling; robot có vùng riêng dưới form xác minh để không che nội dung. Responsive14 viewport320–1920 gồm440/iPad/landscape và breakpoints, xem ảnh; chỉ giả lập trình duyệt.
+- Kiểm tra: PHPUnit55/502, HTTP5/5 với MailpitSMTP thật local+SQLite riêng; UI tài khoản34/34, sau chỉnh robot test lại xác minh18/18; build/typecheck/PHP lint/Pint đạt. npm audit0; Composer0 advisory/abandoned. Build còn cảnh báo bundle>500kB, không phải lỗi biên dịch. Không xác nhận diagnostics IDE trực tiếp. Đã sửa cấu hình logger null trong test cũ, giữ test fallback logging cố tình lỗi.
+- Dev MailpitSMTP1025/UI8025; kiểm thử1026/8026 riêng, không seed/xóa MySQL thật. SMTP thật/queue/multiworker race/cleanup/chống bot/log quota/ACL/alerts còn cần trước deploy. Không gửi thư Internet. Giữ toàn bộ thay đổi cũ; chưa push chức năng này, tiếp tục tuân thủ không push env/database/secrets khi được yêu cầu push.
+
+### Đã push nhóm tài khoản — 29/09/2026
+
+- Commit `426536b19e862e4d8561e12b42aff40412dd9efe`: `Hoan thien dang ky quen mat khau va sua xac thuc tai khoan`, đã push origin/main; ls-remote đối chiếu trùng HEAD.
+- 42 file mã tài khoản, test giả và tài liệu bảo mật/hướng dẫn. Không cập nhật env/database config/SQL/migration/dump/log/session/mailbox/binary/thông tin tài khoản thật; HANDOFF này giữ cục bộ. Các thay đổi ngoài phạm vi vẫn còn trên máy, không bị xóa. Ghi chú 'chưa push' bên dưới là lịch sử trước commit này.
+- Trước push: PHPUnit44/363, build/typecheck, kiểm thử HTTP CSRF/storage forgery và responsive320/440/834/1440/landscape đạt. npm audit0, Composer audit0 advisory/abandoned. Đối chiếu42 file với bí mật env/email riêng và pattern key/token không trùng; kiểm tra staged khớp nội dung đã rà, diff check đạt. Không gọi là quét toàn bộ lịch sử bằng Gitleaks. Xem docs/security/reviews/2026-09-29-auth-push.md.
+
+### Sửa kiểu dữ liệu AuthController (29/09/2026, chưa push)
+
+- Người dùng báo file lỗi; lint không lỗi cú pháp, vendor cho thấy Auth guard/user trả kiểu tổng quát. Đã thêm kiểm tra SessionGuard/NguoiDung trước attemptWhen/save/only/fingerprint, dùng accessor cho cột động. Không vô hiệu diagnostics. Chưa xác minh trực tiếp diagnostics của IDE.
+- PHPUnit44/363 đạt; LoginTest14/120 đạt sau accessor; HTTP5/5 và responsive login320/440/834/1440/landscape đạt, SQLite/Mailpit riêng. Không sửa database/env/frontend. Chi tiết `docs/security/reviews/2026-09-29-auth-controller-types.md`.
+
+### Quên mật khẩu backend + Mailpit (29/09/2026, sau đăng ký, chưa push)
+
+- Đã nối ResetPasswordPage với POST `/api/auth/password/request`, `/verify`, `/complete` qua CSRF/session. OTP 6 chữ số server tạo, bcrypt, TTL5 phút/5 lần sai; gửi lại sau30s, hủy mã/grant cũ. Grant256bit chỉ ở session server, DB SHA-256. Không hiện mã trên UI hoặc ghi browser storage/log. Password giữ khoảng trắng, min8/max72 byte; transaction cập nhật + tiêu thụ một lần, khóa user trước reset record.
+- Dùng bảng reset sẵn có10 cột, không thêm/chạy migration. Read-only MySQL cuối có2 tài khoản active bcrypt, không có tài khoản miền test; khác số1 trong bàn giao trước, không tự sửa dữ liệu. Tất cả fixture/đổi password thử trong SQLite riêng.
+- `PasswordSession` fingerprint HMAC lưu lúc login; ActiveAccount kiểm tra mỗi API bảo vệ để thu hồi phiên cũ khi password đổi. Phiên tạo trước thay đổi này cần login lại một lần. Mọi route bảo vệ mới phải dùng account.active.
+- Mailpit v1.31.3 đã tải chính thức/checksum, binary `tmp/tools/mailpit/mailpit.exe` bị Git bỏ qua. Dev đã chạy SMTP127.0.0.1:1025/UIhttp://127.0.0.1:8025, chỉ local/no relay/Host allowlist. `scripts/start-mailpit.ps1` mở lại khi cần. `.env` local đổi mail log→SMTP; API từ chối log/array/failover. Không push env/binary/database. HTTP test launcher có mailbox riêng1026/8026, SQLite riêng.
+- PHPUnit44 tests/363 assertions đạt; HTTP thật5/5, gồm gửi SMTP→nhận Mailpit→reset→login mới→thu hồi cookie khác. UI11 ca hồi quy tài khoản đạt, reset5/5 đạt sau sửa fixture touch; responsive16 kích thước/landscape, keyboard/reduced motion/Axe, xem ảnh440/1440; chỉ giả lập. Build/typecheck/Pint đạt. Xem docs/security/reviews/2026-09-29-password-reset.md và docs/backend/02-quen-mat-khau.md.
+- Chưa deploy-ready: SMTP đồng bộ + timebox800ms không bảo đảm timing khi mail chậm; cần queue bền vững/mã hóa/retry khi deploy, kiểm tra concurrency MySQL/multipleworkers, SMTP thật/domain/TLS, cleanup OTP, quota/ACL/alerts log. Giữ giới hạn đăng ký chưa xác minh email, AI/CRUD quản trị vẫn demo. Không commit/push lượt này.
+
+### Đăng ký backend (sau commit bebf7d2, chưa push)
+
+- POST `/api/auth/register`: `RegistrationController`, CSRF/web session, 5 lần/phút và 20 lần/giờ/IP. Allowlist name/email/password/password_confirmation; tự gán user/active, bcrypt giữ nguyên password, min 8 ký tự/max 72 byte. UNIQUE email xử lý 409 không ghi đè; người đang đăng nhập không tạo tài khoản qua endpoint này.
+- Form React gọi API, pending khóa gửi/input, lỗi thân thiện và xóa password; thành công chuyển login điền email, giữ next=history. Không tự login, chưa xác minh email. Rời trang khi request đang chạy không bị response kéo quay lại form.
+- Không sửa schema/env hoặc tài khoản MySQL; mọi fixture trong SQLite test riêng. 32 PHPUnit tests/238 assertions đạt; HTTP thật 4 ca (thêm đăng ký → login user → kiểm tra quyền và email trùng) đạt. Build/typecheck đạt; test UI và responsive giả lập trang tài khoản, keyboard/reduced motion/Axe đã chạy; xem báo cáo registration để biết phạm vi và giới hạn.
+- Log auth.register success/failure/rate limit, không ghi mật khẩu/email/token. Quên mật khẩu vẫn demo; CRUD quản trị chưa dùng MySQL. Cập nhật `docs/backend/01-dang-nhap.md`, review `docs/security/reviews/2026-09-29-registration.md`. Chưa commit/push đăng ký; giữ yêu cầu không push env/database khi người dùng yêu cầu sau này.
+
+### Push đăng nhập đã hoàn tất
+
+- Commit `bebf7d2`: `Hoan thien dang nhap Laravel va ket noi giao dien`, đã push `origin/main` sau khi người dùng xác nhận phạm vi 82 file.
+- Không đưa `.env`/template, cấu hình database, SQL/dump, migration/seed hoặc thông tin tài khoản thật vào commit này. Mã model xác thực và fixture test giả nằm trong phạm vi đã duyệt. Các file database đã có trong lịch sử không được cập nhật; không viết lại lịch sử.
+- Bàn giao cục bộ này và các sửa DB/tài liệu ngoài phạm vi vẫn ở máy, chưa commit. Xem `docs/security/reviews/login-push-scope.md` về kết quả kiểm tra và giới hạn; máy clone mới cần chuẩn bị cấu hình môi trường/database riêng.
+
+### Đăng nhập backend đã triển khai (29/09/2026 — trạng thái mới nhất)
+
+- Laravel 12/PHP 8.2: GET `/api/auth/csrf`, POST `/api/auth/login`, GET `/api/auth/me`, POST `/api/auth/logout`. Dùng guard `web` và middleware `web` với session cookie/CSRF; Vite proxy cùng origin `/api` → 127.0.0.1:8000. Chưa cài Sanctum, thay cho đề xuất cũ. Xem `docs/backend/01-dang-nhap.md`.
+- Login chuẩn hóa email, giữ nguyên mật khẩu, kiểm tra hash/trạng thái ở server, đổi session ID, cập nhật lần đăng nhập cuối. Giới hạn 5 lần/phút/email-IP + 30 lần/phút/IP; lỗi chung, không lộ tài khoản/SQL/stack. `account.active` kiểm tra mỗi request, `role.admin` dùng cho API quản trị tương lai; chưa có API CRUD quản trị.
+- React dùng API async, chờ xác nhận phiên khi vào trang bảo vệ, giữ cookie qua reload/tab mới, logout phía server. Bỏ nút tài khoản mẫu và auth từ sessionStorage, xóa dữ liệu phiên demo cũ. Có trạng thái đang gửi, lỗi kết nối/419/429 và thông báo nếu chưa đăng xuất được. Giữ thiết kế/animation; footer admin dùng tên/email từ phiên thật.
+- Log application/security JSON có request ID, allowlist; không ghi thông tin đăng nhập. Rotate file ngày (14/90 file), fallback stderr cố định. CLI `artisan cyberlaw:create-account [--admin]` nhập mật khẩu ẩn, băm bcrypt, ghi tài khoản và audit DB cùng transaction; không có mật khẩu mặc định. `composer setup` bỏ migrate/key generation/npm scaffold. Chưa hoàn thiện log quota/rotation dung lượng/alert/exporter, chưa đủ điều kiện deploy.
+- MySQL kiểm tra chỉ đọc cuối: 11 bảng/101 cột, **1 tài khoản active với hash bcrypt**, không sửa/seed/xóa dữ liệu của anh. Không thêm schema trong lượt này. Fixture test dùng SQLite riêng; đừng nhầm tài khoản `@example.test` trong test với MySQL thật.
+- Kiểm tra: PHPUnit **22 test**; build/typecheck đạt; Composer và npm audit không advisory. UI: 55 ca hồi quy đạt; một ca gộp 80 lượt chuyển trang bị timeout, đã tách thành 16 kích thước và cả 16 đạt; thêm 2 ca lỗi API đạt (tổng 73 ca UI sau tách). 3 ca HTTP tích hợp Laravel/React đạt. Responsive giả lập 320–1920px, iPhone 16 Pro Max 440px, iPad, landscape và mốc bố cục; có keyboard/reduced motion/Axe. Chưa test thiết bị thật.
+- Hướng dẫn chạy/tạo tài khoản: `docs/backend/01-dang-nhap.md`; review: `docs/security/reviews/2026-09-29-login-backend.md`. Đăng ký/quên mật khẩu/AI/CRUD vẫn demo. Các sửa của Claude/tài liệu đang có được giữ; **chưa commit/push**.
+
 Cập nhật ngày 27/09/2026: đã chuyển frontend sang React và thiết kế trang đăng ký/đăng nhập; database tiếng Việt giữ nguyên.
 
 Tài liệu này giúp agent mới tiếp tục dự án mà không cần lịch sử chat. Đây là trạng thái tại thời điểm bàn giao; kiểm tra mã và yêu cầu mới của người dùng trước khi thực hiện công việc tiếp theo.
 
-Trạng thái mới nhất (29/09/2026): người dùng đã duyệt và yêu cầu commit/push giao diện quên mật khẩu, bảng MySQL hỗ trợ và sửa liên kết quản trị giữ phiên khi chuyển sang trang công khai. Thông điệp commit: `Them giao dien quen mat khau va giu phien dang nhap admin`. Build và các kiểm thử responsive liên quan đã đạt, đã rà soát file nhạy cảm; dump cục bộ và mật khẩu kết nối không đưa vào commit. Đối chiếu `HEAD` với `origin/main` để xác nhận trạng thái đồng bộ. Phần giao diện trước đó ở commit `a7e2b10`. Các ghi chú lịch sử bên dưới cần được đối chiếu với trạng thái mới nhất này.
+### Khởi tạo tài khoản Admin và xác nhận kết nối CSDL (30/09/2026)
+
+- Kiểm tra kết nối từ Laravel đến MySQL 8.0 `cyberlaw_search` qua tài khoản `cyberlaw_app`: kết nối thành công, nhận diện đúng 11 bảng.
+- Theo yêu cầu của người dùng, đã tạo tài khoản Quản trị viên (Admin) đầu tiên trong bảng `nguoi_dung`: email `thanhvinh.dev2006@gmail.com`, họ tên `Thanh Vinh`, vai trò `admin`, trạng thái `active`. Mật khẩu được băm bảo mật bằng Bcrypt (`$2y$12$...`), tuân thủ quy tắc không lưu plain-text vào kho lưu trữ hay tài liệu.
+- Đã rà soát toàn bộ các bảng liên quan (`hoi_thoai`, `yeu_cau_dat_lai_mat_khau`, `nhat_ky_quan_tri` đều 0 bản ghi, không có ràng buộc khóa ngoại nào bị ảnh hưởng). Đã chuyển `ma_nguoi_dung` từ 7 về **`1`** (`ma_nguoi_dung = 1`).
+- Các script tạm thời phục vụ thao tác DB đã được xóa sạch khỏi thư mục scratch.
+- Hiện trạng dữ liệu: bảng `nguoi_dung` có 1 tài khoản admin (ID: 1); các bảng tri thức (`van_ban`, `dieu_khoan`, `tu_khoa`, `quy_dinh`) đang có 0 bản ghi, chờ bóc tách từ Luật 116/2025/QH15.
+
+### Tiếp nhận thay đổi Claude trước backend (bản bàn giao 30/09/2026)
+
+- Đã đọc tài liệu backend/DB/yêu cầu/bảo mật và kiểm tra mã thực. Xác nhận PHP 8.2.12, Laravel 12.69.2; Laravel kết nối bằng `cyberlaw_app`, metadata 11 bảng/101 cột, cả 11 model đọc được count 0. Chỉ đọc, không chạy migration/seed hoặc thay dữ liệu DB.
+- Sửa hai điểm model trước auth: `NguoiDung` khai báo `$authPasswordName = 'mat_khau'` để rehash đúng cột; `YeuCauDatLaiMatKhau` ẩn hash OTP/token trong serialization. Test mới `backend/api/tests/Feature/AuthenticationModelTest.php`; PHPUnit đạt **5 tests/13 assertions** (gồm 2 test scaffold), không ghi DB. Không thay frontend, responsive N/A.
+- Báo cáo `docs/security/reviews/2026-09-30-backend-handoff.md` ghi các mục còn mở: password broker mặc định không tương thích bảng OTP; Composer setup còn script scaffold; `MAIL_MAILER=log` không được dùng để ghi thư OTP; audit table đã có nhưng service/exporter chưa có. Không kết luận auth hoặc bảo mật server đã hoàn tất.
+- Bước triển khai tiếp: chuẩn hóa setup/config, Sanctum SPA + logging, register/login/me/logout và quyền phía server, nối React và test HTTP/responsive. Quên mật khẩu/email và AI chưa triển khai trong lượt đọc tiếp nhận này. Không clone/cài lại Laravel, không ghi đè thay đổi Claude, chưa commit/push.
+
+### Quy ước bảo mật và log chuẩn bị deploy (29/09/2026)
+
+- Người dùng yêu cầu code có kiểm soát bảo mật, ghi log, review/test lỗ hổng sau mỗi chức năng và test lại sau sửa. Đã ghi trong `AGENTS.md`; áp dụng cùng quy ước responsive.
+- Skill riêng `.agent/cyberlaw-security/SKILL.md`, tách khỏi repo skills animation. AGENTS yêu cầu đọc skill cho thay đổi tính năng liên quan; không giả định mọi client tự khám phá thư mục `.agent`. `.gitignore` mở đúng thư mục skill riêng để có thể bàn giao qua Git, vẫn bỏ qua repo skills clone, logs và báo cáo thô.
+- Tài liệu `docs/security/`: chính sách, danh mục Web/API/AI, ca test từng chức năng, đặc tả log/audit, checklist deploy, mẫu báo cáo và rà soát ban đầu. Đối chiếu OWASP Top 10:2025, API:2023, LLM:2025, ASVS 5.0.0 và nguồn chính thức ngày 29/09/2026.
+- Đã chạy `npm audit --json` với npm 11.16.0/Node 24.18.0: exit 0, không advisory. Không đổi dependency. Report local `tmp/security/npm-audit-20260929.json`; tóm tắt có hash ở `docs/security/reviews/2026-09-29-baseline.md`.
+- Đã xác minh local trong trình duyệt tách biệt: sessionStorage giả admin mở được UI admin demo. Đây là giới hạn đã biết của mock, không phải đã truy cập DB thật. Auth/OTP server và logger chưa triển khai; các mục phải thay trước production được ghi OPEN. Chưa chạy Gitleaks/SAST tự động/DAST production, không tuyên bố web an toàn tuyệt đối.
+- Quy định logging yêu cầu sự kiện có request ID và che bí mật, rotation/quota/retention/cảnh báo; audit đặc quyền cần bền vững theo transaction, có thể cần thêm bảng audit/outbox lúc triển khai. Chưa tạo log giả, chưa sửa schema DB hoặc cài backend.
+- Lượt này chỉ sửa tài liệu, skill và ignore; không có UI cần chạy lại responsive. Bộ tài liệu/skill chưa commit/push.
+- Skill đã qua validator chính thức; kiểm tra liên kết nội bộ đạt. Do `.agent/skills/` là repo clone riêng, skill mới nằm ở `.agent/cyberlaw-security/`; repo animation vẫn sạch. PyYAML phục vụ validator chỉ nằm trong `tmp/skill-validator` bị Git bỏ qua, không thay dependency ứng dụng.
+
+### Chốt phạm vi và chuẩn bị backend (29/09/2026)
+
+- Người dùng chốt bám sát Luật An ninh mạng 116/2025/QH15. Đã ghi quy ước trong `AGENTS.md`; luật 2018 giữ tham khảo lịch sử, không trộn vào kho mặc định.
+- **30/09/2026 – Đối chiếu FE↔DB:** thêm migration `database/migrations/20260930_bo_sung_truong_khop_frontend.sql` (mirror trong `schema.sql`; **đã áp dụng lên DB dev 30/09/2026**, không chạy lại): `nguoi_dung.lan_dang_nhap_cuoi`, `dieu_khoan.tieu_de` DEFAULT '', `tin_nhan.{trang_thai_tra_loi,do_tin_cay,thoi_gian_xu_ly_ms}`, bảng `nhat_ky_quan_tri` → 11 bảng, 101 cột. Chi tiết `docs/design/04-co-so-du-lieu.md` §9. Không đổi UI (responsive N/A); chưa chạy test bảo mật server.
+- **30/09/2026 – Backend khởi tạo:** người dùng chốt **Laravel 12 + PHP 8.2**. Đã tạo `backend/api/` (Laravel 12.69.2), 11 model Eloquent (fillable allowlist; `NguoiDung` không cho gán `vai_tro/trang_thai`), `config/auth.php` trỏ `NguoiDung`, user MySQL `cyberlaw_app` quyền tối thiểu, `.env` cục bộ (Git bỏ qua; mật khẩu MySQL root do người dùng đưa qua chat, KHÔNG lưu). Kiểm tra: mỗi model đếm được bản ghi qua `cyberlaw_app` (đều 0). Chưa có route/auth/log/test; bước kế: Sanctum SPA + đăng nhập/đăng ký thật, log JSON theo `docs/security/03-logging.md`, review bảo mật vào `docs/security/reviews/`. Chi tiết chạy PHP/Composer trên Windows: `backend/README.md`.
+- Đọc `docs/requirements/03-chuan-bi-backend.md` trước khi viết backend: phân định PHP/Python, nhóm API, điểm còn thiếu của dữ liệu/ma trận quyền/thống kê, thứ tự và tiêu chí hoàn thành. Đã sửa các ghi chú cũ về 9 bảng và luồng quên mật khẩu trong tài liệu liên quan.
+- Rà soát bản trích xuất web thấy 8 tiêu đề chương và đủ 45 tiêu đề điều liên tiếp. Đây là kiểm kê cấu trúc, **chưa đối chiếu toàn văn với scan**; `data/processed/` vẫn trống. Chưa được seed dữ liệu demo hoặc câu trả lời luật 2018 thành dữ liệu pháp luật thật.
+- (Cập nhật 30/09/2026) Đã có khung Laravel 12 ở `backend/api/` (chưa có API); chưa có mã Python/FastAPI. Python 3.11.9 sẵn có; PHP dùng `C:\xampp\php\php.exe` (8.2.12), Composer qua `composer.phar` tải lại từ getcomposer.org khi cần (chạy `php -d extension=zip composer.phar install`).
+- Có thể bắt đầu nền Laravel và tài khoản trước; phần AI phải chờ kho tri thức được duyệt và bộ đánh giá. Người dùng hiện hỏi mức độ sẵn sàng, chưa yêu cầu khởi tạo backend trong lượt này. Chỉ cập nhật tài liệu; không có thay đổi giao diện cần chạy lại responsive.
+- Các thay đổi giao diện/reset/giữ phiên trước đó đã push tại `7cb2918`; phần tài liệu chuẩn bị backend này chưa commit/push.
+
+Đợt push giao diện trước đó (29/09/2026): người dùng đã duyệt và yêu cầu commit/push giao diện quên mật khẩu, bảng MySQL hỗ trợ và sửa liên kết quản trị giữ phiên khi chuyển sang trang công khai. Thông điệp commit: `Them giao dien quen mat khau va giu phien dang nhap admin`. Build và các kiểm thử responsive liên quan đã đạt, đã rà soát file nhạy cảm; dump cục bộ và mật khẩu kết nối không đưa vào commit. Đối chiếu `HEAD` với `origin/main` để xác nhận trạng thái đồng bộ. Phần giao diện trước đó ở commit `a7e2b10`. Các ghi chú lịch sử bên dưới cần được đối chiếu với trạng thái mới nhất này.
 
 ### Giữ phiên admin khi mở tra cứu/thư viện (29/09/2026)
 
@@ -36,14 +173,14 @@ Trạng thái mới nhất (29/09/2026): người dùng đã duyệt và yêu c�
 
 ## 2. Quyết định đã trao đổi
 
-| Phần | Quyết định / hướng thực hiện | Trạng thái thực tế |
-|---|---|---|
-| Frontend | Đã chốt React + TypeScript + Vite + Tailwind CSS + shadcn/ui + Motion for React | Đã triển khai tại frontend/src; có package.json và lockfile |
-| Backend | Người dùng muốn PHP kết hợp Python; đề xuất Laravel cho nghiệp vụ, FastAPI cho AI | Chưa khởi tạo Laravel/FastAPI chạy được |
-| Database | Người dùng chọn MySQL; yêu cầu tên bảng và cột tiếng Việt không dấu | Đã tạo và kiểm tra trên MySQL 8.0.44 |
-| Tài khoản | Có đăng ký, đăng nhập, đăng xuất và phân quyền | Có giao diện và kiểm tra dữ liệu nhập; chưa nối API xác thực |
-| Phân quyền | Hai vai trò tài khoản user/admin; quản lý qua Dashboard Admin `/admin` | Đã triển khai trang Admin CRUD người dùng, phân quyền RBAC, tìm kiếm, lọc, stats card theo schema `nguoi_dung` |
-| AI | Keyphrase, khái niệm, quy định có cấu trúc, tìm kiếm ngữ nghĩa và đáp án có căn cứ | Chưa triển khai; chưa chốt nhà cung cấp LLM/embedding |
+| Phần       | Quyết định / hướng thực hiện                                                       | Trạng thái thực tế                                                                                             |
+| ---------- | ---------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| Frontend   | Đã chốt React + TypeScript + Vite + Tailwind CSS + shadcn/ui + Motion for React    | Đã triển khai tại frontend/src; có package.json và lockfile                                                    |
+| Backend    | Người dùng muốn PHP kết hợp Python; đề xuất Laravel cho nghiệp vụ, FastAPI cho AI  | Chưa khởi tạo Laravel/FastAPI chạy được                                                                        |
+| Database   | Người dùng chọn MySQL; yêu cầu tên bảng và cột tiếng Việt không dấu                | Đã tạo và kiểm tra trên MySQL 8.0.44                                                                           |
+| Tài khoản  | Có đăng ký, đăng nhập, đăng xuất và phân quyền                                     | Có giao diện và kiểm tra dữ liệu nhập; chưa nối API xác thực                                                   |
+| Phân quyền | Hai vai trò tài khoản user/admin; quản lý qua Dashboard Admin `/admin`             | Đã triển khai trang Admin CRUD người dùng, phân quyền RBAC, tìm kiếm, lọc, stats card theo schema `nguoi_dung` |
+| AI         | Keyphrase, khái niệm, quy định có cấu trúc, tìm kiếm ngữ nghĩa và đáp án có căn cứ | Chưa triển khai; chưa chốt nhà cung cấp LLM/embedding                                                          |
 
 Luồng kiến trúc đề xuất: `React → Laravel → FastAPI`, Laravel quản lý MySQL; Python xử lý tri thức và chỉ mục tìm kiếm. Giữ cách triển khai đơn giản trên cùng máy ở giai đoạn đầu.
 
@@ -107,59 +244,59 @@ Luồng kiến trúc đề xuất: `React → Laravel → FastAPI`, Laravel qu�
 - Cập nhật animation điều khoản: thiết kế lại chuẩn theo triết lý và ví dụ mẫu tại Module 04 "Good vs Great animations" trên https://animations.dev/ (mẫu App Store Card Expansion / Shared Layout bằng Motion). Thẻ kết quả tra cứu chuyển thành `<motion.article layoutId={`article-card-${article.id}`}>`, tiêu đề `<motion.h3 layoutId={`article-title-${article.id}`}>`. Khi bấm "Xem điều khoản", thẻ gốc phóng lớn và biến hình mượt mà thành modal dialog căn cứ giữa màn hình với spring physics (`stiffness: 190, damping: 25, mass: 0.85`), tạo cảm giác chuyển động êm, chậm và mượt mà ("đẹp chậm, và mượt mà"). Backdrop làm mờ sâu chuẩn frosted glass (`backdrop-filter: blur(14px) saturate(180%)`) kết hợp sắc độ burgundy ấm (`rgba(22, 10, 17, 0.68)`). Nội dung căn cứ pháp lý hiện dần với độ trễ nhẹ (`y: 14 -> 0, opacity: 0 -> 1, delay: 0.12s`). Khi đóng bằng nút X, bấm ra nền hoặc phím Escape, modal thu nhỏ và hạ cánh mượt mà trở lại đúng vị trí thẻ kết quả ban đầu, trả focus về nút kích hoạt và khôi phục thanh cuộn trang.
 - Hỗ trợ trợ năng và phím: người dùng bật `prefers-reduced-motion` được chuyển sang hiệu ứng crossfade nhẹ 160 ms không dịch chuyển vị trí. Phím Tab được giữ trong phạm vi modal (focus trap). Khi mở từ chat AI hoặc thư viện, modal xuất hiện êm từ trung tâm với cùng thông số spring. Toàn bộ 11 kịch bản kiểm thử Playwright (`npm run test:e2e`) đều đạt. Build và format Prettier đạt chuẩn.
 - Cập nhật Dashboard Phân quyền Admin (`/admin` và `/admin/users`): Thiết kế giao diện Quản trị & Phân quyền hoàn chỉnh theo yêu cầu người dùng, khớp chuẩn dữ liệu bảng `nguoi_dung` trong `database/schema.sql` và tài liệu `docs/requirements/02-tai-khoan-phan-quyen.md`. Bao gồm:
-  + Các trường dữ liệu: `ma_nguoi_dung`, `ho_ten`, `thu_dien_tu`, `mat_khau`, `vai_tro` (`admin` / `user`), `trang_thai` (`active` / `blocked`), `ngay_tao`, `ngay_cap_nhat`.
-  + Giao diện đồng bộ: sidebar quản trị màu kem, đỏ burgundy `#800020`, font `Be Vietnam Pro`, breadcrumb và trạng thái kết nối MySQL 8.0.
-  + Thẻ thống kê tổng quan (Stats Cards): Tổng tài khoản, Quản trị viên, Đang hoạt động, Bị tạm khóa.
-  + Tìm kiếm & Bộ lọc: Ô tìm kiếm tức thời theo họ tên hoặc email, bộ lọc dropdown theo vai trò và trạng thái tài khoản.
-  + Tính năng CRUD hoàn chỉnh:
-    * Thêm tài khoản mới: modal dialog có form validation (họ tên, email đúng định dạng & không trùng lặp, mật khẩu khởi tạo, chọn vai trò và trạng thái kèm mô tả quyền hạn).
-    * Xem chi tiết: modal thông tin tài khoản, ngày tạo, cập nhật, số cuộc trò chuyện AI và các quyền hạn được gán.
-    * Chỉnh sửa thông tin & phân quyền: modal cập nhật họ tên, email, thay đổi vai trò (user ↔ admin), đổi trạng thái, tùy chọn đổi mật khẩu mới.
-    * Khóa / Mở khóa nhanh: modal xác nhận thao tác an toàn; có cơ chế bảo vệ ngăn chặn tự khóa Quản trị viên Hệ thống chính (#1) hoặc Admin hoạt động duy nhất.
-    * Xóa tài khoản vĩnh viễn: modal cảnh báo nguy hiểm và xác nhận xóa tài khoản khỏi CSDL.
-  + Tab Ma trận phân quyền RBAC: Bảng đối chiếu chi tiết quyền hạn giữa Khách vãng lai, Người dùng và Quản trị viên theo tài liệu `02-tai-khoan-phan-quyen.md`.
-  + Tích hợp điều hướng & Bảo mật phân quyền theo vai trò (Cập nhật theo yêu cầu người dùng):
-    * Ẩn hoàn toàn trang Quản trị và các liên kết menubar/sidebar đối với khách vãng lai và tài khoản người dùng thường.
-    * Khi đăng nhập đúng email/mật khẩu Admin (`admin@cyberlaw.vn` / `admin12345`): tự động điều hướng sang `/admin`, thanh menubar và sidebar hiển thị mục "Quản trị hệ thống".
-    * Khi đăng nhập đúng email/mật khẩu User (`mai.nguyen@gmail.com` / `user12345`): tự động điều hướng sang trang người dùng (`/search`), sidebar hiển thị hồ sơ cá nhân và KHÔNG CÓ mục Quản trị.
-    * Bảo vệ route `/admin` (Guard): Khách vãng lai cố tình vào `/admin` bị yêu cầu đăng nhập; User thường cố tình vào `/admin` bị chặn với màn hình cảnh báo 403 (Từ chối quyền truy cập).
-    * Tinh chỉnh menubar quản trị: Bỏ các badge CRUD, RBAC, Sắp tới, DB 9 bảng; cố định chiều cao đồng đều 44px và chiều rộng cho tất cả các box menubar (Người dùng & Phân quyền, Ma trận quyền hạn, Thống kê, Văn bản), đảm bảo thẳng hàng và không bị lệch kích thước.
-  + Nâng cấp Animation thông báo CRUD góc phải dưới (Theo mẫu CSS/Motion của animations.dev):
-    * Loại bỏ hoàn toàn hộp thông báo màu đen cũ một dòng thô cứng.
-    * Tạo component `AdminToast.tsx` (`AdminToastContainer`, `ToastItem`): thiết kế chuẩn thẻ toast trắng kem bo góc `rounded-xl`, shadow nổi sâu (`shadow-[0_12px_32px_rgba(0,0,0,0.12)]`), hỗ trợ xếp chồng đa thông báo (multi-toast stacking) tự động trượt sắp xếp bằng Motion layout animation.
-    * Cấu trúc thông báo 2 dòng chi tiết: tiêu đề in đậm rõ ràng + dòng mô tả cụ thể về tài khoản và hành động được thực hiện.
-    * Phân loại màu sắc và icon tinh tế: Xóa tài khoản (đỏ burgundy/rose), Khóa tài khoản (hổ phách/amber), Mở khóa & Thêm mới (xanh ngọc/emerald), Xem thông tin (đỏ mận burgundy/indigo).
-    * Hiệu ứng chuyển động tự nhiên: Trượt vào với spring physics (`stiffness: 420, damping: 28, mass: 0.8`), trượt ra sang phải khi hết hạn (3.8s) hoặc khi bấm nút X.
-    * Hiệu ứng phản hồi xúc giác trên các icon CRUD (`cl-admin-action-btn`): Micro-scale 1.1 khi hover, chuyển màu riêng biệt theo hành động (xem/sửa/khóa/xóa), co nhẹ 0.92 khi bấm chuột (active press) với cubic-bezier `(0.16, 1, 0.3, 1)`.
-    * Tinh chỉnh thanh tìm kiếm & Nút X xóa nhanh email/họ tên:
-    * Khắc phục lỗi icon X bị tụt xuống góc đáy và bị văng ra viền ngoài (do selector `.cl-admin-toolbar-search svg` áp dụng nhầm `left: 12px; pointer-events: none`).
-    * Thiết kế nút xóa `cl-admin-search-clear-btn` tròn 28x28px tinh tế, căn giữa hoàn hảo theo chiều dọc (`align-items: center`), cách mép ô tìm kiếm một khoảng đệm 8px ("cách xa ô tìm kiếm một xíu, chỉ một xíu thôi").
-    * Xử lý tương tác: Click nút X lập tức xóa trắng từ khóa tìm kiếm (`searchQuery = ""`), tự động focus lại con trỏ vào ô input (`searchInputRef.current?.focus()`), bảng người dùng khôi phục đầy đủ tức thì.
-  + Tinh chỉnh hiển thị thẻ trạng thái tài khoản (Status Badges) trong trang Quản trị & Phân quyền:
-    * Đồng bộ kích thước chuẩn và hình dáng: cố định kích thước `.cl-admin-status-badge` thành `width: 104px; height: 42px;` và padding `4px 8px;`, đặt `min-width: 130px;` cho cột header `<th>Trạng thái</th>`. Cả hai box "Đang hoạt động" và "Đã bị khóa" đều có kích thước $104\text{px} \times 42\text{px}$ bằng hệt nhau, không bị lệch kích thước dù hiển thị ở bất kỳ màn hình nào.
-    * Định dạng 2 dòng cân đối: cả "Đang hoạt động" (`Đang hoạt / động`) và "Đã bị khóa" (`Đã bị / khóa`) đều được tách 2 dòng đồng nhất với `text-align: center`, chữ dòng dưới tự động căn giữa thẳng hàng dưới chữ dòng trên.
-  + Triển khai trang Thống kê & Báo cáo (Mazer Profile Statistics Dashboard) theo yêu cầu người dùng:
-    * Tham khảo chuẩn bố cục và phong cách từ theme Mazer (`https://themewagon.github.io/mazer/` Profile Statistics), điều chỉnh nội dung đồng bộ với CSDL MySQL `cyberlaw_search` (`schema.sql`):
-    * Hàng 1 (4 Stat Cards hàng đầu): Người dùng hệ thống (1.280 - bảng `nguoi_dung`), Văn bản & Điều khoản (47 điều - bảng `van_ban`, `dieu_khoan`), Quy định bóc tách (328 quy định - bảng `quy_dinh`), Lượt hỏi đáp AI (3.450 cuộc trò chuyện - bảng `hoi_thoai`, `tin_nhan`). Theo yêu cầu người dùng, đã bỏ hiệu ứng phóng to icon khi hover (`.cl-stat-icon-wrapper`); giữ kích thước icon cố định. Hover cả box đồng bộ trang Người dùng & Phân quyền: nâng 2px, bóng `0 4px 12px rgba(0,0,0,.05)`, transition 200ms ease; bóng mặc định `0 1px 3px rgba(0,0,0,.03)`. Dùng CSS `translate` riêng để không bị inline `transform` của Motion lúc xuất hiện ghi đè; chỉ hover bằng chuột, reduced motion không nâng. Đã đối chiếu computed style cả 4 box với trang người dùng trên Edge.
-    * Cột chính bên trái:
+  - Các trường dữ liệu: `ma_nguoi_dung`, `ho_ten`, `thu_dien_tu`, `mat_khau`, `vai_tro` (`admin` / `user`), `trang_thai` (`active` / `blocked`), `ngay_tao`, `ngay_cap_nhat`.
+  - Giao diện đồng bộ: sidebar quản trị màu kem, đỏ burgundy `#800020`, font `Be Vietnam Pro`, breadcrumb và trạng thái kết nối MySQL 8.0.
+  - Thẻ thống kê tổng quan (Stats Cards): Tổng tài khoản, Quản trị viên, Đang hoạt động, Bị tạm khóa.
+  - Tìm kiếm & Bộ lọc: Ô tìm kiếm tức thời theo họ tên hoặc email, bộ lọc dropdown theo vai trò và trạng thái tài khoản.
+  - Tính năng CRUD hoàn chỉnh:
+    - Thêm tài khoản mới: modal dialog có form validation (họ tên, email đúng định dạng & không trùng lặp, mật khẩu khởi tạo, chọn vai trò và trạng thái kèm mô tả quyền hạn).
+    - Xem chi tiết: modal thông tin tài khoản, ngày tạo, cập nhật, số cuộc trò chuyện AI và các quyền hạn được gán.
+    - Chỉnh sửa thông tin & phân quyền: modal cập nhật họ tên, email, thay đổi vai trò (user ↔ admin), đổi trạng thái, tùy chọn đổi mật khẩu mới.
+    - Khóa / Mở khóa nhanh: modal xác nhận thao tác an toàn; có cơ chế bảo vệ ngăn chặn tự khóa Quản trị viên Hệ thống chính (#1) hoặc Admin hoạt động duy nhất.
+    - Xóa tài khoản vĩnh viễn: modal cảnh báo nguy hiểm và xác nhận xóa tài khoản khỏi CSDL.
+  - Tab Ma trận phân quyền RBAC: Bảng đối chiếu chi tiết quyền hạn giữa Khách vãng lai, Người dùng và Quản trị viên theo tài liệu `02-tai-khoan-phan-quyen.md`.
+  - Tích hợp điều hướng & Bảo mật phân quyền theo vai trò (Cập nhật theo yêu cầu người dùng):
+    - Ẩn hoàn toàn trang Quản trị và các liên kết menubar/sidebar đối với khách vãng lai và tài khoản người dùng thường.
+    - Khi đăng nhập đúng email/mật khẩu Admin (`admin@cyberlaw.vn` / `admin12345`): tự động điều hướng sang `/admin`, thanh menubar và sidebar hiển thị mục "Quản trị hệ thống".
+    - Khi đăng nhập đúng email/mật khẩu User (`mai.nguyen@gmail.com` / `user12345`): tự động điều hướng sang trang người dùng (`/search`), sidebar hiển thị hồ sơ cá nhân và KHÔNG CÓ mục Quản trị.
+    - Bảo vệ route `/admin` (Guard): Khách vãng lai cố tình vào `/admin` bị yêu cầu đăng nhập; User thường cố tình vào `/admin` bị chặn với màn hình cảnh báo 403 (Từ chối quyền truy cập).
+    - Tinh chỉnh menubar quản trị: Bỏ các badge CRUD, RBAC, Sắp tới, DB 9 bảng; cố định chiều cao đồng đều 44px và chiều rộng cho tất cả các box menubar (Người dùng & Phân quyền, Ma trận quyền hạn, Thống kê, Văn bản), đảm bảo thẳng hàng và không bị lệch kích thước.
+  - Nâng cấp Animation thông báo CRUD góc phải dưới (Theo mẫu CSS/Motion của animations.dev):
+    - Loại bỏ hoàn toàn hộp thông báo màu đen cũ một dòng thô cứng.
+    - Tạo component `AdminToast.tsx` (`AdminToastContainer`, `ToastItem`): thiết kế chuẩn thẻ toast trắng kem bo góc `rounded-xl`, shadow nổi sâu (`shadow-[0_12px_32px_rgba(0,0,0,0.12)]`), hỗ trợ xếp chồng đa thông báo (multi-toast stacking) tự động trượt sắp xếp bằng Motion layout animation.
+    - Cấu trúc thông báo 2 dòng chi tiết: tiêu đề in đậm rõ ràng + dòng mô tả cụ thể về tài khoản và hành động được thực hiện.
+    - Phân loại màu sắc và icon tinh tế: Xóa tài khoản (đỏ burgundy/rose), Khóa tài khoản (hổ phách/amber), Mở khóa & Thêm mới (xanh ngọc/emerald), Xem thông tin (đỏ mận burgundy/indigo).
+    - Hiệu ứng chuyển động tự nhiên: Trượt vào với spring physics (`stiffness: 420, damping: 28, mass: 0.8`), trượt ra sang phải khi hết hạn (3.8s) hoặc khi bấm nút X.
+    - Hiệu ứng phản hồi xúc giác trên các icon CRUD (`cl-admin-action-btn`): Micro-scale 1.1 khi hover, chuyển màu riêng biệt theo hành động (xem/sửa/khóa/xóa), co nhẹ 0.92 khi bấm chuột (active press) với cubic-bezier `(0.16, 1, 0.3, 1)`.
+    - Tinh chỉnh thanh tìm kiếm & Nút X xóa nhanh email/họ tên:
+    - Khắc phục lỗi icon X bị tụt xuống góc đáy và bị văng ra viền ngoài (do selector `.cl-admin-toolbar-search svg` áp dụng nhầm `left: 12px; pointer-events: none`).
+    - Thiết kế nút xóa `cl-admin-search-clear-btn` tròn 28x28px tinh tế, căn giữa hoàn hảo theo chiều dọc (`align-items: center`), cách mép ô tìm kiếm một khoảng đệm 8px ("cách xa ô tìm kiếm một xíu, chỉ một xíu thôi").
+    - Xử lý tương tác: Click nút X lập tức xóa trắng từ khóa tìm kiếm (`searchQuery = ""`), tự động focus lại con trỏ vào ô input (`searchInputRef.current?.focus()`), bảng người dùng khôi phục đầy đủ tức thì.
+  - Tinh chỉnh hiển thị thẻ trạng thái tài khoản (Status Badges) trong trang Quản trị & Phân quyền:
+    - Đồng bộ kích thước chuẩn và hình dáng: cố định kích thước `.cl-admin-status-badge` thành `width: 104px; height: 42px;` và padding `4px 8px;`, đặt `min-width: 130px;` cho cột header `<th>Trạng thái</th>`. Cả hai box "Đang hoạt động" và "Đã bị khóa" đều có kích thước $104\text{px} \times 42\text{px}$ bằng hệt nhau, không bị lệch kích thước dù hiển thị ở bất kỳ màn hình nào.
+    - Định dạng 2 dòng cân đối: cả "Đang hoạt động" (`Đang hoạt / động`) và "Đã bị khóa" (`Đã bị / khóa`) đều được tách 2 dòng đồng nhất với `text-align: center`, chữ dòng dưới tự động căn giữa thẳng hàng dưới chữ dòng trên.
+  - Triển khai trang Thống kê & Báo cáo (Mazer Profile Statistics Dashboard) theo yêu cầu người dùng:
+    - Tham khảo chuẩn bố cục và phong cách từ theme Mazer (`https://themewagon.github.io/mazer/` Profile Statistics), điều chỉnh nội dung đồng bộ với CSDL MySQL `cyberlaw_search` (`schema.sql`):
+    - Hàng 1 (4 Stat Cards hàng đầu): Người dùng hệ thống (1.280 - bảng `nguoi_dung`), Văn bản & Điều khoản (47 điều - bảng `van_ban`, `dieu_khoan`), Quy định bóc tách (328 quy định - bảng `quy_dinh`), Lượt hỏi đáp AI (3.450 cuộc trò chuyện - bảng `hoi_thoai`, `tin_nhan`). Theo yêu cầu người dùng, đã bỏ hiệu ứng phóng to icon khi hover (`.cl-stat-icon-wrapper`); giữ kích thước icon cố định. Hover cả box đồng bộ trang Người dùng & Phân quyền: nâng 2px, bóng `0 4px 12px rgba(0,0,0,.05)`, transition 200ms ease; bóng mặc định `0 1px 3px rgba(0,0,0,.03)`. Dùng CSS `translate` riêng để không bị inline `transform` của Motion lúc xuất hiện ghi đè; chỉ hover bằng chuột, reduced motion không nâng. Đã đối chiếu computed style cả 4 box với trang người dùng trên Edge.
+    - Cột chính bên trái:
       - Biểu đồ Cột "Xu hướng Hỏi đáp AI & Tra cứu Pháp luật" (Profile Visit của Mazer): 12 tháng với 2 cột song song (Hỏi đáp AI đỏ burgundy, Tra cứu điều khoản xanh sky), các đường lưới đứt ngang, tooltip nổi hiển thị chi tiết khi rê chuột, bộ lọc thời gian (Năm 2026, 6 tháng gần nhất, 30 ngày qua).
       - Nâng cấp Animation & Khắc phục lỗi dính layout biểu đồ cột (Theo phản hồi người dùng):
-        * Khắc phục triệt để lỗi cột Tháng 1 (T1) bị dính sát vào số 150 trên trục tung: Tách riêng trục tung thành container độc lập `.cl-barchart-yaxis` có chiều rộng cố định 44px, text-align right, padding phải 14px và đường kẻ ngăn cách `border-right: 1px solid #f0eae5`. Vùng vẽ cột `.cl-barchart-plot-area` được đặt độc lập bên phải với đệm hai đầu `padding: 0 14px;`, đảm bảo cột T1 luôn có khoảng thở thoáng đẹp với trục tọa độ số, không bao giờ bị đè hoặc chạm vào số 150.
-        * Hiệu ứng Animation lướt sóng (Stagger Wave Animation) mượt mà như web demo Mazer: Sử dụng Framer Motion áp dụng cho 24 cột tháng (12 cột Hỏi đáp đỏ burgundy và 12 cột Tra cứu xanh sky) với đường cong chuyển động spring hồi tiếp `ease: [0.34, 1.45, 0.64, 1]`, thời lượng 0.6s và độ trễ tuần tự nối tiếp `delay: 0.08 + index * 0.045` (cột Hỏi đáp) và `delay: 0.11 + index * 0.045` (cột Tra cứu). Khi mở trang hoặc đổi bộ lọc thời gian, các cột đồng loạt dâng lên dạng sóng nước nhịp nhàng, uốn lượn mượt mà từ tháng 1 đến tháng 12.
-        * Củng cố bố cục Flexbox hàng ngang: Bổ sung `flex-direction: row !important` và `align-items: flex-end !important` cho `.cl-barchart-layout`, `.cl-barchart-columns-wrapper`, `.cl-barchart-x-labels` nhằm chống sập layout flex-direction khi có CSS kế thừa.
+        - Khắc phục triệt để lỗi cột Tháng 1 (T1) bị dính sát vào số 150 trên trục tung: Tách riêng trục tung thành container độc lập `.cl-barchart-yaxis` có chiều rộng cố định 44px, text-align right, padding phải 14px và đường kẻ ngăn cách `border-right: 1px solid #f0eae5`. Vùng vẽ cột `.cl-barchart-plot-area` được đặt độc lập bên phải với đệm hai đầu `padding: 0 14px;`, đảm bảo cột T1 luôn có khoảng thở thoáng đẹp với trục tọa độ số, không bao giờ bị đè hoặc chạm vào số 150.
+        - Hiệu ứng Animation lướt sóng (Stagger Wave Animation) mượt mà như web demo Mazer: Sử dụng Framer Motion áp dụng cho 24 cột tháng (12 cột Hỏi đáp đỏ burgundy và 12 cột Tra cứu xanh sky) với đường cong chuyển động spring hồi tiếp `ease: [0.34, 1.45, 0.64, 1]`, thời lượng 0.6s và độ trễ tuần tự nối tiếp `delay: 0.08 + index * 0.045` (cột Hỏi đáp) và `delay: 0.11 + index * 0.045` (cột Tra cứu). Khi mở trang hoặc đổi bộ lọc thời gian, các cột đồng loạt dâng lên dạng sóng nước nhịp nhàng, uốn lượn mượt mà từ tháng 1 đến tháng 12.
+        - Củng cố bố cục Flexbox hàng ngang: Bổ sung `flex-direction: row !important` và `align-items: flex-end !important` cho `.cl-barchart-layout`, `.cl-barchart-columns-wrapper`, `.cl-barchart-x-labels` nhằm chống sập layout flex-direction khi có CSS kế thừa.
       - Cập nhật 28/09/2026: "Hỏi đáp AI & Căn cứ Pháp lý gần đây" chiếm trọn chiều rộng cột chính dưới biểu đồ cột. `RecentQuestionsCard.tsx` và CSS riêng nằm trong `frontend/src/components/admin/`.
-        * Theo mẫu Good vs Great tại https://animations.dev/, thẻ mở thành popup chi tiết bằng shared layout và thu về thẻ nguồn. Dùng Motion `LayoutGroup`, `layoutId`, `AnimatePresence`; spring 190/25/0.85 đồng bộ popup điều khoản trang chính. Danh sách phía sau giữ nguyên vị trí; đã bỏ accordion cũ có cả layout scale lẫn height animation.
-        * Popup dùng Radix Dialog có focus trap, Escape, đóng bằng nền/X, trả focus về thẻ và khóa cuộn. Nội dung dài cuộn bên trong; reduced motion dùng fade 160ms, mở bằng bàn phím hiển thị ngay. Chi tiết fade sau khi khung bắt đầu nở, giữ ảnh đại diện/tiêu đề liên tục qua chuyển cảnh.
-        * Giữ nội dung mẫu từ `admin-data.ts`, ghi rõ "Dữ liệu minh họa". Đây chưa phải truy vấn MySQL, phản hồi AI thật hay căn cứ pháp lý đã kiểm chứng. Sao chép chỉ báo thành công sau khi clipboard ghi xong; liên kết thư viện trỏ `/library`.
-    * Cột phụ bên phải:
+        - Theo mẫu Good vs Great tại https://animations.dev/, thẻ mở thành popup chi tiết bằng shared layout và thu về thẻ nguồn. Dùng Motion `LayoutGroup`, `layoutId`, `AnimatePresence`; spring 190/25/0.85 đồng bộ popup điều khoản trang chính. Danh sách phía sau giữ nguyên vị trí; đã bỏ accordion cũ có cả layout scale lẫn height animation.
+        - Popup dùng Radix Dialog có focus trap, Escape, đóng bằng nền/X, trả focus về thẻ và khóa cuộn. Nội dung dài cuộn bên trong; reduced motion dùng fade 160ms, mở bằng bàn phím hiển thị ngay. Chi tiết fade sau khi khung bắt đầu nở, giữ ảnh đại diện/tiêu đề liên tục qua chuyển cảnh.
+        - Giữ nội dung mẫu từ `admin-data.ts`, ghi rõ "Dữ liệu minh họa". Đây chưa phải truy vấn MySQL, phản hồi AI thật hay căn cứ pháp lý đã kiểm chứng. Sao chép chỉ báo thành công sau khi clipboard ghi xong; liên kết thư viện trỏ `/library`.
+    - Cột phụ bên phải:
       - Thẻ Profile Card: Avatar AD, Quản trị viên Hệ thống, `@admin • admin@cyberlaw.vn`, nhãn Super Admin và trạng thái CSDL trực tuyến (MySQL 8.0 • 9 bảng).
       - Thẻ "Người dùng hỏi đáp nhiều" (Recent Messages trong Mazer): 4 tài khoản hoạt động tích cực kèm chấm trạng thái online/idle/offline, nút chuyển nhanh sang Quản lý tài khoản.
       - Thẻ "Độ chính xác Căn cứ AI" (Visitors Profile Donut Chart trong Mazer): Biểu đồ Donut SVG tương tác với tỷ lệ 78% trích dẫn chính xác điều khoản, 16% giải thích thuật ngữ, 6% cần thêm ngữ cảnh; nhãn trung tâm "94% Tin cậy".
       - Ngay bên dưới là "Phân loại Quy định" (`RegulationBreakdownCard.tsx` và CSS riêng). Giữ 4 sparkline SVG và màu nhóm; tham khảo tương tác Total Sales của Falcon https://prium.github.io/falcon/v3.26.0/index.html. Rê/chọn điểm hiện trục, đường dóng, tooltip; click/tap ghim điểm, click cùng điểm bỏ ghim. Hỗ trợ mũi tên/Home/End/Enter/Escape, chiều cao cố định để trang không nhảy. Bảy giá trị mẫu được gọi là "Mốc 1–7", không tự gán ngày/tháng.
       - Tinh chỉnh tiếp theo theo phản hồi người dùng: tooltip Phân loại Quy định bám tọa độ chuột liên tục bằng MotionValue/transform (không đợi đổi mốc, không đổi bên ở giữa biểu đồ), căn giữa phía trên con trỏ và giới hạn trong khung/viewport. Đường dóng và điểm đánh dấu chuyển mốc bằng transform 200ms `--ease-out`, tiếp tục từ vị trí hiện tại khi đảo chiều. Lần rê vào đầu đặt đúng điểm ngay; rời chuột giữ vị trí cuối lúc fade-out. Bàn phím và reduced motion không trượt vị trí. Tham khảo cấu hình thực tế `assets/js/theme.js` của Falcon: tooltip `transitionDuration: 0`, axis pointer cập nhật 200ms.
       - Đoạn trích luật `.cl-legal-quote` trong popup hỏi đáp đã bỏ viền đỏ trái, dùng đúng bóng đổ người dùng gửi: `rgba(0,0,0,.05) 0px 6px 24px 0px, rgba(0,0,0,.08) 0px 0px 0px 1px`. Đã build và chạy lại 5 test thống kê thành công, gồm test đo tooltip di chuyển trong cùng một mốc và các frame đường dóng chuyển điểm; kiểm tra ảnh popup mới.
-    * Màu sắc & Hiệu ứng: Tông đỏ burgundy `#800020`, kem `#f8f7f4`, viền `#e8e2de`, hiệu ứng Motion fade in up nhẹ nhàng, micro-interactions hover nổi bóng tinh tế.
-  + Kiểm tra lượt sửa 28/09/2026: `npm run build` đạt; Vite còn cảnh báo chunk lớn hơn 500kB. Bốn test `e2e/admin-stats.spec.ts` đạt: bố cục cột, chọn/ghim điểm và bàn phím, đo các frame thẻ nở, nền không dịch chuyển, đóng sớm/đóng bằng nền/Escape, trả focus, mở bằng Enter, responsive 440×956 với motion bình thường và 834×1194 với reduced motion. Đã xem ảnh desktop/mobile trong `frontend/test-results/` (không commit). Lượt này không chạy lại toàn bộ suite hoặc push; giữ thay đổi Antigravity có sẵn ở `admin-data.ts`, `AdminUsersPage.tsx` và tài liệu.
+    - Màu sắc & Hiệu ứng: Tông đỏ burgundy `#800020`, kem `#f8f7f4`, viền `#e8e2de`, hiệu ứng Motion fade in up nhẹ nhàng, micro-interactions hover nổi bóng tinh tế.
+  - Kiểm tra lượt sửa 28/09/2026: `npm run build` đạt; Vite còn cảnh báo chunk lớn hơn 500kB. Bốn test `e2e/admin-stats.spec.ts` đạt: bố cục cột, chọn/ghim điểm và bàn phím, đo các frame thẻ nở, nền không dịch chuyển, đóng sớm/đóng bằng nền/Escape, trả focus, mở bằng Enter, responsive 440×956 với motion bình thường và 834×1194 với reduced motion. Đã xem ảnh desktop/mobile trong `frontend/test-results/` (không commit). Lượt này không chạy lại toàn bộ suite hoặc push; giữ thay đổi Antigravity có sẵn ở `admin-data.ts`, `AdminUsersPage.tsx` và tài liệu.
 - Tham khảo ban đầu: https://bocongan.gov.vn/tim-kiem?search=an+ninh+mang&searchTypeId=title
 - Nhận diện riêng CyberLaw Search: đỏ burgundy, vàng nhạt, nền sáng, chữ tiếng Việt dễ đọc.
 - Sidebar luôn hiển thị bên trái trên desktop; bố cục responsive trên màn hình nhỏ.
@@ -194,17 +331,17 @@ Skills đã đọc và áp dụng: `emil-design-eng`, `animate`, recipe về nú
 - Mật khẩu đã được người dùng cung cấp riêng trong chat cũ, **không lưu trong tệp bàn giao, SQL hay repository**. Nếu công việc mới cần kết nối, dùng thông tin xác thực được cấp trong phiên mới.
 - Đã đổi **9 bảng, 79 cột** sang tiếng Việt không dấu; tên khóa/index và chú thích cũng đã cập nhật.
 
-| Bảng | Chức năng |
-|---|---|
-| `nguoi_dung` | Tài khoản, mật khẩu băm, vai trò và trạng thái |
-| `van_ban` | Số hiệu, tiêu đề, ngày hiệu lực, nguồn và phiên bản nội dung |
-| `dieu_khoan` | Nội dung chương/điều/khoản/điểm để tra cứu |
-| `tu_khoa` | Cụm từ, biến thể và định nghĩa có căn cứ |
-| `dieu_khoan_tu_khoa` | Liên kết điều khoản với từ khóa |
-| `quy_dinh` | Chủ thể, hành vi, đối tượng, điều kiện, ngoại lệ và nguồn |
-| `hoi_thoai` | Hội thoại thuộc người dùng |
-| `tin_nhan` | Câu hỏi và câu trả lời |
-| `trich_dan` | Bản chụp căn cứ gắn với câu trả lời |
+| Bảng                 | Chức năng                                                    |
+| -------------------- | ------------------------------------------------------------ |
+| `nguoi_dung`         | Tài khoản, mật khẩu băm, vai trò và trạng thái               |
+| `van_ban`            | Số hiệu, tiêu đề, ngày hiệu lực, nguồn và phiên bản nội dung |
+| `dieu_khoan`         | Nội dung chương/điều/khoản/điểm để tra cứu                   |
+| `tu_khoa`            | Cụm từ, biến thể và định nghĩa có căn cứ                     |
+| `dieu_khoan_tu_khoa` | Liên kết điều khoản với từ khóa                              |
+| `quy_dinh`           | Chủ thể, hành vi, đối tượng, điều kiện, ngoại lệ và nguồn    |
+| `hoi_thoai`          | Hội thoại thuộc người dùng                                   |
+| `tin_nhan`           | Câu hỏi và câu trả lời                                       |
+| `trich_dan`          | Bản chụp căn cứ gắn với câu trả lời                          |
 
 - Tên khóa chính dạng `ma_nguoi_dung`, `ma_van_ban`…; thời gian là `ngay_tao`, `ngay_cap_nhat`.
 - ENUM vẫn giữ giá trị kỹ thuật như `user/admin`, `active/blocked`, `draft/published/archived`, `user/assistant`; tài liệu giải thích nghĩa tiếng Việt.

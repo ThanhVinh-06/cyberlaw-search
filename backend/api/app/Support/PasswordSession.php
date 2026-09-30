@@ -8,6 +8,8 @@ final class PasswordSession
 {
     public static function fingerprint(NguoiDung $user): string
     {
-        return hash_hmac('sha256', $user->getAuthPassword(), config('app.key'));
+        $marker = $user->getAttribute('ma_ghi_nho');
+
+        return hash_hmac('sha256', $user->getAuthPassword().($marker ? '|'.$marker : ''), config('app.key'));
     }
 }

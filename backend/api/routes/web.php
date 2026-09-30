@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AdminUserController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\EmailVerificationController;
 use App\Http\Controllers\KnowledgeController;
@@ -29,6 +30,13 @@ Route::prefix('api/admin/knowledge')->middleware(['account.active', 'role.admin'
     Route::post('/van_ban/{id}/status', [KnowledgeController::class, 'status'])->whereNumber('id')->middleware('throttle:knowledge-write')->block(15, 15)->name('knowledge.status');
     Route::post('/{table}/{id?}', [KnowledgeController::class, 'write'])->whereIn('table', ['van_ban', 'dieu_khoan', 'tu_khoa', 'quy_dinh'])->whereNumber('id')->middleware('throttle:knowledge-write')->block(15, 15)->name('knowledge.write');
     Route::delete('/{table}/{id}', [KnowledgeController::class, 'destroy'])->whereIn('table', ['van_ban', 'dieu_khoan', 'tu_khoa', 'quy_dinh'])->whereNumber('id')->middleware('throttle:knowledge-write')->block(15, 15)->name('knowledge.delete');
+});
+
+Route::prefix('api/admin/users')->middleware(['account.active', 'role.admin'])->group(function () {
+    Route::get('/', [AdminUserController::class, 'index'])->middleware('throttle:admin-users-read')->name('admin.users.index');
+    Route::post('/{id?}', [AdminUserController::class, 'write'])->whereNumber('id')->middleware('throttle:admin-users-write')->block(15, 15)->name('admin.users.write');
+    Route::post('/{id}/status', [AdminUserController::class, 'status'])->whereNumber('id')->middleware('throttle:admin-users-write')->block(15, 15)->name('admin.users.status');
+    Route::delete('/{id}', [AdminUserController::class, 'destroy'])->whereNumber('id')->middleware('throttle:admin-users-write')->block(15, 15)->name('admin.users.delete');
 });
 
 Route::get('/', function () {
