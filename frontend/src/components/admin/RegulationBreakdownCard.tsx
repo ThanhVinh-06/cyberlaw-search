@@ -349,7 +349,7 @@ function RegulationSparkline({ group }: { group: NhomQuyDinhSparkline }) {
 export function RegulationBreakdownCard() {
   const headingId = useId();
   return (
-    <section className="cl-reg-card" aria-labelledby={headingId}>
+    <section className="cl-reg-card" data-admin-reveal="340" aria-labelledby={headingId}>
       <header className="cl-reg-header">
         <h3 id={headingId}>
           <Scale size={18} aria-hidden="true" />

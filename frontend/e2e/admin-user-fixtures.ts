@@ -1,5 +1,5 @@
 import type { Page, BrowserContext } from '@playwright/test';
-import { initialNguoiDungList } from '../src/lib/admin-data';
+import { initialNguoiDungList, maTranPhanQuyen } from '../src/lib/admin-data';
 
 // Synthetic UI fixtures. Real permissions and writes are covered by Laravel/HTTP tests.
 export async function mockAdminUsers(target: Page | BrowserContext) {
@@ -33,5 +33,8 @@ export async function mockAdminUsers(target: Page | BrowserContext) {
       return route.fulfill({json: {items: [], total: 0, page: 1, revision: '1'.repeat(64)}});
     }
     return route.fulfill({json: {van_ban: [], dieu_khoan: [], tu_khoa: [], quy_dinh: [], dieu_khoan_tu_khoa: [], revision: '1'.repeat(64)}});
+  });
+  await target.route('**/api/admin/permission-matrix**', async route => {
+    return route.fulfill({json: {version: '2026-09-30', roles: ['khach', 'user', 'admin'], rules: maTranPhanQuyen}});
   });
 }

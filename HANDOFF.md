@@ -1,5 +1,23 @@
 # Bàn giao dự án CyberLaw Search
 
+### Đồng bộ animation và nút ma trận — 01/10/2026
+
+- Nút “Tải lại ma trận” nằm dưới nhãn “Chính sách quyền tối thiểu” trong header; mobile giữ cùng cột.
+- Bảng người dùng chờ dữ liệu đầu tiên rồi reveal 950ms. Trước đó chỉ có placeholder; loading ở vị trí riêng không đẩy hàng xuống. Khi tải lại/đổi bộ lọc không replay. `AdminTabReveal` thêm `ready` và bỏ qua target thuộc vùng reveal con để tránh chạy hai lần.
+- Toàn bộ card thống kê dùng chung reveal 1200ms với delay nối tiếp; recent questions delay 300ms. Bỏ animation khung trang 350ms và animation Motion của vỏ card, giữ nguyên chuyển động biểu đồ/chi tiết bên trong. Thay thế cấu hình 950ms riêng cho box xu hướng ở bản trước.
+- Build PASS. 16 ca UI bảng/modal/responsive đạt; 6 ca thống kê chạy lại đạt sau khi đợi entrance kết thúc trước khi đo hình học. Edge giả lập 320/440/834/900/901/956×440/1024/1440, có keyboard/reduced motion; chưa kiểm tra thiết bị thật. Review: `docs/security/reviews/2026-10-01-admin-animation.md`. Chưa push lượt này.
+
+### Backend Ma trận quyền hạn — 30/09/2026
+
+- Thêm `GET /api/admin/permission-matrix`, chỉ admin đang hoạt động và đã xác thực mới đọc được. Ma trận 8 quyền được định nghĩa server-side, phiên bản `2026-09-30`; không thêm bảng quyền động vào MySQL.
+- Route quản trị văn bản dùng Gate `quan_ly_van_ban`; route tài khoản và ma trận dùng Gate `quan_ly_phan_quyen`. Frontend đã tải ma trận từ API, có trạng thái lỗi/tải lại và vẫn giữ fallback fixture riêng cho UI test.
+- PHPUnit: 78 tests, 812 assertions PASS. UI responsive + animation: 15/15 PASS ở 320, 440, 834, 900, 901, 956×440, 1024, 1440; Fade In Up box xu hướng được kiểm tra duration 950ms và không replay khi đổi bộ lọc. Build PASS.
+
+### Khôi phục Fade In Up cho box xu hướng thống kê — 30/09/2026
+
+- Bọc dashboard thống kê bằng `AdminTabReveal` và áp dụng reveal 950ms cho box “Xu hướng Hỏi đáp AI & Tra cứu Pháp luật”; giữ reduced motion và không replay khi tương tác biểu đồ.
+- `admin-stats.spec.ts`: 5/5 PASS ở 440px và 834px; build frontend PASS (còn cảnh báo bundle >500KB).
+
 ### Sắp xếp tài khoản theo ID tăng dần — 30/09/2026
 
 - API danh sách dùng `ma_nguoi_dung ASC` trước phân trang; ID 1 đứng đầu khi không lọc. Fixture UI đồng bộ thứ tự.
@@ -107,7 +125,7 @@ Tài liệu này giúp agent mới tiếp tục dự án mà không cần lịch
 ### Khởi tạo tài khoản Admin và xác nhận kết nối CSDL (30/09/2026)
 
 - Kiểm tra kết nối từ Laravel đến MySQL 8.0 `cyberlaw_search` qua tài khoản `cyberlaw_app`: kết nối thành công, nhận diện đúng 11 bảng.
-- Theo yêu cầu của người dùng, đã tạo tài khoản Quản trị viên (Admin) đầu tiên trong bảng `nguoi_dung`: email `thanhvinh.dev2006@gmail.com`, họ tên `Thanh Vinh`, vai trò `admin`, trạng thái `active`. Mật khẩu được băm bảo mật bằng Bcrypt (`$2y$12$...`), tuân thủ quy tắc không lưu plain-text vào kho lưu trữ hay tài liệu.
+- Theo yêu cầu của người dùng, đã tạo tài khoản Quản trị viên (Admin) đầu tiên trong bảng `nguoi_dung`: email `[email ca nhan da an]`, họ tên `Thanh Vinh`, vai trò `admin`, trạng thái `active`. Mật khẩu được băm bảo mật bằng Bcrypt (`$2y$12$...`), tuân thủ quy tắc không lưu plain-text vào kho lưu trữ hay tài liệu.
 - Đã rà soát toàn bộ các bảng liên quan (`hoi_thoai`, `yeu_cau_dat_lai_mat_khau`, `nhat_ky_quan_tri` đều 0 bản ghi, không có ràng buộc khóa ngoại nào bị ảnh hưởng). Đã chuyển `ma_nguoi_dung` từ 7 về **`1`** (`ma_nguoi_dung = 1`).
 - Các script tạm thời phục vụ thao tác DB đã được xóa sạch khỏi thư mục scratch.
 - Hiện trạng dữ liệu: bảng `nguoi_dung` có 1 tài khoản admin (ID: 1); các bảng tri thức (`van_ban`, `dieu_khoan`, `tu_khoa`, `quy_dinh`) đang có 0 bản ghi, chờ bóc tách từ Luật 116/2025/QH15.
@@ -258,7 +276,7 @@ Luồng kiến trúc đề xuất: `React → Laravel → FastAPI`, Laravel qu�
   - Tích hợp điều hướng & Bảo mật phân quyền theo vai trò (Cập nhật theo yêu cầu người dùng):
     - Ẩn hoàn toàn trang Quản trị và các liên kết menubar/sidebar đối với khách vãng lai và tài khoản người dùng thường.
     - Khi đăng nhập đúng email/mật khẩu Admin (`admin@cyberlaw.vn` / `admin12345`): tự động điều hướng sang `/admin`, thanh menubar và sidebar hiển thị mục "Quản trị hệ thống".
-    - Khi đăng nhập đúng email/mật khẩu User (`mai.nguyen@gmail.com` / `user12345`): tự động điều hướng sang trang người dùng (`/search`), sidebar hiển thị hồ sơ cá nhân và KHÔNG CÓ mục Quản trị.
+    - Khi đăng nhập đúng email/mật khẩu User (`[email ca nhan da an]` / `user12345`): tự động điều hướng sang trang người dùng (`/search`), sidebar hiển thị hồ sơ cá nhân và KHÔNG CÓ mục Quản trị.
     - Bảo vệ route `/admin` (Guard): Khách vãng lai cố tình vào `/admin` bị yêu cầu đăng nhập; User thường cố tình vào `/admin` bị chặn với màn hình cảnh báo 403 (Từ chối quyền truy cập).
     - Tinh chỉnh menubar quản trị: Bỏ các badge CRUD, RBAC, Sắp tới, DB 9 bảng; cố định chiều cao đồng đều 44px và chiều rộng cho tất cả các box menubar (Người dùng & Phân quyền, Ma trận quyền hạn, Thống kê, Văn bản), đảm bảo thẳng hàng và không bị lệch kích thước.
   - Nâng cấp Animation thông báo CRUD góc phải dưới (Theo mẫu CSS/Motion của animations.dev):

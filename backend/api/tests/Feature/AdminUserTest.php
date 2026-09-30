@@ -164,6 +164,21 @@ final class AdminUserTest extends TestCase
         $this->save([])->assertStatus(429);
         $this->getJson('/api/admin/users')->assertOk();
     }
+
+    public function test_permission_matrix_is_server_owned_and_admin_only(): void
+    {
+        $this->getJson('/api/admin/permission-matrix')->assertUnauthorized();
+        $user = $this->account('user');
+        $this->login($user);
+        $this->getJson('/api/admin/permission-matrix')->assertForbidden();
+        $admin = $this->account();
+        $this->login($admin);
+        $response = $this->getJson('/api/admin/permission-matrix')->assertOk();
+        $response->assertJsonPath('roles', ['khach', 'user', 'admin']);
+        $response->assertJsonPath('rules.0.ma_chuc_nang', 'tra_cuu_luat');
+        $response->assertJsonPath('rules.5.admin', true);
+        $this->assertCount(8, $response->json('rules'));
+    }
 }
 
 final class AdminRealCsrf extends ValidateCsrfToken

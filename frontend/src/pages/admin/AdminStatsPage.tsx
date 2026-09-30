@@ -69,7 +69,7 @@ export default function AdminStatsPage({ onNavigateTab }: AdminStatsPageProps) {
   return (
     <div className="cl-admin-stats-dashboard">
       {/* Header with Title and Filter Tabs */}
-      <div className="cl-stats-header">
+      <div className="cl-stats-header" data-admin-reveal="0">
         <div className="cl-stats-title-group">
           <h1 title="Tổng quan Thống kê & Báo cáo Tri thức">
             Tổng quan Thống kê & Báo cáo Tri thức
@@ -106,9 +106,7 @@ export default function AdminStatsPage({ onNavigateTab }: AdminStatsPageProps) {
       <div className="cl-stats-cards-grid">
         <motion.div
           className="cl-stat-box"
-          initial={{ opacity: 0, y: 14 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3, delay: 0.05 }}
+          initial={false} data-admin-reveal="50"
         >
           <div className="cl-stat-icon-wrapper burgundy">
             <Users size={24} />
@@ -127,9 +125,7 @@ export default function AdminStatsPage({ onNavigateTab }: AdminStatsPageProps) {
 
         <motion.div
           className="cl-stat-box"
-          initial={{ opacity: 0, y: 14 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3, delay: 0.1 }}
+          initial={false} data-admin-reveal="90"
         >
           <div className="cl-stat-icon-wrapper sky">
             <BookOpen size={24} />
@@ -148,9 +144,7 @@ export default function AdminStatsPage({ onNavigateTab }: AdminStatsPageProps) {
 
         <motion.div
           className="cl-stat-box"
-          initial={{ opacity: 0, y: 14 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3, delay: 0.15 }}
+          initial={false} data-admin-reveal="130"
         >
           <div className="cl-stat-icon-wrapper emerald">
             <Scale size={24} />
@@ -169,9 +163,7 @@ export default function AdminStatsPage({ onNavigateTab }: AdminStatsPageProps) {
 
         <motion.div
           className="cl-stat-box"
-          initial={{ opacity: 0, y: 14 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3, delay: 0.2 }}
+          initial={false} data-admin-reveal="170"
         >
           <div className="cl-stat-icon-wrapper amber">
             <MessageSquare size={24} />
@@ -196,9 +188,8 @@ export default function AdminStatsPage({ onNavigateTab }: AdminStatsPageProps) {
           {/* Big Chart: Profile Visit / Tần suất truy vấn & hỏi đáp */}
           <motion.div
             className="cl-stats-card"
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.35, delay: 0.25 }}
+            data-admin-reveal="180"
+            initial={false}
           >
             <div className="cl-stats-card-header">
               <div>
@@ -363,9 +354,7 @@ export default function AdminStatsPage({ onNavigateTab }: AdminStatsPageProps) {
           {/* Widget 1: Profile Card (Mazer Style) */}
           <motion.div
             className="cl-stats-card cl-profile-card"
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.35, delay: 0.2 }}
+            initial={false} data-admin-reveal="220"
           >
             <div className="cl-profile-avatar-large">AD</div>
             <h3 className="cl-profile-name">Quản trị viên Hệ thống</h3>
@@ -389,9 +378,7 @@ export default function AdminStatsPage({ onNavigateTab }: AdminStatsPageProps) {
           {/* Widget 2: Recent Messages in Mazer -> Người dùng hỏi đáp tích cực */}
           <motion.div
             className="cl-stats-card"
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.35, delay: 0.25 }}
+            initial={false} data-admin-reveal="260"
           >
             <div className="cl-stats-card-header">
               <div>
@@ -437,9 +424,7 @@ export default function AdminStatsPage({ onNavigateTab }: AdminStatsPageProps) {
           {/* Widget 3: Visitors Profile in Mazer -> Donut Chart: Tỷ lệ căn cứ pháp lý */}
           <motion.div
             className="cl-stats-card"
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.35, delay: 0.3 }}
+            initial={false} data-admin-reveal="300"
           >
             <div className="cl-stats-card-header">
               <div>

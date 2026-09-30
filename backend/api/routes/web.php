@@ -5,6 +5,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\EmailVerificationController;
 use App\Http\Controllers\KnowledgeController;
 use App\Http\Controllers\PasswordResetController;
+use App\Http\Controllers\PermissionMatrixController;
 use App\Http\Controllers\RegistrationController;
 use Illuminate\Support\Facades\Route;
 
@@ -23,7 +24,7 @@ Route::prefix('api/auth')->group(function () {
     Route::post('logout', [AuthController::class, 'logout'])->name('auth.logout');
 });
 
-Route::prefix('api/admin/knowledge')->middleware(['account.active', 'role.admin'])->group(function () {
+Route::prefix('api/admin/knowledge')->middleware(['account.active', 'role.admin', 'can:quan_ly_van_ban'])->group(function () {
     Route::get('/', [KnowledgeController::class, 'index'])->middleware('throttle:knowledge-read')->name('knowledge.index');
     Route::get('/list/{table}', [KnowledgeController::class, 'listing'])->whereIn('table', ['van_ban', 'dieu_khoan', 'tu_khoa', 'quy_dinh'])->middleware('throttle:knowledge-read')->name('knowledge.list');
     Route::get('/van_ban/{id}/pdf', [KnowledgeController::class, 'pdf'])->whereNumber('id')->middleware('throttle:knowledge-read')->name('knowledge.pdf');
@@ -32,12 +33,16 @@ Route::prefix('api/admin/knowledge')->middleware(['account.active', 'role.admin'
     Route::delete('/{table}/{id}', [KnowledgeController::class, 'destroy'])->whereIn('table', ['van_ban', 'dieu_khoan', 'tu_khoa', 'quy_dinh'])->whereNumber('id')->middleware('throttle:knowledge-write')->block(15, 15)->name('knowledge.delete');
 });
 
-Route::prefix('api/admin/users')->middleware(['account.active', 'role.admin'])->group(function () {
+Route::prefix('api/admin/users')->middleware(['account.active', 'role.admin', 'can:quan_ly_phan_quyen'])->group(function () {
     Route::get('/', [AdminUserController::class, 'index'])->middleware('throttle:admin-users-read')->name('admin.users.index');
     Route::post('/{id?}', [AdminUserController::class, 'write'])->whereNumber('id')->middleware('throttle:admin-users-write')->block(15, 15)->name('admin.users.write');
     Route::post('/{id}/status', [AdminUserController::class, 'status'])->whereNumber('id')->middleware('throttle:admin-users-write')->block(15, 15)->name('admin.users.status');
     Route::delete('/{id}', [AdminUserController::class, 'destroy'])->whereNumber('id')->middleware('throttle:admin-users-write')->block(15, 15)->name('admin.users.delete');
 });
+
+Route::get('api/admin/permission-matrix', [PermissionMatrixController::class, 'index'])
+    ->middleware(['account.active', 'role.admin', 'can:quan_ly_phan_quyen', 'throttle:admin-users-read'])
+    ->name('admin.permission-matrix.index');
 
 Route::get('/', function () {
     return view('welcome');

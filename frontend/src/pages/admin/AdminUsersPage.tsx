@@ -43,7 +43,7 @@ import {
   VaiTro,
   TrangThai,
 
-  maTranPhanQuyen,
+  type QuyTacPhanQuyen,
 } from "@/lib/admin-data";
 
 import { adminUsersApi, AdminUserError, type AdminUser as NguoiDung, type UserPage } from "@/lib/admin-users-api";
@@ -173,16 +173,18 @@ export default function AdminUsersPage() {
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
+  const [usersLoaded, setUsersLoaded] = useState(false);
   const [loadError, setLoadError] = useState('');
   const [actionError, setActionError] = useState('');
   const [saving, setSaving] = useState(false);
   const busy = useRef(false);
   const mounted = useRef(true);
   const [reload, setReload] = useState(0);
+  const [matrixRules, setMatrixRules] = useState<QuyTacPhanQuyen[]>([]);
   useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
   useEffect(() => { setPage(1); }, [searchQuery, roleFilter, statusFilter]);
   useEffect(() => {
-    if (activeTab !== 'users' && activeTab !== 'matrix') return;
+    if (activeTab !== 'users') return;
     let active = true;
     setLoading(true);
     setLoadError('');
@@ -195,10 +197,22 @@ export default function AdminUsersPage() {
         setPage(result.page);
       }).catch((error: Error) => {
         if (active) { setLoadError(error.message); setUsers([]); }
-      }).finally(() => { if (active) setLoading(false); });
+      }).finally(() => { if (active) { setLoading(false); setUsersLoaded(true); } });
     }, 180);
     return () => { active = false; clearTimeout(timer); };
   }, [searchQuery, roleFilter, statusFilter, page, reload, activeTab]);
+  useEffect(() => {
+    if (activeTab !== 'matrix') return;
+    let active = true;
+    setLoading(true);
+    setLoadError('');
+    adminUsersApi.matrix().then(result => {
+      if (active) setMatrixRules(result.rules);
+    }).catch((error: Error) => {
+      if (active) { setLoadError(error.message); setMatrixRules([]); }
+    }).finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, [activeTab, reload]);
   const filteredUsers = users;
   async function perform(operation: () => Promise<unknown>, message: string) {
     if (busy.current || loadError) return;
@@ -310,7 +324,9 @@ export default function AdminUsersPage() {
       <AdminToastContainer toasts={toasts} onDismiss={dismissToast} />
 
       {activeTab === "stats" ? (
-        <AdminStatsPage onNavigateTab={changeTab} />
+        <AdminTabReveal tab={activeTab} instant={instantTabReveal} duration={1200}>
+          <AdminStatsPage onNavigateTab={changeTab} />
+        </AdminTabReveal>
       ) : activeTab === "documents" ? (
         <AdminDocumentsPage instant={instantTabReveal} />
       ) : (
@@ -510,9 +526,12 @@ export default function AdminUsersPage() {
               </div>
 
               {/* Table Card */}
-              <div className="cl-admin-table-card" data-admin-reveal="300">
+              <AdminTabReveal tab="users-table" instant={instantTabReveal} ready={usersLoaded} duration={950}>
+              <div className="cl-user-table-region" aria-busy={loading}>
+              <div className="cl-user-table-status" role="status">{loading ? 'Đang tải tài khoản…' : ''}</div>
+              {!usersLoaded ? <div className="cl-user-table-placeholder" aria-hidden="true" /> :
+              <div className="cl-admin-table-card" data-admin-reveal="0">
                 {loadError && <p className="cl-admin-form-error" role="alert">{loadError}</p>}
-                {loading && <p role="status">Đang tải tài khoản…</p>}
                 {filteredUsers.length === 0 ? (
                   <div className="cl-admin-empty">
                     <div className="cl-admin-empty-icon">
@@ -696,6 +715,9 @@ export default function AdminUsersPage() {
                   </div>
                 )}
               </div>
+              }
+              </div>
+              </AdminTabReveal>
               <nav className="cl-user-pagination" aria-label="Phân trang tài khoản">
                 <span>{total} tài khoản · Trang {page}/{Math.max(1, Math.ceil(total / 10))}</span>
                 <button className="cl-admin-btn-outline" disabled={loading || page <= 1} onClick={() => setPage(page - 1)}>Trang trước</button>
@@ -711,16 +733,20 @@ export default function AdminUsersPage() {
                 <div>
                   <h3>Ma trận quyền hạn hệ thống</h3>
                   <p>
-                    Chi tiết quyền hạn được thiết kế theo tài liệu kiến trúc{" "}
-                    <code>docs/requirements/02-tai-khoan-phan-quyen.md</code>
+                    Quyền theo vai trò do hệ thống quản lý. AI, lịch sử và hồ sơ sẽ áp dụng khi triển khai các chức năng tương ứng.
                   </p>
                 </div>
+                <div className="cl-matrix-actions">
                 <div className="cl-admin-status-pill">
                   <ShieldCheck size={14} color="#800020" />
                   <span>Chính sách quyền tối thiểu</span>
                 </div>
+                <button className="cl-admin-btn-outline" disabled={loading} onClick={() => setReload(value => value + 1)}>Tải lại ma trận</button>
+                </div>
               </div>
 
+              {loading && <p role="status">Đang tải ma trận quyền…</p>}
+              {loadError && <p role="alert" className="cl-admin-form-error">{loadError}</p>}
               <div className="cl-admin-table-responsive">
                 <table className="cl-admin-table">
                   <thead>
@@ -740,7 +766,7 @@ export default function AdminUsersPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {maTranPhanQuyen.map((rule) => (
+                    {matrixRules.map((rule) => (
                       <tr key={rule.ma_chuc_nang}>
                         <td>
                           <strong style={{ color: "#261c1e" }}>

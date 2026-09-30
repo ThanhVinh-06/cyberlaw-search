@@ -4,11 +4,13 @@ export function AdminTabReveal({
   tab,
   instant,
   duration = 350,
+  ready = true,
   children,
 }: {
   tab: string;
   instant: boolean;
   duration?: number;
+  ready?: boolean;
   children: ReactNode;
 }) {
   const rootRef = useRef<HTMLDivElement>(null);
@@ -21,11 +23,11 @@ export function AdminTabReveal({
 
   useLayoutEffect(() => {
     const root = rootRef.current;
-    if (!root) return;
+    if (!root || !ready) return;
     const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
     const targets = Array.from(
       root.querySelectorAll<HTMLElement>("[data-admin-reveal]"),
-    );
+    ).filter(element => element.closest('[data-admin-reveal-root]') === root);
     // On rapid tab changes, retained sections continue from their current frame.
     const starts = targets.map((element) => {
       const interrupted =
@@ -64,7 +66,7 @@ export function AdminTabReveal({
           animations.current.delete(element);
       };
     });
-  }, [tab, instant, duration]);
+  }, [tab, instant, duration, ready]);
 
   useLayoutEffect(() => {
     const preference = matchMedia("(prefers-reduced-motion: reduce)");
@@ -81,6 +83,7 @@ export function AdminTabReveal({
   return (
     <div
       ref={rootRef}
+      data-admin-reveal-root
       className="cl-admin-tab-content"
       onPointerDownCapture={settle}
       onKeyDownCapture={settle}

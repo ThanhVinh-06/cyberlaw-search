@@ -11,7 +11,39 @@ async function openStats(page: Page) {
     "transform",
     "none",
   );
+  await expect(
+    page.locator(".cl-stats-card").filter({ hasText: "Xu hướng Hỏi đáp AI & Tra cứu Pháp luật" }),
+  ).toHaveAttribute("data-admin-reveal", "180");
+  // Interaction geometry is measured after the staggered card entrances finish.
+  // The separate entrance test inspects their actual keyframes and timing.
+  await page.waitForFunction(() =>
+    [...document.querySelectorAll('[data-admin-reveal]')].every(el =>
+      el.getAnimations().every(animation => animation.playState !== 'running'),
+    ),
+  );
 }
+
+test('trend card animates upward once without replay on filter changes', async ({page}) => {
+  await mockAuth(page, 'admin');
+  await page.addInitScript(() => {
+    (window as any).trendReveals = [];
+    const original = Element.prototype.animate;
+    Element.prototype.animate = function(frames, options) {
+      if (this.matches('.cl-stats-card[data-admin-reveal]')) {
+        (window as any).trendReveals.push({frames, options, recent: this.classList.contains('cl-recent-questions')});
+      }
+      return original.call(this, frames, options);
+    };
+  });
+  await page.goto('/admin/stats');
+  await expect.poll(() => page.evaluate(() => (window as any).trendReveals.length)).toBeGreaterThan(0);
+  const calls = await page.evaluate(() => (window as any).trendReveals);
+  expect(calls.at(-1).frames).toEqual([{opacity:'0',translate:'0 14px'},{opacity:1,translate:'0 0'}]);
+  expect(calls.every((call: any) => call.options.duration === 1200)).toBe(true);
+  expect(calls.find((call: any) => call.recent).options.delay).toBe(300);
+  await page.getByRole('button', {name:'6 tháng gần nhất'}).click();
+  expect(await page.evaluate(() => (window as any).trendReveals.length)).toBe(calls.length);
+});
 
 test("classification is below AI accuracy; chart supports pinned points and keyboard", async ({
   page,

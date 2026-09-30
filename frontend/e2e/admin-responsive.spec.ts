@@ -68,9 +68,9 @@ async function checkHeader(page: Page) {
   ).toBeLessThanOrEqual(await page.evaluate(() => innerWidth));
 }
 
-for (const width of [320, 440, 834, 1024, 1440]) {
+for (const width of [320, 440, 834, 900, 901, 956, 1024, 1440]) {
   test(`four admin tabs stay readable at ${width}px`, async ({ page }) => {
-    await page.setViewportSize({ width, height: width < 600 ? 956 : 1050 });
+    await page.setViewportSize({ width, height: width === 956 ? 440 : width < 600 ? 956 : 1050 });
     await openAdmin(page);
     await page.screenshot({
       path: `test-results/admin-header-initial-${width}.png`,
@@ -109,6 +109,14 @@ for (const width of [320, 440, 834, 1024, 1440]) {
         expect(dimensions.height).toBeLessThanOrEqual(dimensions.line + 1);
       }
       if (index === 0 || index === 1) {
+        await expect(page.locator('.cl-admin-table-responsive')).toBeVisible();
+        if (index === 1) {
+          const actions = page.locator('.cl-matrix-actions');
+          const badge = (await actions.locator('.cl-admin-status-pill').boundingBox())!;
+          const reload = (await actions.getByRole('button', {name:'Tải lại ma trận'}).boundingBox())!;
+          expect(reload.y).toBeGreaterThanOrEqual(badge.y + badge.height);
+          expect(reload.x + reload.width).toBeLessThanOrEqual(width);
+        }
         if (index === 0) {
           const nameLines = await page
             .locator(".cl-admin-user-cell-name")

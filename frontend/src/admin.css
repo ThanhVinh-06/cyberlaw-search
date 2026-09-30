@@ -850,6 +850,20 @@
   gap: 16px;
 }
 
+.cl-matrix-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 10px;
+  flex-shrink: 0;
+}
+.cl-user-table-region { position: relative; min-height: 360px; }
+.cl-user-table-status { position: absolute; top: -22px; left: 0; font-size: 12px; color: #6e6466; }
+.cl-user-table-placeholder { min-height: 360px; border: 1px solid #e8e2de; border-radius: 12px; background: #fff; }
+@media (max-width: 640px) {
+  .cl-matrix-actions { align-items: flex-start; }
+}
+
 .cl-admin-matrix-header h3 {
   font-size: 18px;
   font-weight: 700;

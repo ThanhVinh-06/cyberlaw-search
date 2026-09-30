@@ -26,3 +26,14 @@
 - Chưa chạy kiểm thử tải hoặc kiểm tra đồng thời nhiều tiến trình trên MySQL triển khai.
 - Chưa kiểm tra deploy production, SMTP thật, rotation/quyền file log và dependency audit trong lượt này.
 - Tài khoản mới do admin tạo phải xác minh email trước khi đăng nhập.
+
+## Kiểm tra UI thống kê liên quan
+
+- Khôi phục Fade In Up 950ms cho box xu hướng bằng component reveal dùng chung; không thay đổi API, dữ liệu hoặc quyền.
+- Test biểu đồ/modal: 5/5 PASS ở 440px và 834px, gồm reduced motion, bàn phím và không tràn ngang.
+
+## Ma trận quyền
+
+- API trả ma trận cố định từ server, không nhận quyền do client gửi; khách và user nhận 401/403, admin nhận danh sách 8 quyền — **PASS**.
+- Gate quản trị được áp dụng cho API tài khoản, ma trận và kho văn bản; PHPUnit toàn bộ: 78 tests/812 assertions — **PASS**.
+- Responsive và animation frontend: 15/15 PASS; không có migration hoặc dữ liệu MySQL nào được thay đổi.

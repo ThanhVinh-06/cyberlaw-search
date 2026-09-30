@@ -1,8 +1,9 @@
-import type { NguoiDung, VaiTro, TrangThai } from './admin-data';
+import type { NguoiDung, VaiTro, TrangThai, QuyTacPhanQuyen } from './admin-data';
 
 export type AdminUser = NguoiDung & {revision: string; ngay_xac_minh_email: string | null; duoc_mien_xac_minh_email: boolean};
 export type UserForm = {ho_ten: string; thu_dien_tu: string; mat_khau: string; vai_tro: VaiTro; trang_thai: TrangThai};
 export type UserPage = {users: AdminUser[]; total: number; page: number; stats: {total: number; adminCount: number; activeCount: number; blockedCount: number}};
+export type PermissionMatrix = {version: string; roles: string[]; rules: QuyTacPhanQuyen[]};
 export class AdminUserError extends Error {
   constructor(public status: number, message: string, public fields: Record<string, string> = {}) {super(message);}
 }
@@ -32,4 +33,5 @@ export const adminUsersApi = {
   save: (form: UserForm, user?: AdminUser) => mutate(user ? `/${user.ma_nguoi_dung}` : '', 'POST', {...form, mat_khau: form.mat_khau || null, ...(user ? {revision: user.revision} : {})}),
   status: (user: AdminUser) => mutate(`/${user.ma_nguoi_dung}/status`, 'POST', {revision: user.revision, trang_thai: user.trang_thai === 'active' ? 'blocked' : 'active'}),
   remove: (user: AdminUser) => mutate(`/${user.ma_nguoi_dung}`, 'DELETE', {revision: user.revision}),
+  matrix: (): Promise<PermissionMatrix> => request('/api/admin/permission-matrix'),
 };

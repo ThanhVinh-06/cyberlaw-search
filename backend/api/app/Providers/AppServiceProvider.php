@@ -5,6 +5,9 @@ namespace App\Providers;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\Gate;
+use App\Support\PermissionMatrix;
+use App\Models\NguoiDung;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -22,6 +25,13 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Only register implemented administrative capabilities here. Future
+        // private-resource policies must also enforce ownership of each record.
+        foreach (PermissionMatrix::rules() as $rule) {
+            if (in_array($rule['ma_chuc_nang'], ['quan_ly_van_ban', 'duyet_tri_thuc', 'quan_ly_phan_quyen'], true)) {
+                Gate::define($rule['ma_chuc_nang'], fn (NguoiDung $user) => $user->canUseAccount() && ($rule[$user->vai_tro] ?? false));
+            }
+        }
         RateLimiter::for('admin-users-read', fn (Request $request) => Limit::perMinute(120)->by('admin-users-read:'.$request->user()?->getAuthIdentifier()));
         RateLimiter::for('admin-users-write', fn (Request $request) => Limit::perMinute(30)->by('admin-users-write:'.$request->user()?->getAuthIdentifier()));
         RateLimiter::for('knowledge-read', fn (Request $request) => Limit::perMinute(120)->by('knowledge-read:'.$request->user()?->getAuthIdentifier()));

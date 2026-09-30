@@ -288,6 +288,7 @@ export function RecentQuestionsCard() {
   return (
     <section
       className="cl-stats-card cl-recent-questions"
+      data-admin-reveal="300"
       aria-labelledby="recent-questions-heading"
     >
       <div className="cl-stats-card-header">
