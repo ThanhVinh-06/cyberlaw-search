@@ -191,7 +191,7 @@ export default function MainSite() {
       article,
       trigger,
       instant,
-      origin: trigger.closest<HTMLElement>(".cl-result") ?? trigger,
+      origin: trigger.closest<HTMLElement>(".cl-result, .cl-term-card") ?? trigger,
     });
   }
   const closeChat = useCallback((instant = false, restoreFocus = true) => {
@@ -440,8 +440,9 @@ export default function MainSite() {
           <span className="cl-context-meta">Nguồn: Luật số 116/2025/QH15</span>
         </div>
         <main id="cl-main" ref={mainRef} tabIndex={-1}>
-          <section className="cl-view" hidden={view !== "/search"}>
-            <div className="cl-page-heading">
+          {view === "/search" && <section className="cl-view">
+            <AdminTabReveal tab={view} instant={false} duration={950} className="cl-public-reveal">
+            <div className="cl-page-heading" data-admin-reveal="0">
               <div>
                 <span className="cl-eyebrow">TRA CỨU KIẾN THỨC</span>
                 <h1>Tìm kiếm quy định pháp luật</h1>
@@ -453,6 +454,7 @@ export default function MainSite() {
             </div>
             <form
               className="cl-search-card"
+              data-admin-reveal="80"
               onPointerDownCapture={() => {
                 searchInstantRef.current = false;
               }}
@@ -581,13 +583,13 @@ export default function MainSite() {
                 </p>
               )}
             </form>
-            <div className="cl-results-heading">
+            <div className="cl-results-heading" data-admin-reveal="160">
               <h2 aria-live="polite">
                 Tìm thấy <strong>{results.length} kết quả</strong>
               </h2>
               <span>Dữ liệu minh họa · 3 điều luật</span>
             </div>
-            <div>
+            <div data-admin-reveal="240">
               {results.map((article, index) => (
                 <ResultReveal
                   key={article.id}
@@ -651,16 +653,18 @@ export default function MainSite() {
                 </div>
               )}
             </div>
-            <div className="cl-source-note">
+            <div className="cl-source-note" data-admin-reveal="320">
               <BookOpen aria-hidden="true" />
               <span>
                 Mỗi kết quả liên kết đến điều khoản và nguồn văn bản để bạn đối
                 chiếu.
               </span>
             </div>
-          </section>
-          <section className="cl-view" hidden={view !== "/library"}>
-            <div className="cl-page-heading">
+            </AdminTabReveal>
+          </section>}
+          {view === "/library" && <section className="cl-view">
+            <AdminTabReveal tab={view} instant={false} duration={950} className="cl-public-reveal">
+            <div className="cl-page-heading" data-admin-reveal="0">
               <div>
                 <span className="cl-eyebrow">THƯ VIỆN VĂN BẢN</span>
                 <h1>Luật An ninh mạng</h1>
@@ -668,7 +672,7 @@ export default function MainSite() {
               </div>
             </div>
             <div className="cl-library-layout">
-              <div className="cl-article-nav">
+              <div className="cl-article-nav" data-admin-reveal="80">
                 <h2>Mục lục minh họa</h2>
                 {articles.map((article) => (
                   <button
@@ -687,26 +691,32 @@ export default function MainSite() {
                   </button>
                 ))}
               </div>
-              <article className="cl-document-card">
+              <article className="cl-document-card" data-admin-reveal="160">
                 <ArticleContent article={libraryArticle} />
               </article>
             </div>
-          </section>
-          <section className="cl-view" hidden={view !== "/terms"}>
-            <div className="cl-page-heading">
+            </AdminTabReveal>
+          </section>}
+          {view === "/terms" && <section className="cl-view">
+            <AdminTabReveal tab={view} instant={false} duration={950} className="cl-public-reveal">
+            <div className="cl-page-heading" data-admin-reveal="0">
               <div>
                 <span className="cl-eyebrow">TỪ ĐIỂN KIẾN THỨC</span>
                 <h1>Từ điển thuật ngữ</h1>
                 <p>Cụm từ và cách diễn đạt thường dùng khi tra cứu.</p>
               </div>
             </div>
-            <div className="cl-term-card">
+            <div data-admin-reveal="80">
+            <motion.div className="cl-term-card" layoutId="article-card-2"
+              layoutDependency={selectedArticle?.article.id === "2"}
+              transition={{type: "spring", stiffness: 190, damping: 25, mass: 0.85}}>
               <span className="cl-result-category">KHÁI NIỆM</span>
               <h2>An ninh mạng</h2>
               <p>Biến thể tìm kiếm: “an ninh mang”, “an ninh mạng là gì”.</p>
               {articleButton(articles[1], "Xem khoản 1 Điều 2")}
+            </motion.div>
             </div>
-            <div className="cl-term-card">
+            <div className="cl-term-card" data-admin-reveal="160">
               <span className="cl-result-category">ỨNG VIÊN KEYPHRASE</span>
               <h2>Tấn công mạng</h2>
               <p>Truy vấn tình huống: “bị tấn công hệ thống”.</p>
@@ -714,11 +724,13 @@ export default function MainSite() {
                 Cần duyệt liên kết điều khoản trước khi đưa vào bộ tìm kiếm.
               </p>
             </div>
-          </section>
+            </AdminTabReveal>
+          </section>}
           {view === historyNavigation.to && isAuthenticated && (
             <section className="cl-view cl-history-view">
               <AdminTabReveal
                 tab="history"
+                duration={950}
                 instant={document.documentElement.dataset.input === "keyboard"}
               >
                 <div className="cl-page-heading" data-admin-reveal="0">

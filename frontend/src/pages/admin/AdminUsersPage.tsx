@@ -51,6 +51,7 @@ import { adminUsersApi, AdminUserError, type AdminUser as NguoiDung, type UserPa
 export default function AdminUsersPage() {
   const {currentUser} = useAuth();
   const location = useLocation();
+  const userRevealDuration = 950;
   const getInitialTab = () => {
     if (location.pathname === "/admin/stats") return "stats";
     if (location.pathname === "/admin/matrix") return "matrix";
@@ -198,7 +199,7 @@ export default function AdminUsersPage() {
       }).catch((error: Error) => {
         if (active) { setLoadError(error.message); setUsers([]); }
       }).finally(() => { if (active) { setLoading(false); setUsersLoaded(true); } });
-    }, 180);
+    }, usersLoaded ? 180 : 0);
     return () => { active = false; clearTimeout(timer); };
   }, [searchQuery, roleFilter, statusFilter, page, reload, activeTab]);
   useEffect(() => {
@@ -330,7 +331,7 @@ export default function AdminUsersPage() {
       ) : activeTab === "documents" ? (
         <AdminDocumentsPage instant={instantTabReveal} />
       ) : (
-        <AdminTabReveal tab={activeTab} instant={instantTabReveal}>
+        <AdminTabReveal tab={activeTab} instant={instantTabReveal} duration={activeTab === 'users' ? userRevealDuration : 350}>
           {/* Page Title & Add Button */}
           <div className="cl-admin-page-header" data-admin-reveal="0">
             <div className="cl-admin-page-title">
@@ -526,7 +527,7 @@ export default function AdminUsersPage() {
               </div>
 
               {/* Table Card */}
-              <AdminTabReveal tab="users-table" instant={instantTabReveal} ready={usersLoaded} duration={950}>
+              <AdminTabReveal tab="users-table" instant={instantTabReveal} ready={usersLoaded} duration={userRevealDuration}>
               <div className="cl-user-table-region" aria-busy={loading}>
               <div className="cl-user-table-status" role="status">{loading ? 'Đang tải tài khoản…' : ''}</div>
               {!usersLoaded ? <div className="cl-user-table-placeholder" aria-hidden="true" /> :

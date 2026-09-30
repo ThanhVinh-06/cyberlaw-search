@@ -1,5 +1,41 @@
 # Bàn giao dự án CyberLaw Search
 
+### Đã push đồng bộ animation frontend và không gian tra cứu — 01/10/2026
+
+- Đồng bộ Fade In Up 950ms cho không gian tra cứu (tìm kiếm, thư viện, thuật ngữ, lịch sử) và chốt một nhịp 950ms thống nhất cho tab Người dùng & Phân quyền.
+- Thẻ thuật ngữ Điều 2 dùng shared layout `article-card-2` đồng bộ spring 190/25/0.85 với kết quả tra cứu; ArticleDialog nhận origin `.cl-term-card`.
+- Build frontend đạt (`tsc -b && vite build`); 12 ca kiểm thử E2E animation/responsive (320px–1440px) PASS; PHPUnit backend 78/78 tests, 812 assertions PASS; npm audit 0 lỗ hổng. Rà soát bảo mật không chứa secret/.env/SQL dump.
+
+### Chốt một nhịp cho tab người dùng — 01/10/2026
+
+- Bỏ hoàn toàn nhánh 350ms theo navigationType/fromLookup sau phản hồi chưa đồng bộ. Mọi luồng vào users (từ tra cứu, reload, tab nội bộ) dùng cùng hằng 950ms cho các khối và bảng; không còn cờ route state dành cho animation.
+- Thay thế hướng dẫn phân biệt tốc độ ở các mục cũ bên dưới. Chờ dữ liệu đầu, không replay khi refresh, reduced motion/bàn phím vẫn giữ. Build PASS; kiểm thử lại luồng ngoài/reload/nội bộ và responsive.
+
+### Làm rõ nhịp quản trị theo luồng vào — 01/10/2026
+
+- Theo phản hồi mới: giữ nhịp 350ms đã duyệt cho PUSH từ link Quản trị hệ thống ở MainSite (`state.fromLookup`). Reload/đi thẳng/back và chuyển tab nội bộ về users dùng 950ms cho cả vỏ trang user và bảng. Reload có navigationType POP nên không giữ nhịp nhanh dù history.state còn cờ từ trang tra cứu. Cờ chỉ dùng cho animation, không quyết định quyền.
+- Test 2 luồng PASS: external PUSH vẫn 350ms; reload rồi về users từ matrix/stats/documents đều 950ms, chỉ một animation thực chạy. React StrictMode probe bị hủy không tính là replay. Refresh dữ liệu không replay; dữ liệu đầu vẫn chờ sẵn sàng.
+- 9 responsive tests PASS (320/440/834/900/901/956×440/1024/1440), build PASS. Không sửa backend; chưa push.
+
+### Nhịp bảng user khi vào quản trị từ trang tra cứu — 01/10/2026
+
+- Bỏ debounce 180ms ở lần tải tài khoản đầu; giữ debounce khi đã tải để tìm kiếm không gọi liên tục. Bảng user reveal 350ms cùng nhịp các khối của tab user, thay 950ms riêng trước đây. Thống kê 1200ms và trang tra cứu 950ms không đổi.
+- Test đúng luồng `/search` → link Quản trị hệ thống với API bị giữ chờ: bảng chỉ animate một lần, delay 0, không có ancestor đang animate; reload không replay/đổi chiều cao. PASS sau sửa test cuộn nút vào viewport trước đo (tránh tính auto-scroll là layout shift).
+- 9 responsive tests PASS ở 320/440/834/900/901/956×440/1024/1440; build PASS (cảnh báo bundle lớn cũ). Không thay backend/database; chưa push.
+
+### Fade In Up Không gian tra cứu — 01/10/2026
+
+- MainSite: search/library/terms reveal 950ms theo khối; history đổi thành 950ms. Chỉ mount section đang xem, giữ state ở MainSite. ChatPopover không đổi.
+- Thẻ thuật ngữ Điều 2 dùng shared layout `article-card-2`, cùng spring với kết quả search. ArticleDialog nhận `.cl-term-card` làm origin; không còn thẻ search ẩn trùng ID.
+- AdminTabReveal thêm className tùy chọn để public wrapper display:contents giữ layout. Chỉ public dùng click capture thay pointerdown để không dịch nút trước mouseup. Default quản trị không đổi.
+- Build PASS; 10 test public-reveal và 2 main-site PASS; 7 test article/search PASS lượt trước sửa click. Responsive giả lập 320/440/760/761/834/956×440/1150/1151/1440 có reduced motion và keyboard. Review `docs/security/reviews/2026-10-01-public-animation.md`. Chưa push.
+
+### Đã push ma trận quyền và animation — 01/10/2026
+
+- Commit `c1e3c4b79699b778fdf7edf465aeb8fde6d29806`, `Hoan thien ma tran quyen va dong bo animation quan tri`; origin/main khớp HEAD sau push.
+- 20 file mã nguồn/test/tài liệu; không kèm env, SQL, migration, PDF, dataset hoặc log. Đã ẩn email cá nhân trong HANDOFF phiên bản mới, không viết lại lịch sử Git.
+- PHPUnit 78/812 PASS, npm audit 0, scan nội dung 20 file staging không còn phát hiện theo mẫu và đối chiếu secret env cục bộ; diff check đạt. Build và 22 ca UI đạt ở lượt kiểm tra trước, không sửa mã sau đó. Composer/Gitleaks không có trong PATH; chưa audit Composer hoặc toàn lịch sử.
+
 ### Đồng bộ animation và nút ma trận — 01/10/2026
 
 - Nút “Tải lại ma trận” nằm dưới nhãn “Chính sách quyền tối thiểu” trong header; mobile giữ cùng cột.

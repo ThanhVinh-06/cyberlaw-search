@@ -5,12 +5,14 @@ export function AdminTabReveal({
   instant,
   duration = 350,
   ready = true,
+  className = "cl-admin-tab-content",
   children,
 }: {
   tab: string;
   instant: boolean;
   duration?: number;
   ready?: boolean;
+  className?: string;
   children: ReactNode;
 }) {
   const rootRef = useRef<HTMLDivElement>(null);
@@ -84,8 +86,9 @@ export function AdminTabReveal({
     <div
       ref={rootRef}
       data-admin-reveal-root
-      className="cl-admin-tab-content"
-      onPointerDownCapture={settle}
+      className={className}
+      onPointerDownCapture={className === "cl-public-reveal" ? undefined : settle}
+      onClickCapture={className === "cl-public-reveal" ? settle : undefined}
       onKeyDownCapture={settle}
       onFocusCapture={(event) => {
         if (event.target.matches(":focus-visible")) settle();

@@ -107,7 +107,7 @@ export function ArticleDialog({
       };
 
   // Check if opening from an on-screen search card
-  const isFromSearchCard = origin && origin.classList.contains("cl-result");
+  const isFromSearchCard = origin && origin.matches(".cl-result, .cl-term-card");
 
   return (
     <div className="cl-article-dialog-root">

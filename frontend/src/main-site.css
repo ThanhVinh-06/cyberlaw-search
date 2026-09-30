@@ -774,6 +774,7 @@
     font-size: 11px !important;
     color: var(--muted);
   }
+  .cl-public-reveal { display: contents; }
   .cl-term-card {
     padding: 24px;
     background: white;
