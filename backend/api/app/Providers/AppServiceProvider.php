@@ -28,12 +28,13 @@ class AppServiceProvider extends ServiceProvider
         // Only register implemented administrative capabilities here. Future
         // private-resource policies must also enforce ownership of each record.
         foreach (PermissionMatrix::rules() as $rule) {
-            if (in_array($rule['ma_chuc_nang'], ['quan_ly_van_ban', 'duyet_tri_thuc', 'quan_ly_phan_quyen', 'xem_lich_su_chat'], true)) {
+            if (in_array($rule['ma_chuc_nang'], ['quan_ly_van_ban', 'duyet_tri_thuc', 'quan_ly_phan_quyen', 'xem_lich_su_chat', 'chat_ai_cyberlaw'], true)) {
                 Gate::define($rule['ma_chuc_nang'], fn (NguoiDung $user) => $user->canUseAccount() && ($rule[$user->vai_tro] ?? false));
             }
         }
         RateLimiter::for('admin-users-read', fn (Request $request) => Limit::perMinute(120)->by('admin-users-read:'.$request->user()?->getAuthIdentifier()));
         RateLimiter::for('history-read', fn (Request $request) => Limit::perMinute(60)->by('history-read:'.$request->user()?->getAuthIdentifier()));
+        RateLimiter::for('ai-answer', fn (Request $request) => [Limit::perMinute(6)->by('ai-minute:'.$request->user()?->getAuthIdentifier()), Limit::perHour(60)->by('ai-hour:'.$request->user()?->getAuthIdentifier())]);
         RateLimiter::for('history-write', fn (Request $request) => Limit::perMinute(10)->by('history-write:'.$request->user()?->getAuthIdentifier()));
         RateLimiter::for('admin-users-write', fn (Request $request) => Limit::perMinute(30)->by('admin-users-write:'.$request->user()?->getAuthIdentifier()));
         RateLimiter::for('knowledge-read', fn (Request $request) => Limit::perMinute(120)->by('knowledge-read:'.$request->user()?->getAuthIdentifier()));

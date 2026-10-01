@@ -22,6 +22,7 @@ import { HistoryView } from "./components/HistoryView";
 import { TermsView } from "./components/TermsView";
 import { LibraryView } from "./components/LibraryView";
 import { publicSearchApi } from "./lib/public-search-api";
+import { ask, AnswerError, type AnswerCitation, type AnswerInput } from "./lib/answer-api";
 
 type Article = (typeof articles)[number] & {
   source?: string;
@@ -37,7 +38,7 @@ type Filters = {
   from: string;
   to: string;
 };
-type Message = { text: string; kind: "user" | "assistant"; article?: Article };
+type Message = { text: string; kind: "user" | "assistant"; article?: Article; citations?: AnswerCitation[] };
 const emptyFilters: Filters = {
   query: "",
   mode: "all",
@@ -45,12 +46,6 @@ const emptyFilters: Filters = {
   from: "",
   to: "",
 };
-const normalize = (s: string) =>
-  s
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/đ/g, "d");
 
 function ArticleContent({
   article,
@@ -122,14 +117,27 @@ export default function MainSite() {
   const launcherRef = useRef<HTMLButtonElement>(null);
   const chatInputRef = useRef<HTMLInputElement>(null);
   const logRef = useRef<HTMLDivElement>(null);
+  const [chatBusy, setChatBusy] = useState(false);
+  const [chatError, setChatError] = useState("");
+  const [conversationId, setConversationId] = useState<string | null>(null);
+  const [historyRevision, setHistoryRevision] = useState(0);
+  const [pendingQuestion, setPendingQuestion] = useState<AnswerInput | null>(null);
+  const chatRequest = useRef<AbortController | null>(null);
   const mainRef = useRef<HTMLElement>(null);
   const currentTitle =
     nav.find((item) => item.to === view)?.label ?? "Về dự án";
 
   useEffect(() => {
+    chatRequest.current?.abort();
+    chatRequest.current = null;
     setMessages([]);
     setQuestion("");
+    setChatBusy(false);
+    setChatError("");
+    setConversationId(null);
+    setPendingQuestion(null);
     setChatOpen(false);
+    return () => chatRequest.current?.abort();
   }, [currentUser?.ma_nguoi_dung]);
 
   useEffect(() => {
@@ -248,29 +256,50 @@ export default function MainSite() {
     setChatInstant(instant);
     setChatOpen(true);
   }
-  function sendChat(value = question) {
+  async function sendChat(value = question, retry = false) {
+    if (chatRequest.current && !chatRequest.current.signal.aborted) return;
     const text = value.trim();
-    if (!text) return;
-    const q = normalize(text);
-    let response: Message = {
-      kind: "assistant",
-      text: "Đây là bản xem thử giao diện, chưa kết nối mô hình AI. Bạn có thể thử “Luật có hiệu lực từ khi nào?” hoặc “An ninh mạng là gì?” để xem cách hiển thị câu trả lời và căn cứ.",
-    };
-    if (q.includes("hieu luc"))
-      response = {
+    if (!text && !retry) return;
+    // Anonymous visitors keep the existing UI preview. Durable, grounded
+    // answers are only requested after the server-authenticated session check.
+    if (!isAuthenticated) {
+      const lower = text.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+      const article = lower.includes("hieu luc") ? articles[2] : lower.includes("an ninh mang") ? articles[1] : undefined;
+      setMessages((previous) => [...previous, { kind: "user", text }, {
         kind: "assistant",
-        text: "Phản hồi mẫu: Luật số 116/2025/QH15 có hiệu lực từ ngày 01/07/2026. Căn cứ: khoản 1 Điều 44.",
-        article: articles[2],
-      };
-    else if (q.includes("an ninh mang la gi"))
-      response = {
-        kind: "assistant",
-        text: "Phản hồi mẫu: Khái niệm an ninh mạng được nêu tại khoản 1 Điều 2. Bạn có thể mở nguyên văn bên dưới để đọc đầy đủ.",
-        article: articles[1],
-      };
-    setMessages((previous) => [...previous, { kind: "user", text }, response]);
-    setQuestion("");
-    chatInputRef.current?.focus();
+        text: article ? `Phản hồi mẫu: Căn cứ liên quan nằm tại Điều ${article.id}. Đăng nhập để lưu lịch sử và nhận truy hồi từ dữ liệu đã duyệt.` : "Đây là bản xem thử giao diện. Bạn đăng nhập để hỏi đáp với kho căn cứ đã duyệt.",
+        article,
+      }]);
+      setQuestion("");
+      return;
+    }
+    const input: AnswerInput = retry && pendingQuestion
+      ? pendingQuestion
+      : { question: text, request_id: crypto.randomUUID(), ...(conversationId ? { conversation_id: conversationId } : {}) };
+    const controller = new AbortController();
+    chatRequest.current = controller;
+    setChatBusy(true); setChatError(""); setPendingQuestion(input);
+    if (!retry) { setMessages(previous => [...previous, { kind: "user", text }]); setQuestion(""); }
+    try {
+      const result = await ask(input, controller.signal);
+      if (!controller.signal.aborted) {
+        setConversationId(result.conversation_id); setPendingQuestion(null);
+        setHistoryRevision(previous => previous + 1);
+        const citedArticle = result.citations[0] && articles.find((article) => article.id === result.citations[0].article);
+        setMessages(previous => [...previous, { kind: "assistant", text: result.answer, citations: result.citations, article: citedArticle }]);
+      }
+    } catch (reason) {
+      if (!controller.signal.aborted) {
+        setChatError(reason instanceof AnswerError ? (reason.status === 401 ? "LOGIN_REQUIRED" : reason.message) : "CONNECTION_ERROR");
+        if (reason instanceof AnswerError && [403, 404, 409, 422].includes(reason.status)) {
+          setPendingQuestion(null);
+          setQuestion(input.question);
+          if (reason.status === 404) setConversationId(null);
+        }
+      }
+    } finally {
+      if (!controller.signal.aborted) { setChatBusy(false); chatRequest.current = null; chatInputRef.current?.focus(); }
+    }
   }
   const articleButton = (article: Article, label = "Xem điều khoản") => (
     <button
@@ -718,7 +747,7 @@ export default function MainSite() {
           </section>}
           {view === "/library" && <LibraryView />}
           {view === "/terms" && <TermsView selectedId={selectedArticle?.article.id} articleButton={articleButton} onOpenArticle={openArticle} />}
-          {view === historyNavigation.to && isAuthenticated && <HistoryView key={currentUser?.ma_nguoi_dung} previewMessages={messages} articleButton={articleButton} onOpenChat={() => openChat(false)} />}
+          {view === historyNavigation.to && isAuthenticated && <HistoryView key={currentUser?.ma_nguoi_dung} revision={historyRevision} previewMessages={messages} articleButton={articleButton} onOpenChat={() => openChat(false)} />}
           {!nav.some((item) => item.to === view) && (
             <section className="cl-document-card">
               <h1>
@@ -731,8 +760,8 @@ export default function MainSite() {
                 dẫn chiếu nguồn văn bản.
               </p>
               <p>
-                Giao diện dùng dữ liệu minh họa. Tài khoản và mô hình AI chưa
-                kết nối backend.
+                Tài khoản và tra cứu đã kết nối hệ thống. Hỏi đáp đang thử nghiệm
+                truy hồi căn cứ cục bộ từ văn bản đã công bố.
               </p>
               <Link to="/search">Về trang tra cứu →</Link>
             </section>
@@ -740,7 +769,7 @@ export default function MainSite() {
           <footer className="cl-page-footer">
             <strong>CyberLaw</strong>
             <span>Đồ án môn Trí tuệ nhân tạo</span>
-            <span>Giao diện mẫu · Chưa kết nối AI</span>
+            <span>Hỏi đáp · Truy hồi căn cứ cục bộ</span>
           </footer>
         </main>
       </div>
@@ -759,6 +788,7 @@ export default function MainSite() {
           aria-live="polite"
         >
           <div className="cl-chat-date">TRÒ CHUYỆN MỚI</div>
+          {conversationId && <button className="cl-text-button" disabled={chatBusy || !!pendingQuestion} onClick={() => { setMessages([]); setConversationId(null); setChatError(""); }}>Cuộc trò chuyện mới</button>}
           <div className="cl-message cl-assistant">
             <strong>Xin chào, tôi là trợ lý CyberLaw.</strong>
             <p>Bạn muốn tìm hiểu quy định nào về Luật An ninh mạng?</p>
@@ -766,7 +796,7 @@ export default function MainSite() {
           <div className="cl-chat-prompts">
             {["Luật có hiệu lực từ khi nào?", "An ninh mạng là gì?"].map(
               (prompt) => (
-                <button key={prompt} onClick={() => sendChat(prompt)}>
+                <button key={prompt} disabled={chatBusy || !!pendingQuestion} onClick={() => sendChat(prompt)}>
                   {prompt}
                 </button>
               ),
@@ -775,6 +805,14 @@ export default function MainSite() {
           {messages.map((message, index) => (
             <div key={index} className={`cl-message cl-${message.kind}`}>
               {message.text}
+              {message.citations?.map((citation) => (
+                <details key={citation.id} className="cl-chat-citation">
+                  <summary>Căn cứ: Điều {citation.article}{citation.clause && ` khoản ${citation.clause}`}{citation.point && ` điểm ${citation.point}`}</summary>
+                  <p>{citation.text}</p>
+                  <small>{citation.law} · Phiên bản {citation.version}{citation.page ? ` · Trang ${citation.page}` : ""}</small>
+                  {citation.source && <p><a href={citation.source} target="_blank" rel="noopener noreferrer">Đối chiếu nguồn ↗</a></p>}
+                </details>
+              ))}
               {message.article && (
                 <p>
                   {articleButton(
@@ -786,6 +824,8 @@ export default function MainSite() {
             </div>
           ))}
         </div>
+        {chatBusy && <p role="status" className="cl-chat-status">Đang đối chiếu căn cứ…</p>}
+        {chatError && <div role="alert" className="cl-chat-status">{chatError === "LOGIN_REQUIRED" ? <Link to="/login">Đăng nhập để hỏi đáp và lưu lịch sử</Link> : <>{chatError === "CONNECTION_ERROR" ? "Mất kết nối. Bạn thử lại cùng yêu cầu để tránh lưu trùng nhé." : chatError}{pendingQuestion && <button disabled={chatBusy} onClick={() => sendChat("", true)}>Thử lại</button>}</>}</div>}
         <form
           id="cl-chat-form"
           onSubmit={(event) => {
@@ -803,14 +843,16 @@ export default function MainSite() {
             onChange={(event) => setQuestion(event.target.value)}
             placeholder="Nhập câu hỏi của bạn…"
             maxLength={1000}
+            minLength={3}
+            disabled={chatBusy || !!pendingQuestion}
             required
           />
-          <button type="submit" aria-label="Gửi câu hỏi">
+          <button type="submit" aria-label="Gửi câu hỏi" disabled={chatBusy || !!pendingQuestion}>
             <Send aria-hidden="true" />
           </button>
         </form>
         <div className="cl-chat-disclaimer">
-          Bản xem thử giao diện · Phản hồi mẫu
+          Truy hồi cục bộ · Căn cứ từ Luật 116/2025/QH15
         </div>
       </ChatPopover>
       <AnimatePresence>

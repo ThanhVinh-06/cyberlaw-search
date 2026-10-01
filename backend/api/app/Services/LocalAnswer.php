@@ -1,0 +1,132 @@
+<?php
+
+namespace App\Services;
+
+use App\Models\DieuKhoan;
+use App\Models\HoiThoai;
+use App\Models\TinNhan;
+use App\Models\TrichDan;
+use App\Models\VanBan;
+use App\Support\PasswordSession;
+use App\Support\SafeLog;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
+
+class LocalAnswer
+{
+    public function __construct(private LocalRetriever $retriever, private KnowledgeAdmin $knowledge) {}
+
+    private function snapshot(): array
+    {
+        $doc = VanBan::where('so_hieu', PublicKnowledgeSearch::LAW_NUMBER)->where('trang_thai', 'published')->first();
+        abort_unless($doc, 409, 'Kho luật chưa có văn bản được công bố. Bạn thử lại sau nhé.');
+        $query = DieuKhoan::where('ma_van_ban', $doc->getKey());
+        abort_if((clone $query)->count() > 5000 || (int) (clone $query)->selectRaw('SUM(LENGTH(noi_dung)) AS bytes')->value('bytes') > 6*1024*1024, 503);
+        $rows = $query->orderBy('thu_tu')->orderBy('ma_dieu_khoan')->get();
+        abort_if($rows->isEmpty(), 409, 'Kho luật chưa có nội dung để trả lời.');
+        $chunks = $rows->map(fn ($r) => ['id'=>(string) $r->getKey(), 'title'=>$r->tieu_de, 'text'=>$r->noi_dung,
+            'article'=>(string) $r->so_dieu, 'clause'=>(string) $r->so_khoan, 'point'=>(string) $r->ky_hieu_diem])->all();
+        return ['doc'=>$doc, 'rows'=>$rows->keyBy('ma_dieu_khoan'), 'chunks'=>$chunks,
+            'digest'=>hash('sha256', json_encode([$doc->toArray(), $chunks], JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE))];
+    }
+
+    private function owned(Request $request, string $id)
+    {
+        return HoiThoai::where('ma_nguoi_dung', $request->user()->getKey())->whereKey($id)->firstOrFail();
+    }
+
+    private function result(Request $request, int $threadId, int $messageId): array
+    {
+        $this->owned($request, (string) $threadId);
+        $message = TinNhan::where('ma_hoi_thoai', $threadId)->whereKey($messageId)->firstOrFail();
+        $citations = TrichDan::where('ma_tin_nhan', $messageId)->orderBy('thu_tu_trich_dan')->get();
+        return ['conversation_id'=>(string) $threadId, 'message_id'=>(string) $messageId,
+            'status'=>$message->trang_thai_tra_loi, 'answer'=>$message->noi_dung, 'engine'=>'local-extractive-v1',
+            'citations'=>$citations->map(fn ($c)=>[
+                'id'=>(string) $c->getKey(), 'law'=>$c->so_hieu, 'article'=>$c->so_dieu, 'clause'=>$c->so_khoan,
+                'point'=>$c->ky_hieu_diem, 'text'=>$c->noi_dung_trich_dan, 'version'=>(int) $c->phien_ban_noi_dung,
+                'page'=>$c->trang_nguon, 'source'=>(string) $c->lien_ket_nguon,
+            ])->all()];
+    }
+
+    private function replay(Request $request, array $input, string $digest): ?array
+    {
+        $event=DB::table('nhat_ky_quan_tri')->where('hanh_dong','ai.answer.completed')
+            ->where('ma_nguoi_thuc_hien',$request->user()->getKey())->where('ma_yeu_cau',$input['request_id'])->first();
+        if (!$event) return null;
+        $metadata=json_decode($event->du_lieu_them,true,32,JSON_THROW_ON_ERROR);
+        abort_unless(hash_equals($metadata['request_digest'],$digest),409,'Mã yêu cầu đã được dùng cho câu hỏi khác.');
+        return $this->result($request,(int) $event->ma_doi_tuong,(int) $metadata['message_id']);
+    }
+
+    public function answer(Request $request): array
+    {
+        $input=$request->validate(['question'=>'required|string|min:3|max:1000','request_id'=>'required|uuid',
+            'conversation_id'=>['nullable','string','regex:/^[1-9][0-9]{0,17}$/']]);
+        $question=trim($input['question']);
+        abort_if(mb_strlen($question)<3,422,'Bạn nhập câu hỏi cụ thể hơn nhé.');
+        $digest=hash_hmac('sha256',json_encode([$question,$input['conversation_id']??null]),config('app.key'));
+        // One in-flight job per account; never queue unbounded model jobs.
+        $lock=Cache::lock('ai-account:'.$request->user()->getKey(),30);
+        abort_unless($lock->get(),429,'Bạn chờ câu trả lời hiện tại hoàn tất nhé.');
+        $started = hrtime(true);
+        $logContext = ['request_id' => $request->attributes->get('request_id'), 'actor_id' => $request->user()->getKey(), 'route' => 'ai.answer'];
+        SafeLog::write('application', 'ai.answer.started', 'started', $logContext);
+        try {
+            $replay=$this->knowledge->serialized(fn ()=>$this->replay($request,$input,$digest));
+            if($replay) {
+                SafeLog::write('application', 'ai.answer.replayed', 'success', $logContext);
+                return $replay;
+            }
+            if(!empty($input['conversation_id'])) $this->owned($request,$input['conversation_id']);
+            $snapshot=$this->knowledge->serialized(fn ()=>$this->snapshot());
+            $retrieved=$this->retriever->retrieve($question,$snapshot['chunks']);
+            $ids=$retrieved['ids'];
+            abort_unless(count(array_unique($ids))===count($ids),503);
+            foreach($ids as $id) abort_unless($snapshot['rows']->has($id),503);
+            $result=$this->knowledge->serialized(function () use ($request,$input,$digest,$snapshot,$retrieved,$ids,$question) {
+                // Recheck after computation; never save citations from an old/draft revision.
+                $fresh=$this->snapshot();
+                abort_unless(hash_equals($snapshot['digest'],$fresh['digest']),409,'Văn bản vừa được cập nhật. Bạn gửi lại câu hỏi nhé.');
+                $user=$request->user()->fresh();
+                abort_unless($user && $user->trang_thai==='active' && $user->canUseAccount()
+                    && hash_equals(PasswordSession::fingerprint($user),(string)$request->session()->get('auth_password_fingerprint')),401);
+                if($replay=$this->replay($request,$input,$digest)) return $replay;
+                $thread=!empty($input['conversation_id']) ? $this->owned($request,$input['conversation_id'])
+                    : HoiThoai::create(['ma_nguoi_dung'=>$user->getKey(),'tieu_de'=>Str::limit($question,120)]);
+                $text=$retrieved['status']==='no_basis'
+                    ? 'Chưa đủ căn cứ trong nguyên bản Luật 116/2025/QH15 để trả lời câu hỏi này. Bạn nêu rõ vấn đề hoặc số điều/khoản; hệ thống không tự suy ra mức phạt hay tình trạng pháp luật hiện hành.'
+                    : 'Các trích đoạn liên quan trong nguyên bản Luật 116/2025/QH15 được liệt kê bên dưới. Đây là kết quả truy hồi; bạn cần đọc cả điều kiện, ngoại lệ và văn bản được dẫn chiếu trước khi áp dụng.';
+                TinNhan::create(['ma_hoi_thoai'=>$thread->getKey(),'nguoi_gui'=>'user','noi_dung'=>$question]);
+                $message=TinNhan::create(['ma_hoi_thoai'=>$thread->getKey(),'nguoi_gui'=>'assistant','noi_dung'=>$text,
+                    'trang_thai_tra_loi'=>$retrieved['status'],'do_tin_cay'=>null]);
+                $doc=$snapshot['doc'];
+                $source=(string)$doc->lien_ket_nguon;
+                if(!preg_match('~^https?://~i',$source)||!filter_var($source,FILTER_VALIDATE_URL)) $source='';
+                foreach($ids as $order=>$id) {
+                    $row=$snapshot['rows']->get($id);
+                    TrichDan::create(['ma_tin_nhan'=>$message->getKey(),'ma_dieu_khoan'=>$row->getKey(),'thu_tu_trich_dan'=>$order+1,
+                        'so_hieu'=>$doc->so_hieu,'tieu_de_van_ban'=>$doc->tieu_de,'phien_ban_noi_dung'=>$doc->phien_ban_noi_dung,
+                        'so_dieu'=>$row->so_dieu,'so_khoan'=>$row->so_khoan,'ky_hieu_diem'=>$row->ky_hieu_diem,
+                        'noi_dung_trich_dan'=>$row->noi_dung,'lien_ket_nguon'=>$source,'trang_nguon'=>$row->trang_nguon]);
+                }
+                $thread->touch();
+                // Durable request deduplication + audit, same transaction as the answer.
+                DB::table('nhat_ky_quan_tri')->insert(['ma_nguoi_thuc_hien'=>$user->getKey(),'hanh_dong'=>'ai.answer.completed',
+                    'loai_doi_tuong'=>'hoi_thoai','ma_doi_tuong'=>$thread->getKey(),'ma_yeu_cau'=>$input['request_id'],
+                    'du_lieu_them'=>json_encode(['request_digest'=>$digest,'message_id'=>$message->getKey()]),'ngay_tao'=>now()]);
+                return $this->result($request,$thread->getKey(),$message->getKey());
+            });
+            SafeLog::write('application','ai.answer.completed','success',['request_id'=>$request->attributes->get('request_id'),
+                'actor_id'=>$request->user()->getKey(),'route'=>'ai.answer', 'duration_ms' => (int) ((hrtime(true) - $started) / 1000000)]);
+            return $result;
+        } catch (\Throwable $error) {
+            SafeLog::write('application', 'ai.answer.failed', 'failure', [...$logContext,
+                'status' => $error instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface ? $error->getStatusCode() : 500,
+                'duration_ms' => (int) ((hrtime(true) - $started) / 1000000)]);
+            throw $error;
+        } finally { $lock->release(); }
+    }
+}

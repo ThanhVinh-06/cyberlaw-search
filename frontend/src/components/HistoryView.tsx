@@ -8,7 +8,7 @@ const date=(value:string|null)=>value && !Number.isNaN(Date.parse(value)) ? new 
 const message=(error:unknown)=>error instanceof Error ? error.message : 'Không thể tải lịch sử. Bạn thử lại nhé.';
 type PreviewArticle = (typeof import('../lib/articles').articles)[number];
 type PreviewMessage = {text:string; kind:'user'|'assistant'; article?:PreviewArticle};
-export function HistoryView({previewMessages=[],articleButton,onOpenChat}:{previewMessages?:PreviewMessage[]; articleButton?:(article:PreviewArticle,label?:string)=>ReactNode; onOpenChat?:()=>void}) {
+export function HistoryView({previewMessages=[],articleButton,onOpenChat,revision=0}:{previewMessages?:PreviewMessage[]; articleButton?:(article:PreviewArticle,label?:string)=>ReactNode; onOpenChat?:()=>void; revision?:number}) {
   const [request,setRequest]=useState({page:1,run:0});
   const [data,setData]=useState<HistoryPage|null>(null);
   const [selected,setSelected]=useState({id:'',page:1,run:0});
@@ -31,7 +31,7 @@ export function HistoryView({previewMessages=[],articleButton,onOpenChat}:{previ
     }).catch(reason=>{if(!controller.signal.aborted) {if(reason instanceof HistoryError && reason.status===401) expire();setError(message(reason));}})
       .finally(()=>{if(!controller.signal.aborted) setLoading(false);});
     return ()=>controller.abort();
-  },[request]);
+  },[request,revision]);
   useEffect(()=>{
     setDetail(null);setDetailError('');setConfirm(false);
     if(!selected.id) {setDetailLoading(false);return;}

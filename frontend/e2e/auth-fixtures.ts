@@ -157,6 +157,29 @@ export async function mockAuth(
     }
     await route.fulfill({ status: 200, json: { items: [], total: 0, page: 1, per_page: 12 } });
   });
+  // The browser suite is UI-only. Keep the AI transport deterministic here;
+  // the real Laravel route is covered by LocalAnswerTest.
+  await target.route("**/api/answer", async (route) => {
+    if (!currentRole) {
+      await route.fulfill({ status: 401, json: { message: "Unauthenticated" } });
+      return;
+    }
+    const input = route.request().postDataJSON() as { question?: string; request_id?: string };
+    await route.fulfill({
+      status: 200,
+      json: {
+        conversation_id: "ui-fixture-conversation",
+        message_id: input.request_id ?? "ui-fixture-message",
+        status: "answered",
+        answer: "Phản hồi mẫu từ căn cứ đã được duyệt.",
+        engine: "fixture",
+        citations: [{
+          id: "ui-fixture-citation", law: "116/2025/QH15", article: "2", clause: "1", point: "",
+          text: "An ninh mạng là sự ổn định của không gian mạng.", source: "https://example.test/source", version: 1, page: 1,
+        }],
+      },
+    });
+  });
   await target.route("**/api/terms*", async (route) => {
     await route.fulfill({
       status: 200,

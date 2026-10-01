@@ -702,6 +702,7 @@
     justify-items: start;
     gap: 8px;
     margin-top: 16px;
+    margin-bottom: 16px;
   }
   .cl-chat-prompts button {
     background: white;
@@ -710,6 +711,11 @@
     font-size: 11px;
     padding: 8px 10px;
     color: var(--red);
+    transition: background 0.15s ease, border-color 0.15s ease;
+  }
+  .cl-chat-prompts button:hover:not(:disabled) {
+    background: #fdf5f7;
+    border-color: #d4a5b2;
   }
   #cl-chat-form {
     flex-shrink: 0;
@@ -746,6 +752,13 @@
     text-align: center;
     padding: 0 5px 10px;
   }
+  .cl-chat-citation { margin-top: 12px; padding: 10px; border-radius: 8px; background: #faf6f7; box-shadow: 0 0 0 1px #eee6ea; }
+  .cl-chat-citation summary { color: var(--red); cursor: pointer; }
+  .cl-chat-citation p { white-space: pre-wrap; }
+  .cl-chat-citation small { display: block; margin-top: 8px; color: var(--muted); }
+  .cl-chat-status { flex-shrink: 0; margin: 0; padding: 8px 14px; font-size: 12px; overflow-wrap: anywhere; }
+  .cl-chat-status button { margin-left: 8px; padding: 6px 10px; border: 1px solid #e4c8d0; border-radius: 6px; color: var(--red); background: white; }
+  .cl-chat-prompts button:disabled, #cl-chat-form button:disabled { opacity: .55; cursor: wait; }
   .cl-library-layout {
     display: grid;
     grid-template-columns: 220px 1fr;
