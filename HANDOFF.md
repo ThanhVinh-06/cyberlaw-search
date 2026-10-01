@@ -1,5 +1,51 @@
 # Bàn giao dự án CyberLaw Search
 
+### Chuẩn hóa animation Fade In Up cho các box thuật ngữ (TermsView) — 02/10/2026
+
+- **Khắc phục triệt để hiện tượng giật hình và thiếu animation Fade In Up khi tải lại dữ liệu**:
+  - **Nguyên nhân cốt lõi trước đó**: Thẻ card thuật ngữ (`.cl-term-card`) được render trực tiếp bên trong `TermsView.tsx` mà không có wrapper entrance animation. Khi mới vào trang hoặc bấm "Tải lại dữ liệu", `AdminTabReveal` bên ngoài đã chạy xong trong lúc component còn đang ở trạng thái `loading = true`. Đến khi `fetchTerms` trả về dữ liệu, các thẻ card xuất hiện đột ngột tức thì không có animation. Ngoài ra, việc gắn trực tiếp `layoutId` Motion lên card mà không có wrapper tách biệt dễ gây xung đột toạ độ bounding box khi click bung modal Shared Element.
+  - **Đồng bộ giải pháp chuẩn từ trang Tra cứu (`ResultReveal`)**:
+    - Tái sử dụng component `ResultReveal` (`frontend/src/components/ResultReveal.tsx`) bọc quanh từng `<motion.div className="cl-term-card">`.
+    - Quản lý state `termsEntrance = { run: number, instant: boolean }`: mỗi khi `fetchTerms` thành công (bao gồm tải trang lần đầu, tìm kiếm từ khoá mới, hoặc bấm nút **"Tải lại dữ liệu"**), `termsEntrance.run` tăng lên, kích hoạt animation Fade In Up chuẩn **950ms**, hiệu ứng so le (stagger delay `index * 80ms`, tối đa 5 items) êm dịu, trôi nhẹ từ dưới lên (`translateY(16px) → 0`, `opacity: 0 → 1`).
+    - Phân tách hoàn hảo giữa lớp wrapper animation entrance (`ResultReveal`) và thẻ card Shared Element (`.cl-term-card` với `layoutId={`article-card-${term.article.id}`}`), loại bỏ hoàn toàn hiện tượng giật giật toạ độ layout khi mở modal căn cứ pháp lý.
+    - Hỗ trợ đầy đủ `prefers-reduced-motion` (duration rút gọn 160ms, transform 'none') và tương tác bàn phím/focus (`settle` animation tức thì khi người dùng tương tác).
+- **Kiểm thử và xác minh toàn diện**:
+  - `npm run build`: PASS 100% (`tsc -b && vite build`).
+  - Playwright E2E:
+    - `terms.spec.ts`: **2/2 PASS** (bao gồm test mở/đóng modal, click card, click nút, tìm kiếm, reload trên toàn bộ **9 kích thước responsive**: 320px, 440px iPhone 16 Pro Max, 760px, 761px, 834px iPad, 956x440px landscape, 1150px, 1151px, 1440px desktop; và test chuyên biệt xác minh Web Animations API trigger Fade In Up 950ms khi load ban đầu và khi bấm "Tải lại dữ liệu").
+    - `navigation.spec.ts`: **20/20 PASS** (kiểm tra toàn bộ luồng điều hướng, sidebar, menu touch screen và mobile responsive).
+
+### Chuẩn hóa hiển thị tab Lịch sử hỏi đáp (HistoryView) — 02/10/2026
+
+- **Khắc phục triệt để dòng thông báo gây hiểu nhầm và bổ sung animation Fade In Up**:
+  - Khi tài khoản đã đăng nhập và đã có các cuộc hội thoại được lưu thật trong cơ sở dữ liệu (`data.items.length > 0`): tự động **ẩn hoàn toàn khối tin nhắn xem trước tạm thời (`previewMessages`)** ở phía trên.
+  - Loại bỏ dứt điểm dòng chữ _"Trao đổi thử trong phiên hiện tại, chưa lưu lên hệ thống."_ khi đã có lịch sử thật, giúp danh sách **"Hội thoại của bạn"** hiển thị ngay trên đầu cực kỳ gọn gàng, rõ ràng và nhất quán.
+  - **Animation Fade In Up đồng bộ**: Các item button `.cl-history-select` trong danh sách "Hội thoại của bạn" được bọc bằng `motion.button` với animation trồi nhẹ từ dưới lên (`y: 12px → 0`, `opacity: 0 → 1`), duration 0.5s, hiệu ứng so le nối tiếp (stagger delay `index * 0.05s`, tối đa 0.3s) êm dịu, mượt mà chuẩn đồng bộ toàn hệ thống; tự động tắt chuyển động khi bật `prefers-reduced-motion`.
+  - **Animation Fade In Up đồng bộ**: Các item button `.cl-history-select` trong danh sách "Hội thoại của bạn" được bọc bằng `motion.button` với animation trồi nhẹ từ dưới lên (`y: 16px → 0`, `opacity: 0 → 1`), duration tăng lên `0.85s` êm ái hơn, hiệu ứng so le nối tiếp (stagger delay `index * 0.07s`, tối đa 0.42s) êm dịu, mượt mà chuẩn đồng bộ toàn hệ thống; tự động tắt chuyển động khi bật `prefers-reduced-motion`.
+  - Chuẩn hóa thông điệp trạng thái rỗng (`cl-history-empty`): _"Khi bạn hỏi đáp cùng trợ lý AI, các cuộc trao đổi sẽ tự động được lưu tại đây."_ (thay cho thông điệp cũ về hội thoại demo).
+  - Khối tin nhắn xem trước chỉ xuất hiện khi tài khoản chưa có bản ghi lịch sử nào trong database và đang có tin nhắn tạm trong phiên hiện tại (`data.items.length === 0 && previewMessages.length > 0`).
+- **Kiểm thử và xác minh toàn diện**:
+  - `npm run build`: PASS 100% (`tsc -b && vite build`).
+  - Playwright E2E: `history.spec.ts` 2/2 PASS (kiểm tra đầy đủ 9 kích thước responsive: 320px, 440px iPhone 16 Pro Max, 760px, 761px, 834px iPad, 956x440px landscape, 1150px, 1151px, 1440px desktop), `main-site.spec.ts` 2/2 PASS, `navigation.spec.ts` 22/22 PASS.
+
+### Tối ưu biểu đồ xu hướng tab Thống kê & Báo cáo (Admin Stats) — 02/10/2026
+
+- **Khắc phục triệt để lỗi vỡ giao diện biểu đồ và phân chia các kỳ hiển thị to đẹp, thoáng đãng**:
+  - **Tab 30 ngày qua (`30d`)**: Gom 30 ngày thành **4 phần (4 tuần)** gồm `Tuần 1`, `Tuần 2`, `Tuần 3`, `Tuần 4` (thay vì 30 cột li ti như hạt gạo làm tràn trục X và đè chữ lên nội dung bên dưới). Tooltip hiển thị chi tiết khoảng ngày cụ thể của tuần (ví dụ `Tuần 1 (02/09 – 08/09)`).
+  - **Tab 6 tháng gần nhất (`6m`)**: Chia thành **3 phần** (cách nhau mỗi 2 tháng, gom 2 tháng vào 1 cột: `T05-06`, `T07-08`, `T09-10`). Tooltip hiển thị đầy đủ (ví dụ `Tháng 05 – 06/2026`).
+  - **Tab Năm 2026 (`year`)**: Chia thành **6 phần** (mỗi phần 2 tháng: `T01-02`, `T03-04`, `T05-06`, `T07-08`, `T09-10`, `T11-12`).
+  - **Thiết kế cột to và đẹp hơn (`admin-stats.css`)**:
+    - Nâng chiều rộng cột `.cl-bar-single` từ `13px` lên `22px` (bo góc `6px 6px 0 0`, gap `7px`), giúp các cột to bản, vững chãi, khoảng cách giữa các cột thoáng đãng, mang lại vẻ đẹp chuyên nghiệp chuẩn dashboard hiện đại.
+    - Phụ đề thẻ biểu đồ cập nhật động theo từng kỳ lọc (`30 ngày qua`, `6 tháng gần nhất`, `năm 2026`).
+  - **Responsive tối ưu đa kích thước**:
+    - Thêm media query cho `@media (max-width: 540px)`, `@media (max-width: 480px)` và `@media (max-width: 360px)`: điều chỉnh padding thẻ card, chiều rộng cột (`13px-15px`) và font size nhãn X (`9.5px-10.5px`).
+    - Hoàn toàn không bị tràn ngang (`scrollWidth <= clientWidth`), hiển thị trọn vẹn 100% trên iPhone 16 Pro Max (440px) và màn hình nhỏ 320px.
+- **Backend & Kiểm thử toàn diện**:
+  - Backend `AdminStatisticsController.php` cập nhật logic nhóm bucket cho `30d`, `6m`, `year`.
+  - PHPUnit: `AdminStatisticsTest` 3/3 PASS (21 assertions) kiểm tra chính xác số cột (4 tuần cho 30d, 3 kỳ cho 6m, 6 kỳ cho year). Toàn bộ 107 PHPUnit tests PASS (1200 assertions).
+  - Playwright E2E: `admin-stats.spec.ts` 7/7 PASS (bao gồm test mới chuyển giữa 3 tab kỳ hạn, kiểm tra số lượng cột và nhãn, tooltip và no-overflow), `admin-responsive.spec.ts` 9/9 PASS (320px, 440px, 834px, 900px, 901px, 956px, 1024px, 1440px).
+  - Frontend build: `npm run build` PASS 100%.
+
 ### Căn giữa chữ xem điều khoản và mở popup khi click box thuật ngữ — 02/10/2026
 
 - **Tối ưu trải nghiệm thẻ thuật ngữ (`TermsView`) chuẩn đồng bộ với Tra cứu pháp luật**:
@@ -573,6 +619,7 @@ Sau mỗi giai đoạn đáng kể, cập nhật trạng thái bàn giao để p
 - Đợt cập nhật giao diện quản trị hiện tại được người dùng yêu cầu commit và push lên `origin/main`; thông điệp commit dùng tiếng Việt **không dấu**: `Hoan thien thong ke bao cao va dong bo hieu ung cac trang quan tri`. Bao gồm trang thống kê/dữ liệu mẫu, biểu đồ tương tác, popup hỏi đáp, hover đồng bộ, Fade In Up cho người dùng/ma trận quyền hạn và quy ước animation cho trang mới. Build đã đạt; 5 test thống kê đạt sau khi tích hợp điều hướng tab; các thao tác chuyển tab/bộ lọc/bàn phím/mobile đã kiểm tra riêng trên Edge. Danh sách 14 file thay đổi chỉ gồm mã nguồn, test và tài liệu; kiểm tra không phát hiện mẫu khóa bí mật, `.env`, dump SQL, skills và kết quả kiểm tra vẫn được bỏ qua. Đối chiếu `HEAD` và `origin/main` để xác nhận trạng thái push thực tế.
 
 Chỉ đưa mã nguồn, SQL tạo cấu trúc và tài liệu dự án lên GitHub. Bản dump `database/cyberlaw_search.sql` và bản Desktop giữ local; các liên kết tới dump trong tài liệu chỉ dùng trên máy đã tạo file. Không đưa mật khẩu, `.env`, khóa riêng, backup hoặc dữ liệu tài khoản lên repository. `database/schema.sql` là tệp cấu trúc dùng khi clone dự án sang máy khác.
+
 # Backend và giao diện hỏi đáp AI cục bộ — 02/10/2026
 
 - Thêm `POST /api/answer` cho phiên đăng nhập: CSRF/session, quyền `chat_ai_cyberlaw`, giới hạn 6 lần/phút và 60 lần/giờ, chống request trùng, snapshot phiên bản và chỉ truy hồi văn bản `116/2025/QH15` đã `published`.
@@ -580,3 +627,10 @@ Chỉ đưa mã nguồn, SQL tạo cấu trúc và tài liệu dự án lên Git
 - Lưu `hoi_thoai`, `tin_nhan`, `trich_dan` và audit metadata; nguồn `javascript:`/không phải HTTP(S) bị loại. Giao diện chat hiển thị căn cứ, trạng thái đang xử lý, retry cùng request ID và bản xem thử cho khách; lịch sử tự tải lại sau câu trả lời thật.
 - Kiểm thử: `python -m unittest test_retriever.py` 4/4; dev eval 28/28 (đây là tập phát triển, không phải test độc lập); PHPUnit AI + history 12/12, 144 assertions; `npm run build` PASS; UI chat/navigation đã chạy qua các ca responsive hiện có. Báo cáo: `docs/security/reviews/2026-10-02-ai.md`; thiết kế: `docs/backend/11-ai-truy-hoi-cuc-bo.md`.
 - Chưa deploy-ready: cần pipeline phê duyệt dữ liệu, đánh giá độc lập, semantic retrieval/reranker hoặc LLM nếu cần diễn giải, load/staging test, rotation log và rà dependency trước phát hành.
+
+# Backend thống kê và báo cáo — 02/10/2026
+
+- Thêm `GET /api/admin/statistics`, chỉ admin active có quyền quản lý văn bản được đọc. API tổng hợp dữ liệu văn bản 116/2025/QH15 đã `published`, điều khoản, quy định, người dùng active, hội thoại/tin nhắn AI, citation, top users và 5 câu hỏi gần đây.
+- Dashboard giữ nguyên toàn bộ Fade In Up, hover, tooltip, biểu đồ và popup; `AdminStatsPage` tải dữ liệu qua `admin-statistics-api.ts`, hiển thị trạng thái tải/lỗi rõ ràng. `RecentQuestionsCard` và `RegulationBreakdownCard` nhận dữ liệu backend mà không đổi layout.
+- `tra_cuu` theo tháng hiện là `null` vì database chưa có bảng/event nhật ký tra cứu riêng; không dựng số liệu giả. Cần làm event thống kê tra cứu sau nếu muốn biểu đồ này có số thật.
+- Kiểm thử: `AdminStatisticsTest` 3/3 (14 assertions), Playwright thống kê + responsive 15/15, frontend build/typecheck PASS. Rà soát: `docs/security/reviews/2026-10-02-admin-statistics.md`.

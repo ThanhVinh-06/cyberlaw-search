@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
   Users,
@@ -21,13 +21,7 @@ import {
 import "@/admin-stats.css";
 import { RecentQuestionsCard } from "@/components/admin/RecentQuestionsCard";
 import { RegulationBreakdownCard } from "@/components/admin/RegulationBreakdownCard";
-import {
-  thongKeTongQuanData,
-  thongKeTheoThangData,
-  danhSachNguoiDungNoiBat,
-  tyLeTrichDanData,
-  DuLieuThang,
-} from "@/lib/admin-data";
+import { loadAdminStatistics, type AdminStatistics } from "@/lib/admin-statistics-api";
 
 interface AdminStatsPageProps {
   onNavigateTab?: (tab: string) => void;
@@ -42,21 +36,24 @@ export default function AdminStatsPage({ onNavigateTab }: AdminStatsPageProps) {
   const [selectedDonutSegment, setSelectedDonutSegment] = useState<
     number | null
   >(null);
+  const [statistics, setStatistics] = useState<AdminStatistics | null>(null);
+  const [statisticsError, setStatisticsError] = useState("");
+  const [statisticsLoading, setStatisticsLoading] = useState(true);
+  const [reload, setReload] = useState(0);
+  useEffect(() => {
+    const controller = new AbortController();
+    setStatisticsLoading(true); setStatisticsError("");
+    loadAdminStatistics(filterPeriod, controller.signal).then(setStatistics).catch((error) => { if (!controller.signal.aborted) { setStatistics(null); setStatisticsError(error instanceof Error ? error.message : "Không thể tải báo cáo."); } }).finally(() => { if (!controller.signal.aborted) setStatisticsLoading(false); });
+    return () => controller.abort();
+  }, [filterPeriod, reload]);
+  const overview = statistics?.overview ?? { tong_nguoi_dung: 0, tang_truong_nguoi_dung: "", tong_dieu_khoan: 0, tong_van_ban: 0, tong_quy_dinh: 0, tang_truong_quy_dinh: "", tong_cuoc_hoi_dap: 0, tang_truong_hoi_dap: "" };
+  const currentMonths = statistics?.months ?? [];
+  const topUsers = statistics?.top_users ?? [];
+  const citationRates = statistics?.citation_rates ?? [];
 
   // Filter months data based on active period
-  const getFilteredMonths = (): DuLieuThang[] => {
-    if (filterPeriod === "6m") {
-      return thongKeTheoThangData.slice(-6);
-    }
-    if (filterPeriod === "30d") {
-      return thongKeTheoThangData.slice(-3);
-    }
-    return thongKeTheoThangData;
-  };
-
-  const currentMonths = getFilteredMonths();
   const maxVal = Math.max(
-    ...currentMonths.map((m) => Math.max(m.hoi_dap, m.tra_cuu)),
+    ...currentMonths.map((m) => Math.max(m.hoi_dap, m.tra_cuu ?? 0)),
     100,
   );
 
@@ -67,7 +64,9 @@ export default function AdminStatsPage({ onNavigateTab }: AdminStatsPageProps) {
   let accumulatedPercent = 0;
 
   return (
-    <div className="cl-admin-stats-dashboard">
+    <div className="cl-admin-stats-dashboard" aria-busy={statisticsLoading}>
+      <div className="cl-stats-data-status"><button className="cl-admin-btn-outline" disabled={statisticsLoading} onClick={() => setReload(value => value + 1)}>Tải lại dữ liệu</button><span role="status">{statisticsLoading ? "Đang tải báo cáo…" : statistics?.range ?? "Chưa có dữ liệu"}</span></div>
+      {statisticsError && <p role="alert" className="cl-stats-load-error">{statisticsError}</p>}
       {/* Header with Title and Filter Tabs */}
       <div className="cl-stats-header" data-admin-reveal="0">
         <div className="cl-stats-title-group">
@@ -114,11 +113,11 @@ export default function AdminStatsPage({ onNavigateTab }: AdminStatsPageProps) {
           <div className="cl-stat-info">
             <span className="cl-stat-info-label">Người dùng hệ thống</span>
             <span className="cl-stat-info-value">
-              {thongKeTongQuanData.tong_nguoi_dung.toLocaleString("vi-VN")}
+              {overview.tong_nguoi_dung.toLocaleString("vi-VN")}
             </span>
             <span className="cl-stat-info-sub">
               <TrendingUp size={13} />
-              {thongKeTongQuanData.tang_truong_nguoi_dung}
+              {overview.tang_truong_nguoi_dung}
             </span>
           </div>
         </motion.div>
@@ -133,11 +132,11 @@ export default function AdminStatsPage({ onNavigateTab }: AdminStatsPageProps) {
           <div className="cl-stat-info">
             <span className="cl-stat-info-label">Văn bản & Điều khoản</span>
             <span className="cl-stat-info-value">
-              {thongKeTongQuanData.tong_dieu_khoan} điều
+              {overview.tong_dieu_khoan} điều
             </span>
             <span className="cl-stat-info-sub" style={{ color: "#0284c7" }}>
               <FileText size={13} />
-              {thongKeTongQuanData.tong_van_ban} văn bản luật (2025 & 2018)
+              {overview.tong_van_ban} văn bản đã công bố
             </span>
           </div>
         </motion.div>
@@ -152,11 +151,11 @@ export default function AdminStatsPage({ onNavigateTab }: AdminStatsPageProps) {
           <div className="cl-stat-info">
             <span className="cl-stat-info-label">Quy định bóc tách</span>
             <span className="cl-stat-info-value">
-              {thongKeTongQuanData.tong_quy_dinh} quy định
+              {overview.tong_quy_dinh} quy định
             </span>
             <span className="cl-stat-info-sub">
               <CheckCircle2 size={13} />
-              {thongKeTongQuanData.tang_truong_quy_dinh}
+              {overview.tang_truong_quy_dinh}
             </span>
           </div>
         </motion.div>
@@ -171,11 +170,11 @@ export default function AdminStatsPage({ onNavigateTab }: AdminStatsPageProps) {
           <div className="cl-stat-info">
             <span className="cl-stat-info-label">Lượt hỏi đáp AI</span>
             <span className="cl-stat-info-value">
-              {thongKeTongQuanData.tong_cuoc_hoi_dap.toLocaleString("vi-VN")}
+              {overview.tong_cuoc_hoi_dap.toLocaleString("vi-VN")}
             </span>
             <span className="cl-stat-info-sub" style={{ color: "#d97706" }}>
               <Sparkles size={13} />
-              {thongKeTongQuanData.tang_truong_hoi_dap}
+              {overview.tang_truong_hoi_dap}
             </span>
           </div>
         </motion.div>
@@ -198,8 +197,11 @@ export default function AdminStatsPage({ onNavigateTab }: AdminStatsPageProps) {
                   Xu hướng Hỏi đáp AI & Tra cứu Pháp luật
                 </h2>
                 <p>
-                  Thống kê lưu lượng truy vấn trợ lý ảo và tra cứu điều khoản
-                  trong năm 2026
+                  {filterPeriod === "30d"
+                    ? "Thống kê lưu lượng truy vấn trợ lý ảo và tra cứu điều khoản trong 30 ngày qua"
+                    : filterPeriod === "6m"
+                      ? "Thống kê lưu lượng truy vấn trợ lý ảo và tra cứu điều khoản trong 6 tháng gần nhất"
+                      : "Thống kê lưu lượng truy vấn trợ lý ảo và tra cứu điều khoản trong năm 2026"}
                 </p>
               </div>
 
@@ -210,7 +212,7 @@ export default function AdminStatsPage({ onNavigateTab }: AdminStatsPageProps) {
                 </div>
                 <div className="cl-legend-item">
                   <span className="cl-legend-dot sky" />
-                  <span>Tra cứu Điều khoản</span>
+                  <span>{statistics?.search_available ? "Tra cứu Điều khoản" : "Tra cứu Điều khoản (chưa thu thập)"}</span>
                 </div>
               </div>
             </div>
@@ -220,10 +222,10 @@ export default function AdminStatsPage({ onNavigateTab }: AdminStatsPageProps) {
               <div className="cl-barchart-layout">
                 {/* Y-Axis Column (Left, dedicated, completely separated from bars) */}
                 <div className="cl-barchart-yaxis">
-                  <span className="cl-barchart-yaxis-label">600</span>
-                  <span className="cl-barchart-yaxis-label">450</span>
-                  <span className="cl-barchart-yaxis-label">300</span>
-                  <span className="cl-barchart-yaxis-label">150</span>
+                  <span className="cl-barchart-yaxis-label">{maxVal}</span>
+                  <span className="cl-barchart-yaxis-label">{Math.round(maxVal * 0.75)}</span>
+                  <span className="cl-barchart-yaxis-label">{Math.round(maxVal * 0.5)}</span>
+                  <span className="cl-barchart-yaxis-label">{Math.round(maxVal * 0.25)}</span>
                   <span className="cl-barchart-yaxis-label">0</span>
                 </div>
 
@@ -245,8 +247,8 @@ export default function AdminStatsPage({ onNavigateTab }: AdminStatsPageProps) {
                   >
                     {currentMonths.map((item, index) => {
                       const isHovered = hoveredBarIndex === index;
-                      const hHoiDap = Math.round((item.hoi_dap / 600) * 190);
-                      const hTraCuu = Math.round((item.tra_cuu / 600) * 190);
+                      const hHoiDap = Math.round((item.hoi_dap / maxVal) * 190);
+                      const hTraCuu = item.tra_cuu === null ? 0 : Math.round((item.tra_cuu / maxVal) * 190);
 
                       return (
                         <div
@@ -272,13 +274,13 @@ export default function AdminStatsPage({ onNavigateTab }: AdminStatsPageProps) {
                                     fontSize: 12,
                                   }}
                                 >
-                                  {item.ten_thang} / 2026
+                                  {item.ten_thang}
                                 </strong>
                                 <div style={{ color: "#f87171" }}>
                                   💬 Hỏi đáp AI: {item.hoi_dap} lượt
                                 </div>
                                 <div style={{ color: "#38bdf8" }}>
-                                  📖 Tra cứu: {item.tra_cuu} lượt
+                                  📖 Tra cứu: {item.tra_cuu === null ? "Chưa thu thập" : `${item.tra_cuu} lượt`}
                                 </div>
                                 <div
                                   style={{
@@ -321,7 +323,7 @@ export default function AdminStatsPage({ onNavigateTab }: AdminStatsPageProps) {
                                 delay: 0.11 + index * 0.045,
                                 ease: [0.34, 1.45, 0.64, 1],
                               }}
-                              title={`Tra cứu: ${item.tra_cuu}`}
+                              title={item.tra_cuu === null ? "Tra cứu: chưa thu thập" : `Tra cứu: ${item.tra_cuu}`}
                             />
                           </div>
                         </div>
@@ -346,7 +348,7 @@ export default function AdminStatsPage({ onNavigateTab }: AdminStatsPageProps) {
           </motion.div>
 
           {/* Bottom Row: 2 Cards (Sparklines & Recent Comments) */}
-          <RecentQuestionsCard />
+          <RecentQuestionsCard items={statistics?.recent_questions} />
         </div>
 
         {/* Right Column (4 cols): Profile Card + Active Users + Donut Chart */}
@@ -391,7 +393,7 @@ export default function AdminStatsPage({ onNavigateTab }: AdminStatsPageProps) {
             </div>
 
             <div className="cl-active-users-list">
-              {danhSachNguoiDungNoiBat.map((u) => (
+              {topUsers.map((u) => (
                 <div key={u.ma_nguoi_dung} className="cl-active-user-item">
                   <div className="cl-active-user-avatar-wrap">
                     <div className="cl-active-user-avatar">{u.avatar}</div>
@@ -447,7 +449,7 @@ export default function AdminStatsPage({ onNavigateTab }: AdminStatsPageProps) {
                   height="160"
                   style={{ transform: "rotate(-90deg)" }}
                 >
-                  {tyLeTrichDanData.map((item, index) => {
+                  {citationRates.map((item, index) => {
                     const strokeDasharray = `${(item.ti_le / 100) * circumference} ${circumference}`;
                     const strokeDashoffset = `${-(accumulatedPercent / 100) * circumference}`;
                     accumulatedPercent += item.ti_le;
@@ -479,8 +481,8 @@ export default function AdminStatsPage({ onNavigateTab }: AdminStatsPageProps) {
                 <div className="cl-donut-center-label">
                   <div className="cl-donut-center-pct">
                     {selectedDonutSegment !== null
-                      ? `${tyLeTrichDanData[selectedDonutSegment].ti_le}%`
-                      : "94%"}
+                      ? `${citationRates[selectedDonutSegment].ti_le}%`
+                      : citationRates[0] ? `${citationRates[0].ti_le}%` : "—"}
                   </div>
                   <div className="cl-donut-center-text">
                     {selectedDonutSegment !== null ? "Phần trăm" : "Tin cậy"}
@@ -490,7 +492,7 @@ export default function AdminStatsPage({ onNavigateTab }: AdminStatsPageProps) {
 
               {/* Legend List */}
               <div className="cl-donut-legend-list">
-                {tyLeTrichDanData.map((item, index) => (
+                {citationRates.map((item, index) => (
                   <div
                     key={item.nhom}
                     className="cl-donut-legend-item"
@@ -518,7 +520,7 @@ export default function AdminStatsPage({ onNavigateTab }: AdminStatsPageProps) {
               </div>
             </div>
           </motion.div>
-          <RegulationBreakdownCard />
+          <RegulationBreakdownCard items={statistics?.regulations} />
         </div>
       </div>
     </div>

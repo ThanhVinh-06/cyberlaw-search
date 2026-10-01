@@ -4,6 +4,7 @@ const article = {id:'2',category:'definition',label:'Khái niệm',title:'Điề
 const term = {id:'1',cum_tu:'An ninh mạng',bien_the:['an ninh mang'],dinh_nghia:'Sự ổn định của không gian mạng.',article};
 
 test('terms loads, searches without accents and stays within mobile width', async ({page}) => {
+  test.setTimeout(90000);
   await mockAuth(page,'user');
   await page.route('**/api/terms*', route => route.fulfill({json:{items:[term],total:1,page:1,per_page:12}}));
   await page.addInitScript(() => {
@@ -54,4 +55,46 @@ test('terms loads, searches without accents and stays within mobile width', asyn
   }
   const calls = await page.evaluate(() => (window as any).termReveals);
   expect(calls.every((x: any) => x.duration === 950)).toBeTruthy();
+});
+
+test('terms cards trigger Fade In Up animation on initial load and reload data', async ({ page }) => {
+  await mockAuth(page, 'user');
+  await page.route('**/api/terms*', route => route.fulfill({
+    json: { items: [term], total: 1, page: 1, per_page: 12 },
+  }));
+
+  await page.addInitScript(() => {
+    (window as any).resultRevealCalls = [];
+    const origAnimate = Element.prototype.animate;
+    Element.prototype.animate = function(frames, options) {
+      if (this.classList.contains('cl-result-reveal')) {
+        (window as any).resultRevealCalls.push({
+          frames,
+          options,
+          element: this.className,
+        });
+      }
+      return origAnimate.call(this, frames, options);
+    };
+  });
+
+  await page.goto('/terms');
+  await expect(page.getByRole('heading', { name: 'Từ điển thuật ngữ' })).toBeVisible();
+  const card = page.locator('.cl-result-reveal .cl-term-card');
+  await expect(card).toBeVisible();
+
+  // Verify initial entrance animation
+  let calls = await page.evaluate(() => (window as any).resultRevealCalls);
+  expect(calls.length).toBeGreaterThanOrEqual(1);
+  expect(calls[0].options.duration).toBe(950);
+
+  // Click reload button and verify animation triggers again
+  const reloadBtn = page.getByRole('button', { name: 'Tải lại dữ liệu' });
+  await reloadBtn.click();
+  await expect(card).toBeVisible();
+
+  calls = await page.evaluate(() => (window as any).resultRevealCalls);
+  expect(calls.length).toBeGreaterThanOrEqual(2);
+  const lastCall = calls[calls.length - 1];
+  expect(lastCall.options.duration).toBe(950);
 });

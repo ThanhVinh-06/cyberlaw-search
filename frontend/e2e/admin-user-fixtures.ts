@@ -1,5 +1,6 @@
 import type { Page, BrowserContext } from '@playwright/test';
 import { initialNguoiDungList, maTranPhanQuyen } from '../src/lib/admin-data';
+import { thongKeTongQuanData, thongKeTheoThangData, thongKeTheo6ThangData, thongKeTheo30NgayData, danhSachCauHoiGanDay, danhSachNguoiDungNoiBat, tyLeTrichDanData, nhomQuyDinhData } from '../src/lib/admin-data';
 
 // Synthetic UI fixtures. Real permissions and writes are covered by Laravel/HTTP tests.
 export async function mockAdminUsers(target: Page | BrowserContext) {
@@ -36,5 +37,19 @@ export async function mockAdminUsers(target: Page | BrowserContext) {
   });
   await target.route('**/api/admin/permission-matrix**', async route => {
     return route.fulfill({json: {version: '2026-09-30', roles: ['khach', 'user', 'admin'], rules: maTranPhanQuyen}});
+  });
+  await target.route('**/api/admin/statistics**', async route => {
+    const url = new URL(route.request().url());
+    const period = url.searchParams.get('period') || 'year';
+    let months = thongKeTheoThangData;
+    let range = '01/01/2026 – 31/12/2026';
+    if (period === '30d') {
+      months = thongKeTheo30NgayData;
+      range = '02/09/2026 – 01/10/2026';
+    } else if (period === '6m') {
+      months = thongKeTheo6ThangData;
+      range = '01/05/2026 – 01/10/2026';
+    }
+    await route.fulfill({json: {period, year: 2026, range, search_available: true, overview: thongKeTongQuanData, months, regulations: nhomQuyDinhData, recent_questions: danhSachCauHoiGanDay, top_users: danhSachNguoiDungNoiBat, citation_rates: tyLeTrichDanData}});
   });
 }

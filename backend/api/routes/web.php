@@ -7,6 +7,7 @@ use App\Http\Controllers\KnowledgeController;
 use App\Http\Controllers\PasswordResetController;
 use App\Http\Controllers\PermissionMatrixController;
 use App\Http\Controllers\RegistrationController;
+use App\Http\Controllers\AdminStatisticsController;
 use App\Services\PublicKnowledgeSearch;
 use App\Http\Controllers\PublicLibraryController;
 use App\Http\Controllers\PublicTermsController;
@@ -56,6 +57,9 @@ Route::prefix('api/admin/users')->middleware(['account.active', 'role.admin', 'c
 Route::get('api/admin/permission-matrix', [PermissionMatrixController::class, 'index'])
     ->middleware(['account.active', 'role.admin', 'can:quan_ly_phan_quyen', 'throttle:admin-users-read'])
     ->name('admin.permission-matrix.index');
+Route::get('api/admin/statistics', [AdminStatisticsController::class, 'overview'])
+    ->middleware(['account.active', 'role.admin', 'can:quan_ly_van_ban', 'throttle:knowledge-read'])
+    ->name('admin.statistics.overview');
 
 Route::get('api/search', fn (Request $request, PublicKnowledgeSearch $search) => response()->json($search->search($request)))
     ->middleware('throttle:public-search')->name('public.search');

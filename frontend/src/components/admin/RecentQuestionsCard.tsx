@@ -278,7 +278,7 @@ function QuestionDetail({
   );
 }
 
-export function RecentQuestionsCard() {
+export function RecentQuestionsCard({ items = danhSachCauHoiGanDay }: { items?: CauHoiGanDay[] }) {
   const [selected, setSelected] = useState<CauHoiGanDay | null>(null);
   const [instant, setInstant] = useState(false);
   const trigger = useRef<HTMLButtonElement | null>(null);
@@ -298,7 +298,7 @@ export function RecentQuestionsCard() {
             Hỏi đáp AI & Căn cứ Pháp lý gần đây
           </h3>
           <p>
-            Chọn câu hỏi để xem phản hồi và căn cứ trích dẫn · Dữ liệu minh họa
+            Chọn câu hỏi để xem phản hồi và căn cứ trích dẫn trong phạm vi được phép
           </p>
         </div>
       </div>
@@ -310,7 +310,9 @@ export function RecentQuestionsCard() {
           }}
         >
           <div className="cl-comments-list">
-            {danhSachCauHoiGanDay.map((item, index) => (
+            {items.length === 0 ? (
+              <p className="cl-question-empty">Chưa có câu hỏi trong khoảng thời gian này.</p>
+            ) : items.map((item, index) => (
               <motion.button
                 type="button"
                 key={item.ma_tin_nhan}
@@ -343,7 +345,7 @@ export function RecentQuestionsCard() {
               <QuestionDetail
                 key={selected.ma_tin_nhan}
                 item={selected}
-                index={danhSachCauHoiGanDay.indexOf(selected)}
+                index={items.indexOf(selected)}
                 instant={instant}
                 trigger={trigger.current}
                 onClose={() => setSelected(null)}

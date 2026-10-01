@@ -9,6 +9,33 @@
   gap: 24px;
 }
 
+.cl-stats-data-status {
+  min-height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  color: #76686a;
+  font-size: 12px;
+}
+
+.cl-stats-data-status .cl-admin-btn-outline {
+  min-height: 34px;
+  padding: 7px 14px;
+}
+
+.cl-stats-load-error {
+  margin: -14px 0 0;
+  color: #a4002a;
+  font-size: 13px;
+}
+
+.cl-question-empty {
+  margin: 18px 0;
+  color: #76686a;
+  font-size: 14px;
+}
+
 @keyframes fadeInStats {
   from {
     opacity: 0;
@@ -252,6 +279,10 @@
 }
 
 @media (max-width: 600px) {
+  .cl-stats-data-status {
+    justify-content: space-between;
+    flex-wrap: wrap;
+  }
   .cl-stats-title-group {
     width: 100%;
   }
@@ -443,14 +474,15 @@
   display: flex !important;
   flex-direction: row !important;
   align-items: flex-end !important;
-  gap: 5px;
+  gap: 7px;
   width: 100%;
   justify-content: center;
 }
 
 .cl-bar-single {
-  width: 13px;
-  border-radius: 4px 4px 0 0;
+  width: 22px;
+  max-width: 26px;
+  border-radius: 6px 6px 0 0;
   position: relative;
   transform-origin: bottom center;
   will-change: height, transform;
@@ -458,7 +490,7 @@
 
 .cl-barchart-col:hover .cl-bar-single {
   filter: brightness(1.15);
-  box-shadow: 0 0 10px rgba(128, 0, 32, 0.25);
+  box-shadow: 0 0 12px rgba(128, 0, 32, 0.28);
 }
 
 .cl-bar-single.burgundy {
@@ -487,11 +519,80 @@
   font-weight: 600;
   color: #716667;
   transition: color 0.15s ease;
+  white-space: nowrap;
 }
 
 .cl-barchart-x-label.active {
   color: #800020;
   font-weight: 700;
+}
+
+@media (max-width: 540px) {
+  .cl-barchart-columns-wrapper {
+    padding: 0 8px !important;
+    gap: 4px;
+  }
+  .cl-barchart-col-bars {
+    gap: 4px;
+  }
+  .cl-bar-single {
+    width: 15px;
+    border-radius: 4px 4px 0 0;
+  }
+  .cl-barchart-x-labels {
+    padding: 8px 8px 0 8px !important;
+    gap: 4px;
+  }
+  .cl-barchart-x-label {
+    font-size: 10.5px;
+  }
+}
+
+@media (max-width: 480px) {
+  .cl-stats-card {
+    padding: 16px 12px;
+    border-radius: 12px;
+  }
+  .cl-barchart-yaxis {
+    width: 32px;
+    padding-right: 6px;
+  }
+  .cl-barchart-yaxis-label {
+    font-size: 10px;
+  }
+  .cl-barchart-columns-wrapper {
+    padding: 0 4px !important;
+    gap: 2px;
+  }
+  .cl-barchart-col-bars {
+    gap: 3px;
+  }
+  .cl-bar-single {
+    width: 13px;
+  }
+  .cl-barchart-x-labels {
+    padding: 8px 4px 0 4px !important;
+    gap: 2px;
+  }
+  .cl-barchart-x-label {
+    font-size: 9.5px;
+  }
+}
+
+@media (max-width: 360px) {
+  .cl-stats-card {
+    padding: 14px 8px;
+  }
+  .cl-barchart-yaxis {
+    width: 28px;
+    padding-right: 4px;
+  }
+  .cl-bar-single {
+    width: 11px;
+  }
+  .cl-barchart-x-label {
+    font-size: 8.5px;
+  }
 }
 
 /* Tooltip on bar hover with headroom */

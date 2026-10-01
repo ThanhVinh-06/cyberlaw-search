@@ -257,3 +257,52 @@ for (const size of [
     await expect(card).toBeFocused();
   });
 }
+
+test("period tabs split chart into 4 weeks, 3 bi-months, and 6 bi-months without layout break", async ({
+  page,
+}) => {
+  await openStats(page);
+
+  // 1. Tab mặc định Năm 2026: 6 kỳ (mỗi kỳ 2 tháng)
+  const colsYear = page.locator(".cl-barchart-col");
+  await expect(colsYear).toHaveCount(6);
+  const labelsYear = page.locator(".cl-barchart-x-label");
+  await expect(labelsYear).toHaveText([
+    "T01-02",
+    "T03-04",
+    "T05-06",
+    "T07-08",
+    "T09-10",
+    "T11-12",
+  ]);
+
+  // 2. Chuyển sang 6 tháng gần nhất: 3 kỳ (mỗi kỳ 2 tháng)
+  await page.getByRole("button", { name: "6 tháng gần nhất" }).click();
+  const cols6m = page.locator(".cl-barchart-col");
+  await expect(cols6m).toHaveCount(3);
+  const labels6m = page.locator(".cl-barchart-x-label");
+  await expect(labels6m).toHaveText(["T05-06", "T07-08", "T09-10"]);
+
+  // 3. Chuyển sang 30 ngày qua: 4 tuần
+  await page.getByRole("button", { name: "30 ngày qua" }).click();
+  const cols30d = page.locator(".cl-barchart-col");
+  await expect(cols30d).toHaveCount(4);
+  const labels30d = page.locator(".cl-barchart-x-label");
+  await expect(labels30d).toHaveText([
+    "Tuần 1",
+    "Tuần 2",
+    "Tuần 3",
+    "Tuần 4",
+  ]);
+
+  // 4. Hover vào cột để xác nhận tooltip hiển thị đầy đủ ngày trong tuần
+  await cols30d.first().hover();
+  const tooltip = page.locator(".cl-barchart-tooltip");
+  await expect(tooltip).toBeVisible();
+  await expect(tooltip).toContainText("Tuần 1 (02/09 – 08/09)");
+
+  // 5. Kiểm tra không bị tràn layout
+  const scrollWidth = await page.evaluate(() => document.documentElement.scrollWidth);
+  const clientWidth = await page.evaluate(() => document.documentElement.clientWidth);
+  expect(scrollWidth).toBeLessThanOrEqual(clientWidth);
+});

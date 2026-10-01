@@ -346,7 +346,7 @@ function RegulationSparkline({ group }: { group: NhomQuyDinhSparkline }) {
   );
 }
 
-export function RegulationBreakdownCard() {
+export function RegulationBreakdownCard({ items = nhomQuyDinhData }: { items?: NhomQuyDinhSparkline[] }) {
   const headingId = useId();
   return (
     <section className="cl-reg-card" data-admin-reveal="340" aria-labelledby={headingId}>
@@ -358,12 +358,12 @@ export function RegulationBreakdownCard() {
         <p>Nhóm quy định trong kho tri thức</p>
       </header>
       <ul className="cl-reg-list">
-        {nhomQuyDinhData.map((group) => (
+        {items.map((group) => (
           <RegulationSparkline key={group.ma_loai} group={group} />
         ))}
       </ul>
       <p className="cl-reg-hint">Chạm vào biểu đồ để ghim một mốc.</p>
-      <span className="cl-reg-demo-label">Dữ liệu minh họa · 7 mốc</span>
+      <span className="cl-reg-demo-label">Dữ liệu đã công bố · 7 mốc gần nhất</span>
     </section>
   );
 }

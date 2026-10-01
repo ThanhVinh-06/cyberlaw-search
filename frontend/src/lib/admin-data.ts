@@ -251,94 +251,107 @@ export interface DuLieuThang {
   thang: string;
   ten_thang: string;
   hoi_dap: number;
-  tra_cuu: number;
+  tra_cuu: number | null;
   trich_dan: number;
 }
 
 export const thongKeTheoThangData: DuLieuThang[] = [
   {
-    thang: "T1",
-    ten_thang: "Tháng 1",
-    hoi_dap: 140,
+    thang: "T01-02",
+    ten_thang: "Tháng 01 – 02/2026",
+    hoi_dap: 335,
+    tra_cuu: 490,
+    trich_dan: 310,
+  },
+  {
+    thang: "T03-04",
+    ten_thang: "Tháng 03 – 04/2026",
+    hoi_dap: 550,
+    tra_cuu: 790,
+    trich_dan: 522,
+  },
+  {
+    thang: "T05-06",
+    ten_thang: "Tháng 05 – 06/2026",
+    hoi_dap: 440,
+    tra_cuu: 610,
+    trich_dan: 420,
+  },
+  {
+    thang: "T07-08",
+    ten_thang: "Tháng 07 – 08/2026",
+    hoi_dap: 700,
+    tra_cuu: 910,
+    trich_dan: 670,
+  },
+  {
+    thang: "T09-10",
+    ten_thang: "Tháng 09 – 10/2026",
+    hoi_dap: 460,
+    tra_cuu: 630,
+    trich_dan: 436,
+  },
+  {
+    thang: "T11-12",
+    ten_thang: "Tháng 11 – 12/2026",
+    hoi_dap: 760,
+    tra_cuu: 1000,
+    trich_dan: 730,
+  },
+];
+
+export const thongKeTheo6ThangData: DuLieuThang[] = [
+  {
+    thang: "T05-06",
+    ten_thang: "Tháng 05 – 06/2026",
+    hoi_dap: 440,
+    tra_cuu: 610,
+    trich_dan: 420,
+  },
+  {
+    thang: "T07-08",
+    ten_thang: "Tháng 07 – 08/2026",
+    hoi_dap: 700,
+    tra_cuu: 910,
+    trich_dan: 670,
+  },
+  {
+    thang: "T09-10",
+    ten_thang: "Tháng 09 – 10/2026",
+    hoi_dap: 460,
+    tra_cuu: 630,
+    trich_dan: 436,
+  },
+];
+
+export const thongKeTheo30NgayData: DuLieuThang[] = [
+  {
+    thang: "Tuần 1",
+    ten_thang: "Tuần 1 (02/09 – 08/09)",
+    hoi_dap: 95,
+    tra_cuu: 140,
+    trich_dan: 88,
+  },
+  {
+    thang: "Tuần 2",
+    ten_thang: "Tuần 2 (09/09 – 15/09)",
+    hoi_dap: 130,
+    tra_cuu: 185,
+    trich_dan: 122,
+  },
+  {
+    thang: "Tuần 3",
+    ten_thang: "Tuần 3 (16/09 – 22/09)",
+    hoi_dap: 110,
+    tra_cuu: 160,
+    trich_dan: 104,
+  },
+  {
+    thang: "Tuần 4",
+    ten_thang: "Tuần 4 (23/09 – 01/10)",
+    hoi_dap: 145,
     tra_cuu: 210,
-    trich_dan: 128,
-  },
-  {
-    thang: "T2",
-    ten_thang: "Tháng 2",
-    hoi_dap: 195,
-    tra_cuu: 280,
-    trich_dan: 182,
-  },
-  {
-    thang: "T3",
-    ten_thang: "Tháng 3",
-    hoi_dap: 320,
-    tra_cuu: 450,
-    trich_dan: 304,
-  },
-  {
-    thang: "T4",
-    ten_thang: "Tháng 4",
-    hoi_dap: 230,
-    tra_cuu: 340,
-    trich_dan: 218,
-  },
-  {
-    thang: "T5",
-    ten_thang: "Tháng 5",
-    hoi_dap: 160,
-    tra_cuu: 220,
-    trich_dan: 152,
-  },
-  {
-    thang: "T6",
-    ten_thang: "Tháng 6",
-    hoi_dap: 280,
-    tra_cuu: 390,
-    trich_dan: 268,
-  },
-  {
-    thang: "T7",
-    ten_thang: "Tháng 7",
-    hoi_dap: 410,
-    tra_cuu: 530,
-    trich_dan: 395,
-  },
-  {
-    thang: "T8",
-    ten_thang: "Tháng 8",
-    hoi_dap: 290,
-    tra_cuu: 380,
-    trich_dan: 275,
-  },
-  {
-    thang: "T9",
-    ten_thang: "Tháng 9",
-    hoi_dap: 185,
-    tra_cuu: 260,
-    trich_dan: 176,
-  },
-  {
-    thang: "T10",
-    ten_thang: "Tháng 10",
-    hoi_dap: 275,
-    tra_cuu: 370,
-    trich_dan: 260,
-  },
-  {
-    thang: "T11",
-    ten_thang: "Tháng 11",
-    hoi_dap: 450,
-    tra_cuu: 590,
-    trich_dan: 432,
-  },
-  {
-    thang: "T12",
-    ten_thang: "Tháng 12",
-    hoi_dap: 310,
-    tra_cuu: 410,
-    trich_dan: 298,
+    trich_dan: 138,
   },
 ];
 
