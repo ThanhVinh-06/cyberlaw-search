@@ -50,7 +50,7 @@ async function call(path: string): Promise<unknown> {
   return data;
 }
 
-function article(value: unknown): PublicArticle {
+export function article(value: unknown): PublicArticle {
   const row = value as PublicArticle;
   if (
     !row ||

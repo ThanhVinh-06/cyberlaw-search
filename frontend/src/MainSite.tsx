@@ -18,6 +18,7 @@ import { Brand } from "./components/Brand";
 import { AdminTabReveal } from "./components/admin/AdminTabReveal";
 import { publicNavigation, historyNavigation } from "./lib/navigation";
 import { motion, AnimatePresence } from "motion/react";
+import { TermsView } from "./components/TermsView";
 import { LibraryView } from "./components/LibraryView";
 import { publicSearchApi } from "./lib/public-search-api";
 
@@ -715,35 +716,7 @@ export default function MainSite() {
             </AdminTabReveal>
           </section>}
           {view === "/library" && <LibraryView />}
-          {view === "/terms" && <section className="cl-view">
-            <AdminTabReveal tab={view} instant={false} duration={950} className="cl-public-reveal">
-            <div className="cl-page-heading" data-admin-reveal="0">
-              <div>
-                <span className="cl-eyebrow">TỪ ĐIỂN KIẾN THỨC</span>
-                <h1>Từ điển thuật ngữ</h1>
-                <p>Cụm từ và cách diễn đạt thường dùng khi tra cứu.</p>
-              </div>
-            </div>
-            <div data-admin-reveal="80">
-            <motion.div className="cl-term-card" layoutId="article-card-2"
-              layoutDependency={selectedArticle?.article.id === "2"}
-              transition={{type: "spring", stiffness: 190, damping: 25, mass: 0.85}}>
-              <span className="cl-result-category">KHÁI NIỆM</span>
-              <h2>An ninh mạng</h2>
-              <p>Biến thể tìm kiếm: “an ninh mang”, “an ninh mạng là gì”.</p>
-              {articleButton(articles[1], "Xem khoản 1 Điều 2")}
-            </motion.div>
-            </div>
-            <div className="cl-term-card" data-admin-reveal="160">
-              <span className="cl-result-category">ỨNG VIÊN KEYPHRASE</span>
-              <h2>Tấn công mạng</h2>
-              <p>Truy vấn tình huống: “bị tấn công hệ thống”.</p>
-              <p className="cl-muted">
-                Cần duyệt liên kết điều khoản trước khi đưa vào bộ tìm kiếm.
-              </p>
-            </div>
-            </AdminTabReveal>
-          </section>}
+          {view === "/terms" && <TermsView selectedId={selectedArticle?.article.id} articleButton={articleButton} />}
           {view === historyNavigation.to && isAuthenticated && (
             <section className="cl-view cl-history-view">
               <AdminTabReveal

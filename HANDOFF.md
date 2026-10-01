@@ -1,5 +1,11 @@
 # Bàn giao dự án CyberLaw Search
 
+### Backend và giao diện Từ điển thuật ngữ — 02/10/2026
+
+- Thêm `GET /api/terms?q=&page=`: chỉ thuật ngữ trong bảng `tu_khoa` có căn cứ thuộc Luật `116/2025/QH15` đang `published`; trả biến thể, định nghĩa và DTO điều khoản an toàn.
+- `TermsView` thay hai thẻ mẫu bằng dữ liệu API, có tìm kiếm không dấu, loading/error, phân trang và hủy request cũ. Popup căn cứ dùng luồng `ArticleDialog` hiện có; Fade In Up 950ms giữ nguyên.
+- Kiểm thử: `PublicTermsTest` 2/2 (11 assertions), `terms.spec.ts` 1/1 tại 320/440/834/1440px, typecheck/build PASS. Báo cáo: `docs/security/reviews/2026-10-02-public-terms.md`.
+
 ### Backend và hoàn thiện trải nghiệm Thư viện văn bản — 01/10/2026
 
 - Thêm API công khai `GET /api/library`, `GET /api/library/articles/{number}` và `GET /api/library/pdf`. Chỉ văn bản `published` có số hiệu `116/2025/QH15` được trả; mục lục gom theo điều, nội dung điều trả các khoản/điểm theo `thu_tu`, metadata có phiên bản và nguồn HTTP(S).

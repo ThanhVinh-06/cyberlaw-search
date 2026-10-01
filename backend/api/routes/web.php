@@ -9,6 +9,7 @@ use App\Http\Controllers\PermissionMatrixController;
 use App\Http\Controllers\RegistrationController;
 use App\Services\PublicKnowledgeSearch;
 use App\Http\Controllers\PublicLibraryController;
+use App\Http\Controllers\PublicTermsController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -54,6 +55,8 @@ Route::get('api/search/{id}', fn (int $id, PublicKnowledgeSearch $search) => res
 
 Route::get('api/library', [PublicLibraryController::class, 'index'])
     ->middleware('throttle:public-search')->name('public.library');
+Route::get('api/terms', [PublicTermsController::class, 'index'])
+    ->middleware('throttle:public-search')->name('public.terms');
 Route::get('api/library/articles/{number}', [PublicLibraryController::class, 'article'])
     ->where('number', '[1-9][0-9]{0,2}[a-z]?')->middleware('throttle:public-search')->name('public.library.article');
 Route::get('api/library/pdf', [PublicLibraryController::class, 'pdf'])

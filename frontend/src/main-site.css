@@ -749,6 +749,12 @@
     grid-template-columns: 220px 1fr;
     gap: 20px;
   }
+  .cl-terms-search { display:flex; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:20px; }
+  .cl-terms-search label { width:100%; font-weight:600; }
+  .cl-terms-search input { flex:1; min-width:160px; max-width:100%; border:1px solid var(--border); border-radius:8px; padding:12px; background:white; }
+  .cl-terms-search button, .cl-terms-pagination button { padding:10px 16px; border-radius:8px; }
+  .cl-terms-pagination { display:flex; flex-wrap:wrap; align-items:center; gap:12px; }
+  .cl-terms-view .cl-term-card { overflow-wrap:anywhere; }
   .cl-article-nav {
     background: white;
     border: 1px solid var(--border);
