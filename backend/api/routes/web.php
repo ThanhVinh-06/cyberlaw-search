@@ -10,10 +10,16 @@ use App\Http\Controllers\RegistrationController;
 use App\Services\PublicKnowledgeSearch;
 use App\Http\Controllers\PublicLibraryController;
 use App\Http\Controllers\PublicTermsController;
+use App\Http\Controllers\HistoryController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 // Deliberately in the web group: every request has encrypted cookies, server session and CSRF.
+Route::prefix('api/history')->middleware(['account.active', 'can:xem_lich_su_chat'])->group(function () {
+    Route::get('/', [HistoryController::class, 'index'])->middleware('throttle:history-read')->name('history.index');
+    Route::get('/{id}', [HistoryController::class, 'show'])->where('id', '[1-9][0-9]{0,17}')->middleware('throttle:history-read')->name('history.show');
+    Route::delete('/{id}', [HistoryController::class, 'destroy'])->where('id', '[1-9][0-9]{0,17}')->middleware('throttle:history-write')->block(15, 15)->name('history.destroy');
+});
 Route::prefix('api/auth')->group(function () {
     Route::get('email/status', [EmailVerificationController::class, 'status'])->middleware('throttle:120,1')->block(15, 15)->name('auth.email.status');
     Route::post('email/send', [EmailVerificationController::class, 'send'])->middleware('throttle:email-send')->block(15, 15)->name('auth.email.send');

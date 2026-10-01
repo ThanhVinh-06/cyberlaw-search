@@ -569,7 +569,8 @@
     line-height: 1.85;
     margin: 0;
   }
-  .cl-result-bottom {
+  .cl-result-bottom,
+  .cl-term-bottom {
     grid-column: 1 / -1;
     margin-top: 13px;
     display: flex;
@@ -583,7 +584,8 @@
     font-size: 10px;
     color: #90919b;
   }
-  .cl-result-bottom > .cl-link-button {
+  .cl-result-bottom > .cl-link-button,
+  .cl-term-bottom > .cl-link-button {
     flex-shrink: 0;
     white-space: nowrap;
   }
@@ -749,6 +751,39 @@
     grid-template-columns: 220px 1fr;
     gap: 20px;
   }
+  .cl-history-toolbar { margin-bottom:16px; display:flex; flex-wrap:wrap; gap:12px; align-items:center; }
+  .cl-history-relogin-link {
+    display: inline-flex;
+    align-items: center;
+    padding: 8px 14px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    color: var(--red);
+    font-size: 13px;
+    font-weight: 500;
+    text-decoration: none;
+    background: white;
+    transition: background-color 0.16s ease, border-color 0.16s ease;
+  }
+  .cl-history-relogin-link:hover {
+    background: #faf7f5;
+    border-color: var(--border-dark);
+  }
+  .cl-history-layout { display:grid; grid-template-columns:minmax(0,1fr); gap:20px; align-items:start; }
+  .cl-history-layout > * { min-width:0; overflow-wrap:anywhere; }
+  .cl-history-list { display:grid; gap:8px; }
+  .cl-history-select { width:100%; text-align:left; padding:12px; border:1px solid var(--border); border-radius:8px; background:white; color:var(--text); overflow-wrap:anywhere; transition:background-color .2s,box-shadow .2s; }
+  .cl-history-select:hover, .cl-history-select[aria-current] { background:#fcf0f3; box-shadow:0 2px 8px #8000200a; }
+  .cl-history-select time, .cl-history-message time { display:block; font-size:11px; color:var(--muted); margin-top:6px; }
+  .cl-history-pages, .cl-history-confirm { display:flex; flex-wrap:wrap; align-items:center; gap:10px; margin-top:20px; }
+  .cl-history-pages button, .cl-history-confirm button { padding:10px 14px; border:1px solid var(--border); border-radius:8px; background:white; color:var(--red); }
+  .cl-history-confirm p { width:100%; }
+  .cl-history-message { padding:18px 0; border-bottom:1px solid var(--border); }
+  .cl-history-message > p, .cl-history-citation p { white-space:pre-wrap; }
+  .cl-history-message h3 { margin:0; font-size:14px; color:var(--red); }
+  .cl-history-citation { padding:12px; margin:12px 0; background:#faf7f5; border-radius:8px; }
+  .cl-history-citation summary { cursor:pointer; color:var(--red); }
+  @media(min-width:1151px) { .cl-history-layout:has(.cl-history-detail) { grid-template-columns:minmax(240px,1fr) minmax(0,2fr); } }
   .cl-terms-search { display:flex; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:20px; }
   .cl-terms-search label { width:100%; font-weight:600; }
   .cl-terms-search input { flex:1; min-width:160px; max-width:100%; border:1px solid var(--border); border-radius:8px; padding:12px; background:white; }
@@ -777,7 +812,9 @@
     margin: 0;
   }
   .cl-admin-btn-outline,
-  .cl-library-reload-btn {
+  .cl-library-reload-btn,
+  .cl-history-reload-btn,
+  .cl-terms-reload-btn {
     display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
@@ -795,21 +832,29 @@
     text-decoration: none !important;
     box-sizing: border-box !important;
     width: auto !important;
+  }
+  .cl-library-reload-btn {
     align-self: flex-start !important;
   }
   .cl-admin-btn-outline:hover:not(:disabled),
-  .cl-library-reload-btn:hover:not(:disabled) {
+  .cl-library-reload-btn:hover:not(:disabled),
+  .cl-history-reload-btn:hover:not(:disabled),
+  .cl-terms-reload-btn:hover:not(:disabled) {
     background: #f8f6f3 !important;
     color: #21181d !important;
     border-color: #c9c0ba !important;
   }
   .cl-admin-btn-outline:disabled,
-  .cl-library-reload-btn:disabled {
+  .cl-library-reload-btn:disabled,
+  .cl-history-reload-btn:disabled,
+  .cl-terms-reload-btn:disabled {
     opacity: 0.6 !important;
     cursor: not-allowed !important;
   }
   .cl-admin-btn-outline svg,
-  .cl-library-reload-btn svg {
+  .cl-library-reload-btn svg,
+  .cl-history-reload-btn svg,
+  .cl-terms-reload-btn svg {
     width: 14px !important;
     height: 14px !important;
     flex-shrink: 0 !important;
@@ -940,6 +985,22 @@
     border: 1px solid var(--border);
     margin-bottom: 16px;
     border-radius: 8px;
+    cursor: pointer;
+    transition:
+      border-color 0.15s ease,
+      box-shadow 0.15s ease;
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .cl-term-card:hover {
+      border-color: #d1b4bc;
+      box-shadow: 0 2px 8px rgba(128, 0, 32, 0.05);
+    }
+    .cl-term-card:hover .cl-link-button {
+      color: var(--red-dark);
+    }
+    .cl-term-card:hover .cl-link-button svg {
+      transform: translateX(2px);
+    }
   }
   .cl-term-card h2 {
     font-size: 19px;

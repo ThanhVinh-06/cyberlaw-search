@@ -63,6 +63,11 @@ return [
             'days' => 90, 'level' => 'info', 'permission' => 0600, 'locking' => true,
             'tap' => [JsonFormatter::class],
         ],
+        'audit' => [
+            'driver' => 'daily', 'path' => storage_path('logs/audit.log'),
+            'days' => 90, 'level' => 'info', 'permission' => 0600, 'locking' => true,
+            'tap' => [JsonFormatter::class],
+        ],
 
         'stack' => [
             'driver' => 'stack',

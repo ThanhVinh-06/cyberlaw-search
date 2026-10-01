@@ -1,5 +1,41 @@
 # Bàn giao dự án CyberLaw Search
 
+### Căn giữa chữ xem điều khoản và mở popup khi click box thuật ngữ — 02/10/2026
+
+- **Tối ưu trải nghiệm thẻ thuật ngữ (`TermsView`) chuẩn đồng bộ với Tra cứu pháp luật**:
+  - **Căn giữa nút "Xem điều khoản"**: Bọc nút điều khoản trong `.cl-term-bottom` áp dụng `display: flex; justify-content: center; align-items: center; margin-top: 13px; gap: 12px;` đồng bộ tuyệt đối với `.cl-result-bottom` của trang Tra cứu pháp luật.
+  - **Mở popup khi click vào bất cứ đâu trên thẻ (`.cl-term-card`)**: Gắn sự kiện `onClick` trực tiếp lên thẻ `<motion.div className="cl-term-card">`, kích hoạt `openArticle` với spring animation tức thì (0ms latency, Shared Element transition từ thẻ).
+  - Thêm kiểm tra tránh mở nhầm khi bôi đen sao chép văn bản (`window.getSelection()?.toString()`), giữ `event.stopPropagation()` trên nút con để ngăn click trùng lặp, tự động khôi phục focus về nút bên trong khi đóng dialog bằng `Escape`.
+  - Hiệu ứng hover mềm mại trên thẻ: `cursor: pointer`, đổi viền `#d1b4bc`, bóng mờ êm dịu, chữ nút chuyển đỏ mận `var(--red-dark)` và icon mũi tên `→` trượt nhẹ 2px sang phải.
+- **Kiểm thử và xác minh toàn diện**:
+  - `npm run build`: PASS 100% (`tsc -b && vite build`).
+  - `terms.spec.ts`: 1/1 PASS (xác minh click box mở popup, bấm Escape đóng dialog, nút được căn giữa `justify-content: center`, click trực tiếp nút vẫn mở popup, test đầy đủ trên 9 kích thước responsive: 320px, 440px iPhone 16 Pro Max, 760px, 761px, 834px iPad, 956x440px xoay ngang, 1150px, 1151px, 1440px desktop).
+  - 18/18 Playwright tests không gian tra cứu: PASS 100%.
+
+### Đồng bộ button Tải lại dữ liệu cho tab Lịch sử hỏi đáp và Từ điển thuật ngữ — 02/10/2026
+
+- **Đồng bộ button "Tải lại dữ liệu" chuẩn 100% Thư viện văn bản & Quản trị hệ thống**:
+  - **Tab Lịch sử hỏi đáp (`HistoryView`)**: Thay thế nút text đơn sơ (`cl-text-button`) bằng nút chuẩn viền mờ bo góc `.cl-admin-btn-outline.cl-history-reload-btn`. Nền trắng `#ffffff`, bo góc `8px`, viền `#ded7d1`, chữ `#4a3e40` (hover `#f8f6f3` viền `#c9c0ba`), icon xoay `<RefreshCw size={14} />` tự động kích hoạt animation `.cl-spin` khi `loading`, kèm bọc `<span>Tải lại dữ liệu</span>`. Link "Đăng nhập lại" khi hết hạn phiên cũng được tinh chỉnh đồng bộ giao diện.
+  - **Tab Từ điển thuật ngữ (`TermsView`)**: Bổ sung icon xoay `<RefreshCw size={14} />` với hiệu ứng xoay tròn `.cl-spin` khi `loading`, nâng cấp nút tìm kiếm/tải lại sang `.cl-admin-btn-outline.cl-terms-reload-btn`, chuẩn hóa kích thước, padding và hover mượt mà đồng bộ.
+  - **CSS toàn hệ thống (`main-site.css`)**: Gom chung các class reload button `.cl-library-reload-btn`, `.cl-history-reload-btn`, `.cl-terms-reload-btn` cùng `.cl-admin-btn-outline`, giữ nguyên `align-self: flex-start` riêng cho mục lục Thư viện, căn chỉnh `align-items: center` trên toolbar Lịch sử và thanh tìm kiếm Thuật ngữ.
+  - **Khắc phục mock fixture test**: Bổ sung mock endpoint `GET /api/terms*` vào `e2e/auth-fixtures.ts` giúp các bài kiểm thử liên trang (`main-site.spec.ts`) chạy độc lập, khép kín và không bị lỗi phụ thuộc dữ liệu thật.
+- **Kiểm thử và xác minh toàn diện**:
+  - `npm run build`: PASS 100% (`tsc -b && vite build`).
+  - PHPUnit: 97 passed (1130 assertions) PASS 100%.
+  - 18/18 Playwright tests PASS trên toàn bộ không gian tra cứu và các view liên quan:
+    - `history.spec.ts`: 2/2 PASS (kiểm tra nút tải lại, icon xoay và 9 breakpoint responsive).
+    - `terms.spec.ts`: 1/1 PASS (kiểm tra nút tải lại, icon xoay và 9 breakpoint responsive: 320px, 440px iPhone 16 Pro Max, 760px, 761px, 834px iPad, 956x440px xoay ngang, 1150px, 1151px, 1440px desktop).
+    - `library.spec.ts`: 3/3 PASS.
+    - `main-site.spec.ts`: 2/2 PASS.
+    - `public-reveal.spec.ts`: 10/10 PASS.
+  - Rà soát bảo mật không chứa secret/.env/DB dump.
+
+### Backend và giao diện Lịch sử hỏi đáp — 02/10/2026
+
+- Thêm `GET /api/history`, `GET /api/history/{id}`, `DELETE /api/history/{id}`. Server luôn lấy chủ sở hữu từ session; user A không đọc/xóa được hội thoại B, admin không có bypass. Xóa dùng CSRF, transaction, rate limit và cascade tin nhắn/trích dẫn.
+- Frontend có danh sách, chi tiết tin nhắn/căn cứ snapshot, phân trang, loading/error/rỗng, xác nhận xóa và retry. Demo chat hiện tại chỉ hiển thị tạm trong phiên, chưa ghi thành lịch sử thật cho tới khi backend AI hoàn thiện. Fade In Up 950ms giữ nguyên.
+- Kiểm thử: `HistoryTest` 5/5 (95 assertions), `history.spec.ts` 2/2, navigation history 20/20, build/typecheck PASS. Báo cáo: `docs/security/reviews/2026-10-02-history.md`.
+
 ### Backend và giao diện Từ điển thuật ngữ — 02/10/2026
 
 - Thêm `GET /api/terms?q=&page=`: chỉ thuật ngữ trong bảng `tu_khoa` có căn cứ thuộc Luật `116/2025/QH15` đang `published`; trả biến thể, định nghĩa và DTO điều khoản an toàn.

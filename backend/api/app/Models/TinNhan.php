@@ -19,6 +19,6 @@ class TinNhan extends Model
 
     protected function casts(): array
     {
-        return ['do_tin_cay' => 'float', 'thoi_gian_xu_ly_ms' => 'integer'];
+        return ['do_tin_cay' => 'float', 'thoi_gian_xu_ly_ms' => 'integer', 'ngay_tao' => 'datetime', 'ngay_cap_nhat' => 'datetime'];
     }
 }

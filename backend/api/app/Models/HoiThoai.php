@@ -16,4 +16,9 @@ class HoiThoai extends Model
 
     // Chi cac truong nay duoc gan hang loat.
     protected $fillable = ['ma_nguoi_dung', 'tieu_de'];
+
+    protected function casts(): array
+    {
+        return ['ngay_tao' => 'datetime', 'ngay_cap_nhat' => 'datetime'];
+    }
 }

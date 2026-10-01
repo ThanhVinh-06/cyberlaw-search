@@ -18,6 +18,7 @@ import { Brand } from "./components/Brand";
 import { AdminTabReveal } from "./components/admin/AdminTabReveal";
 import { publicNavigation, historyNavigation } from "./lib/navigation";
 import { motion, AnimatePresence } from "motion/react";
+import { HistoryView } from "./components/HistoryView";
 import { TermsView } from "./components/TermsView";
 import { LibraryView } from "./components/LibraryView";
 import { publicSearchApi } from "./lib/public-search-api";
@@ -716,66 +717,8 @@ export default function MainSite() {
             </AdminTabReveal>
           </section>}
           {view === "/library" && <LibraryView />}
-          {view === "/terms" && <TermsView selectedId={selectedArticle?.article.id} articleButton={articleButton} />}
-          {view === historyNavigation.to && isAuthenticated && (
-            <section className="cl-view cl-history-view">
-              <AdminTabReveal
-                tab="history"
-                duration={950}
-                instant={document.documentElement.dataset.input === "keyboard"}
-              >
-                <div className="cl-page-heading" data-admin-reveal="0">
-                  <div>
-                    <span className="cl-eyebrow">KHÔNG GIAN CỦA BẠN</span>
-                    <h1>{historyNavigation.label}</h1>
-                    <p>
-                      Các trao đổi dùng thử trong lần mở trang này. Lịch sử chưa
-                      được lưu lên hệ thống.
-                    </p>
-                  </div>
-                </div>
-                {messages.length === 0 ? (
-                  <div
-                    className="cl-document-card cl-history-empty"
-                    data-admin-reveal="50"
-                  >
-                    <historyNavigation.icon size={28} aria-hidden="true" />
-                    <h2>Bạn chưa có cuộc hỏi đáp nào</h2>
-                    <p>
-                      Bắt đầu một câu hỏi để xem phản hồi và căn cứ pháp lý minh
-                      họa.
-                    </p>
-                    <button
-                      className="cl-primary"
-                      onClick={(event) => openChat(event.detail === 0)}
-                    >
-                      <MessageCircle aria-hidden="true" /> Hỏi đáp cùng AI
-                    </button>
-                  </div>
-                ) : (
-                  messages
-                    .filter((message) => message.kind === "user")
-                    .map((message, index) => {
-                      const response = messages[index * 2 + 1];
-                      return (
-                        <article
-                          className="cl-document-card cl-history-item"
-                          key={index}
-                          data-admin-reveal={50 + Math.min(index, 5) * 50}
-                        >
-                          <span className="cl-eyebrow">
-                            CÂU HỎI {index + 1}
-                          </span>
-                          <h2>{message.text}</h2>
-                          <p>{response?.text}</p>
-                          {response?.article && articleButton(response.article)}
-                        </article>
-                      );
-                    })
-                )}
-              </AdminTabReveal>
-            </section>
-          )}
+          {view === "/terms" && <TermsView selectedId={selectedArticle?.article.id} articleButton={articleButton} onOpenArticle={openArticle} />}
+          {view === historyNavigation.to && isAuthenticated && <HistoryView key={currentUser?.ma_nguoi_dung} previewMessages={messages} articleButton={articleButton} onOpenChat={() => openChat(false)} />}
           {!nav.some((item) => item.to === view) && (
             <section className="cl-document-card">
               <h1>

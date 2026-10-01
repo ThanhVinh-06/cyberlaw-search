@@ -150,6 +150,32 @@ export async function mockAuth(
       },
     });
   });
+  await target.route("**/api/history**", async (route) => {
+    if (!currentRole) {
+      await route.fulfill({ status: 401, json: { message: "Unauthenticated" } });
+      return;
+    }
+    await route.fulfill({ status: 200, json: { items: [], total: 0, page: 1, per_page: 12 } });
+  });
+  await target.route("**/api/terms*", async (route) => {
+    await route.fulfill({
+      status: 200,
+      json: {
+        items: [
+          {
+            id: "1",
+            cum_tu: "An ninh mạng",
+            bien_the: ["an ninh mang"],
+            dinh_nghia: "Sự ổn định của không gian mạng.",
+            article: publicArticles[1],
+          },
+        ],
+        total: 1,
+        page: 1,
+        per_page: 12,
+      },
+    });
+  });
   await target.route("**/api/library/articles/*", async (route) => {
     const number = new URL(route.request().url()).pathname.split("/").pop() ?? "1";
     const article = publicArticles.find((item) => item.so_dieu === number);
