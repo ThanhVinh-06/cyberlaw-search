@@ -1,5 +1,38 @@
 # Bàn giao dự án CyberLaw Search
 
+### Backend và hoàn thiện trải nghiệm Thư viện văn bản — 01/10/2026
+
+- Thêm API công khai `GET /api/library`, `GET /api/library/articles/{number}` và `GET /api/library/pdf`. Chỉ văn bản `published` có số hiệu `116/2025/QH15` được trả; mục lục gom theo điều, nội dung điều trả các khoản/điểm theo `thu_tu`, metadata có phiên bản và nguồn HTTP(S).
+- **Hoàn thiện animation và tương tác theo yêu cầu**:
+  - **Fade In Up nội dung bài viết khi click chọn giữa các điều chuẩn 950ms**: Khối bài viết chi tiết bên trong `.cl-library-content` được animate bằng `motion.div key={article.so_dieu}` với thời lượng chuẩn **950ms** (`duration: 0.95`, ease `[0.16, 1, 0.3, 1]`) từ dưới lên (`y: 16px → 0`, `opacity: 0 → 1`), các khoản/điểm bên trong trồi lên nối tiếp (stagger 50ms) êm dịu, mượt mà, đồng bộ với quy ước animation toàn hệ thống; hỗ trợ tự động prefers-reduced-motion.
+  - **Button "Tải lại dữ liệu" chuẩn 100% tab Người dùng & Phân quyền**: Sửa lỗi do selector `.cl-article-nav button` cũ áp đặt `display: block` làm icon bị rớt thành 2 dòng riêng biệt. Khôi phục `display: inline-flex !important`, `white-space: nowrap`, nền trắng `#ffffff`, bo góc `8px`, viền `#ded7d1`, chữ `#4a3e40`, kèm icon xoay `<RefreshCw size={14} />`, hover `#f8f6f3` viền `#c9c0ba` giống hệt 100% nút "Tải lại dữ liệu" của `AdminUsersPage`.
+  - **Hiệu ứng chữ đậm êm dịu tuyệt đối, không giật chữ (No-layout-shift)**: Khắc phục triệt để hiện tượng giật chữ do đổi font-weight làm dãn bề ngang ký tự. Giữ cố định `font-weight: 500` và áp dụng `text-shadow: 0 0 0.4px currentColor;` chuyển tiếp trong `0.25s` mềm mại. Khi hover, nét chữ dày dặn hơn một cách nhẹ nhàng và đổi sang màu đỏ mận `var(--red-dark)` êm ái, phẳng lặng, hoàn toàn không suy suyển vị trí dòng hay giật bố cục.
+- **Kiểm thử và xác minh toàn diện**:
+  - `npm run build`: PASS 100% (`tsc -b && vite build`).
+  - 20/20 Playwright E2E tests PASS trên toàn bộ không gian tra cứu và thư viện:
+    - `library.spec.ts`: 3/3 PASS (kiểm tra nội dung dài trên 9 breakpoint 320–1440px, hủy request muộn, nút Tải lại dữ liệu, hover chữ đậm và Fade In Up khi đổi điều).
+    - `article-animation.spec.ts`: 5/5 PASS.
+    - `public-reveal.spec.ts`: 10/10 PASS.
+    - `main-site.spec.ts`: 2/2 PASS.
+  - Rà soát bảo mật không chứa secret/.env/DB dump.
+
+### Bổ sung tương tác mở popup khi ấn trực tiếp vào box kết quả tra cứu — 01/10/2026
+
+- **Cho phép ấn vào bất kỳ đâu trên box kết quả (`.cl-result`) để mở popup điều khoản ngay lập tức**:
+  - Gắn sự kiện `onClick` lên thẻ `<motion.article className="cl-result">` gọi trực tiếp `openArticle` với Shared Element Spring Animation mượt mà (0ms latency, không khựng giật).
+  - Thêm kiểm tra tránh mở nhầm khi người dùng đang quét chọn/bôi đen văn bản để sao chép (`window.getSelection()?.toString()`).
+  - Vẫn **giữ nguyên nút và dòng chữ "Xem điều khoản"** cùng icon mũi tên trong thẻ để người dùng nhận diện trực quan; thêm `event.stopPropagation()` trên nút con để ngăn chặn sự kiện trùng lặp.
+  - Cải tiến Accessibility & Focus Management: Trong `openArticle`, tự động xác định `focusTarget` trỏ tới `.cl-link-button` bên trong thẻ để khi đóng popup (phím `Escape` hoặc nút Đóng), tiêu điểm focus được khôi phục chính xác về nút điều khiển trong thẻ đó, không gây gián đoạn điều hướng bàn phím.
+  - Tinh chỉnh CSS & Trải nghiệm người dùng: Thêm `cursor: pointer` trên `.cl-result`, hiệu ứng hover nhẹ đổi viền `#d1b4bc`, bóng mờ êm và mũi tên nút "Xem điều khoản" trượt nhẹ 2px sang phải khi rê chuột vào bất cứ đâu trên box kết quả.
+- **Kiểm thử và xác minh toàn diện**:
+  - `npm run build`: PASS 100% (`tsc -b && vite build`).
+  - 20/20 Playwright E2E tests PASS liên quan đến tra cứu, animation và tương tác click box:
+    - `article-animation.spec.ts`: 5/5 PASS (bổ sung test case kiểm tra click tiêu đề thẻ, click khoảng trống thẻ, click nút "Xem điều khoản", khôi phục focus về nút sau khi đóng bằng Escape, kiểm thử responsive 5 kích thước 320px, 440px iPhone 16 Pro Max, 834px iPad, 1280px desktop, 956x440px xoay ngang).
+    - `search-animation.spec.ts`: 3/3 PASS.
+    - `public-reveal.spec.ts`: 10/10 PASS trên toàn bộ breakpoint.
+    - `public-search.spec.ts`: 2/2 PASS.
+  - Rà soát bảo mật không chứa secret/.env/DB dump.
+
 ### Khôi phục animation box kết quả và popup tra cứu mượt mà như cũ — 01/10/2026
 
 - **Khắc phục triệt để hiện tượng khựng và giật lag khi ấn vào box kết quả / điều khoản**:

@@ -102,9 +102,15 @@ test("guest searches published law via real Laravel and opens a responsive citat
       await expect(
         dialog.getByRole("link", { name: /Đối chiếu/ }),
       ).toHaveAttribute("href", "https://example.test/law");
-      await page.screenshot({ path: `test-results/search-http-${width}.png` });
+
       await page.keyboard.press("Escape");
       await expect(dialog).toHaveCount(0);
+      await page.goto("/library");
+      await expect(page.locator(".cl-library-content")).toContainText("<script>alert(1)</script>");
+      await expect(page.locator(".cl-library-content script")).toHaveCount(0);
+      await expect(page.getByRole("button", { name: "Điều 2 · Giải thích từ ngữ" })).toBeVisible();
+      expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
+
     }
   } finally {
     await guest.close();

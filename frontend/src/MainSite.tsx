@@ -18,6 +18,7 @@ import { Brand } from "./components/Brand";
 import { AdminTabReveal } from "./components/admin/AdminTabReveal";
 import { publicNavigation, historyNavigation } from "./lib/navigation";
 import { motion, AnimatePresence } from "motion/react";
+import { LibraryView } from "./components/LibraryView";
 import { publicSearchApi } from "./lib/public-search-api";
 
 type Article = (typeof articles)[number] & {
@@ -101,7 +102,6 @@ export default function MainSite() {
   const appliedFilters = useRef(filters);
   const [detailError, setDetailError] = useState("");
   const detailRequestRef = useRef(0);
-  const [libraryArticle, setLibraryArticle] = useState(articles[0]);
   const [selectedArticle, setSelectedArticle] = useState<{
     article: Article;
     trigger: HTMLElement;
@@ -208,11 +208,16 @@ export default function MainSite() {
   ) {
     const requestNumber = ++detailRequestRef.current;
     setDetailError("");
+    const origin =
+      trigger.closest<HTMLElement>(".cl-result, .cl-term-card") ?? trigger;
+    const focusTarget = trigger.matches("button, a, [tabindex]")
+      ? trigger
+      : origin.querySelector<HTMLElement>(".cl-link-button, button, a") ?? trigger;
     const selection = {
       article,
-      trigger,
+      trigger: focusTarget,
       instant,
-      origin: trigger.closest<HTMLElement>(".cl-result, .cl-term-card") ?? trigger,
+      origin,
     };
     setSelectedArticle(selection);
 
@@ -267,10 +272,12 @@ export default function MainSite() {
   }
   const articleButton = (article: Article, label = "Xem điều khoản") => (
     <button
+      type="button"
       className="cl-link-button"
-      onClick={(event) =>
-        openArticle(article, event.currentTarget, event.detail === 0)
-      }
+      onClick={(event) => {
+        event.stopPropagation();
+        openArticle(article, event.currentTarget, event.detail === 0);
+      }}
     >
       {label}
       <ArrowRight aria-hidden="true" />
@@ -641,6 +648,15 @@ export default function MainSite() {
                       damping: 25,
                       mass: 0.85,
                     }}
+                    onClick={(event) => {
+                      const selection = window.getSelection()?.toString();
+                      if (selection && selection.trim().length > 0) return;
+                      openArticle(
+                        article,
+                        event.currentTarget,
+                        event.detail === 0,
+                      );
+                    }}
                   >
                     <div className="cl-result-icon">
                       <FileText aria-hidden="true" />
@@ -698,41 +714,7 @@ export default function MainSite() {
             </div>
             </AdminTabReveal>
           </section>}
-          {view === "/library" && <section className="cl-view">
-            <AdminTabReveal tab={view} instant={false} duration={950} className="cl-public-reveal">
-            <div className="cl-page-heading" data-admin-reveal="0">
-              <div>
-                <span className="cl-eyebrow">THƯ VIỆN VĂN BẢN</span>
-                <h1>Luật An ninh mạng</h1>
-                <p>Luật số 116/2025/QH15 · Ban hành ngày 10/12/2025</p>
-              </div>
-            </div>
-            <div className="cl-library-layout">
-              <div className="cl-article-nav" data-admin-reveal="80">
-                <h2>Mục lục minh họa</h2>
-                {articles.map((article) => (
-                  <button
-                    key={article.id}
-                    aria-current={
-                      libraryArticle.id === article.id ? "true" : undefined
-                    }
-                    onClick={() => setLibraryArticle(article)}
-                  >
-                    Điều {article.id} ·{" "}
-                    {article.id === "1"
-                      ? "Phạm vi điều chỉnh"
-                      : article.id === "2"
-                        ? "Giải thích từ ngữ"
-                        : "Hiệu lực thi hành"}
-                  </button>
-                ))}
-              </div>
-              <article className="cl-document-card" data-admin-reveal="160">
-                <ArticleContent article={libraryArticle} />
-              </article>
-            </div>
-            </AdminTabReveal>
-          </section>}
+          {view === "/library" && <LibraryView />}
           {view === "/terms" && <section className="cl-view">
             <AdminTabReveal tab={view} instant={false} duration={950} className="cl-public-reveal">
             <div className="cl-page-heading" data-admin-reveal="0">

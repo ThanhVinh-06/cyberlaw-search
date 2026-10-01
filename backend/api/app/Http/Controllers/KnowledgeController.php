@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\VanBan;
 use App\Services\KnowledgeAdmin;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
+use App\Support\KnowledgePdf;
 use Illuminate\Support\Str;
 
 final class KnowledgeController extends Controller
@@ -82,23 +82,6 @@ final class KnowledgeController extends Controller
 
     public function pdf(int $id)
     {
-        $document = VanBan::findOrFail($id);
-        $relative = $document->duong_dan_tep;
-        abort_unless(is_string($relative) && $relative !== '', 404);
-        if (preg_match('~^knowledge/[A-Za-z0-9]+\.pdf$~D', $relative)) {
-            $path = Storage::disk('local')->path($relative);
-        } elseif ($relative === 'data/raw/laws/2025/official/116-2025-qh15-congbao.pdf') {
-            $path = base_path('../../'.$relative);
-        } else {
-            abort(404);
-        }
-        abort_unless(is_file($path), 404);
-
-        // Untrusted PDFs are downloaded, never embedded with the application's origin.
-        return response()->download($path, 'van-ban-'.$id.'.pdf', [
-            'Content-Type' => 'application/pdf', 'X-Content-Type-Options' => 'nosniff',
-            'Content-Security-Policy' => "sandbox; default-src 'none'",
-            'Cache-Control' => 'private, no-store',
-        ]);
+        return KnowledgePdf::download(VanBan::findOrFail($id));
     }
 }

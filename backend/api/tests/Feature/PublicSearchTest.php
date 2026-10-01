@@ -105,4 +105,5 @@ final class PublicSearchTest extends TestCase
             if (is_file($file)) unlink($file);
         }
     }
+
 }

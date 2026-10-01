@@ -1,6 +1,6 @@
 # MySQL, tài khoản và phân quyền
 
-Cập nhật yêu cầu ngày 27/09/2026. Đã tạo database với 9 bảng theo [thiết kế dữ liệu](../design/04-co-so-du-lieu.md); đã có giao diện React `/login` và `/register`, kiểm tra form phía client; chưa kết nối API và chưa có chức năng đăng nhập thật.
+Cập nhật ngày 30/09/2026. Database hiện có 11 bảng theo [thiết kế dữ liệu](../design/04-co-so-du-lieu.md); đã có giao diện React `/login`, `/register` và `/forgot-password`, kiểm tra form phía client; đã tạo tài khoản Quản trị viên mẫu trong bảng `nguoi_dung`. Thứ tự triển khai ở [bản chuẩn bị backend](03-chuan-bi-backend.md).
 
 ## 1. Phần đã được yêu cầu và phần đề xuất
 
@@ -11,16 +11,16 @@ Cập nhật yêu cầu ngày 27/09/2026. Đã tạo database với 9 bảng the
 
 ## 2. Ma trận quyền đề xuất
 
-| Chức năng | Khách | Người dùng | Quản trị viên |
-|---|---|---|---|
-| Tra cứu công khai, xem luật và thuật ngữ | Có | Có | Có |
-| Đăng ký, đăng nhập | Có | Đã có phiên | Đã có phiên |
-| Chat AI | Mời đăng nhập, giữ câu hỏi đang soạn | Có | Có |
-| Xem lịch sử chat | Không | Của mình | Của mình |
-| Sửa hồ sơ, đổi mật khẩu, đăng xuất | Không | Của mình | Của mình |
-| Quản lý văn bản, điều khoản và keyphrase | Không | Không | Có |
-| Duyệt tri thức và yêu cầu lập chỉ mục | Không | Không | Có |
-| Quản lý vai trò và trạng thái tài khoản | Không | Không | Có, có kiểm tra và nhật ký |
+| Chức năng                                | Khách                                | Người dùng  | Quản trị viên              |
+| ---------------------------------------- | ------------------------------------ | ----------- | -------------------------- |
+| Tra cứu công khai, xem luật và thuật ngữ | Có                                   | Có          | Có                         |
+| Đăng ký, đăng nhập                       | Có                                   | Đã có phiên | Đã có phiên                |
+| Chat AI                                  | Mời đăng nhập, giữ câu hỏi đang soạn | Có          | Có                         |
+| Xem lịch sử chat                         | Không                                | Của mình    | Của mình                   |
+| Sửa hồ sơ, đổi mật khẩu, đăng xuất       | Không                                | Của mình    | Của mình                   |
+| Quản lý văn bản, điều khoản và keyphrase | Không                                | Không       | Có                         |
+| Duyệt tri thức và yêu cầu lập chỉ mục    | Không                                | Không       | Có                         |
+| Quản lý vai trò và trạng thái tài khoản  | Không                                | Không       | Có, có kiểm tra và nhật ký |
 
 Chat, lịch sử, hồ sơ và quản trị là các phần được đề xuất đi kèm tài khoản; ưu tiên thực hiện theo từng giai đoạn. Vai trò admin không tự cho quyền đọc hội thoại riêng của người khác.
 
@@ -36,7 +36,7 @@ Laravel kiểm tra email duy nhất và các quy tắc mật khẩu; client ch�
 
 Email, mật khẩu, hiện/ẩn mật khẩu và nút đăng nhập. Sai thông tin hiển thị thông báo chung, giữ email, không giữ mật khẩu lâu dài. Đăng nhập thành công quay lại đường dẫn nội bộ đang yêu cầu hoặc trang tra cứu. Chỉ chấp nhận đường dẫn quay lại thuộc ứng dụng.
 
-Nút quên mật khẩu chỉ đưa vào sản phẩm khi có luồng gửi liên kết đặt lại hoạt động; chưa có dịch vụ gửi thư thì không giả lập thành công.
+Theo yêu cầu mới, đã có giao diện quên mật khẩu dùng mã xác nhận email: nhập email → gửi mã → xác nhận mã → nhập mật khẩu mới và xác nhận → quay về đăng nhập. Bản hiện tại ghi rõ dùng mã minh họa, không gửi thư hoặc đổi mật khẩu thật. Backend cần triển khai gửi mã và kiểm tra ở server bằng bảng `yeu_cau_dat_lai_mat_khau`; không dùng luồng gửi liên kết như đề xuất cũ.
 
 ### Trạng thái đã đăng nhập
 
@@ -59,16 +59,17 @@ Các mục cần thiết: tài khoản; văn bản và tri thức; trạng thái
 
 ## 5. Thiết kế dữ liệu MySQL tối thiểu
 
-| Bảng | Mục đích / trường quan trọng |
-|---|---|
-| `nguoi_dung` | ma_nguoi_dung, ho_ten, thu_dien_tu duy nhất, mat_khau băm, vai_tro, trang_thai, ngay_tao, ngay_cap_nhat |
-| `van_ban` | ma_van_ban, so_hieu, tieu_de, nguồn, phien_ban_noi_dung, trang_thai |
-| `dieu_khoan` | ma_dieu_khoan, so_dieu, so_khoan, ky_hieu_diem, noi_dung, ma_van_ban; vị trí duy nhất trong văn bản |
-| `tu_khoa`, `dieu_khoan_tu_khoa` | Cụm từ, biến thể, định nghĩa có nguồn và liên kết điều khoản |
-| `quy_dinh` | Loại quy định, chủ thể, hành vi, điều kiện, ngoại lệ và căn cứ |
-| `hoi_thoai` | ma_hoi_thoai, ma_nguoi_dung, tieu_de, ngay_tao, ngay_cap_nhat; triển khai khi làm lịch sử chat |
-| `tin_nhan` | ma_tin_nhan, ma_hoi_thoai, nguoi_gui, noi_dung, ngay_tao, ngay_cap_nhat |
-| `trich_dan` | ma_trich_dan, ma_tin_nhan, ma_dieu_khoan, phien_ban_noi_dung và bản chụp nội dung căn cứ tại thời điểm trả lời |
+| Bảng                            | Mục đích / trường quan trọng                                                                                   |
+| ------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| `nguoi_dung`                    | ma_nguoi_dung, ho_ten, thu_dien_tu duy nhất, mat_khau băm, vai_tro, trang_thai, ngay_tao, ngay_cap_nhat        |
+| `yeu_cau_dat_lai_mat_khau`      | Mã xác nhận và token đã băm, số lần thử, hạn dùng, thời điểm xác nhận/sử dụng/hủy; FK đến người dùng           |
+| `van_ban`                       | ma_van_ban, so_hieu, tieu_de, nguồn, phien_ban_noi_dung, trang_thai                                            |
+| `dieu_khoan`                    | ma_dieu_khoan, so_dieu, so_khoan, ky_hieu_diem, noi_dung, ma_van_ban; vị trí duy nhất trong văn bản            |
+| `tu_khoa`, `dieu_khoan_tu_khoa` | Cụm từ, biến thể, định nghĩa có nguồn và liên kết điều khoản                                                   |
+| `quy_dinh`                      | Loại quy định, chủ thể, hành vi, điều kiện, ngoại lệ và căn cứ                                                 |
+| `hoi_thoai`                     | ma_hoi_thoai, ma_nguoi_dung, tieu_de, ngay_tao, ngay_cap_nhat; triển khai khi làm lịch sử chat                 |
+| `tin_nhan`                      | ma_tin_nhan, ma_hoi_thoai, nguoi_gui, noi_dung, ngay_tao, ngay_cap_nhat                                        |
+| `trich_dan`                     | ma_trich_dan, ma_tin_nhan, ma_dieu_khoan, phien_ban_noi_dung và bản chụp nội dung căn cứ tại thời điểm trả lời |
 
 Tên bảng/cột dùng tiếng Việt không dấu. Chọn utf8mb4 để lưu nội dung tiếng Việt; dùng khóa ngoại và index cho các quan hệ truy vấn. Định nghĩa nằm trong `tu_khoa`, quy định nằm trong `quy_dinh`; bộ QA đánh giá giữ ở tệp trong `data/evaluation/`. Lưu nguồn và phiên bản cùng câu trả lời để tái hiện căn cứ khi văn bản thay đổi.
 

@@ -8,6 +8,7 @@ use App\Http\Controllers\PasswordResetController;
 use App\Http\Controllers\PermissionMatrixController;
 use App\Http\Controllers\RegistrationController;
 use App\Services\PublicKnowledgeSearch;
+use App\Http\Controllers\PublicLibraryController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -50,6 +51,13 @@ Route::get('api/search', fn (Request $request, PublicKnowledgeSearch $search) =>
     ->middleware('throttle:public-search')->name('public.search');
 Route::get('api/search/{id}', fn (int $id, PublicKnowledgeSearch $search) => response()->json($search->detail($id)))
     ->where('id', '[1-9][0-9]{0,17}')->middleware('throttle:public-search')->name('public.search.detail');
+
+Route::get('api/library', [PublicLibraryController::class, 'index'])
+    ->middleware('throttle:public-search')->name('public.library');
+Route::get('api/library/articles/{number}', [PublicLibraryController::class, 'article'])
+    ->where('number', '[1-9][0-9]{0,2}[a-z]?')->middleware('throttle:public-search')->name('public.library.article');
+Route::get('api/library/pdf', [PublicLibraryController::class, 'pdf'])
+    ->middleware('throttle:public-search')->name('public.library.pdf');
 
 Route::get('/', function () {
     return view('welcome');

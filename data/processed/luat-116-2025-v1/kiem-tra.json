@@ -1,0 +1,17 @@
+{
+  "ket_qua": "PASS",
+  "thong_ke": {
+    "van_ban": 1,
+    "chuong": 8,
+    "dieu": 45,
+    "khoan": 207,
+    "diem": 282,
+    "doan_goc": 494,
+    "dieu_khoan": 434,
+    "tu_khoa": 60,
+    "dieu_khoan_tu_khoa": 1326,
+    "quy_dinh": 434
+  },
+  "bo_kiem_tra": "rebuild/schema/FK/quotes/pages/Unicode/continuations/hashes/draft",
+  "gioi_han": "Không chứng nhận hiệu lực hợp nhất hay độ chính xác AI."
+}

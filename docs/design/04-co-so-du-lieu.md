@@ -1,5 +1,7 @@
 # Thiết kế MySQL cho đồ án CyberLaw
 
+**Cập nhật 30/09/2026 — dữ liệu luật:** đã nạp bộ nguyên bản 116/2025 vào 5 bảng tri thức ở trạng thái draft. Mapping và số lượng trong [tài liệu dữ liệu](../data/01-du-lieu-luat-116.md). Schema hiện 12 bảng, 111 cột; không thêm cột trong lần nạp này. Cột `dieu_khoan.ky_hieu_diem` đổi sang `utf8mb4_0900_as_ci` để UNIQUE phân biệt điểm `d` và `đ`; migration `20260930_phan_biet_diem_d_va_dd.sql` đã được chủ dự án áp dụng và kiểm tra thật. Không chạy lại trên máy hiện tại. Các dòng mô tả chưa triển khai dưới đây thuộc lịch sử thiết kế; trạng thái backend mới nhất ở HANDOFF.
+
 Ngày thiết kế: 27/09/2026; cập nhật đặt lại mật khẩu ngày 29/09/2026. Phạm vi: thiết kế và xuất cấu trúc cơ sở dữ liệu; chưa tích hợp Laravel, Python hoặc đăng nhập thật.
 
 ## 1. Yêu cầu cần đáp ứng
@@ -10,7 +12,7 @@ Ngày thiết kế: 27/09/2026; cập nhật đặt lại mật khẩu ngày 29/
 4. Lưu hội thoại cá nhân, câu hỏi, câu trả lời và căn cứ pháp lý.
 5. Lưu yêu cầu đặt lại mật khẩu qua mã xác nhận email, có hạn dùng và trạng thái đã sử dụng.
 
-Thiết kế dùng **10 bảng, 89 cột**, MySQL 8.0.16 trở lên, InnoDB và utf8mb4. Tên bảng và cột dùng **tiếng Việt không dấu**, viết thường và nối bằng `_`, ví dụ `nguoi_dung`, `ma_nguoi_dung`, `ngay_tao`. Tên database vẫn là `cyberlaw_search`.
+Thiết kế dùng **11 bảng, 101 cột**, MySQL 8.0.16 trở lên, InnoDB và utf8mb4. Tên bảng và cột dùng **tiếng Việt không dấu**, viết thường và nối bằng `_`, ví dụ `nguoi_dung`, `ma_nguoi_dung`, `ngay_tao`. Tên database vẫn là `cyberlaw_search`.
 
 Chọn trường `vai_tro` cho phân quyền; không thêm bộ bảng quyền nhiều cấp. Các giá trị ENUM như `user`, `admin` được giữ nguyên và giải thích bên dưới. Không tạo tài khoản hoặc mật khẩu mẫu trong file SQL.
 
@@ -110,11 +112,11 @@ erDiagram
 ## 6. Những phần để ngoài database ở bản đầu
 
 - Session đăng nhập: dùng file driver của Laravel/Sanctum lúc phát triển. Chuyển sang database session sau này bằng migration nếu cần.
-- Xác minh email lúc đăng ký, token API, hàng đợi: bổ sung khi triển khai. Đặt lại mật khẩu đã có bảng riêng; cần triển khai luồng PHP tương ứng với tên cột tiếng Việt.
+- Token API, hàng đợi: bổ sung khi cần triển khai. Xác minh email đã có bảng riêng (mục 10); đặt lại mật khẩu đã có luồng Laravel và bảng riêng.
 - Bộ câu hỏi đánh giá AI: `data/evaluation/`.
 - Embedding/chỉ mục: Python quản lý ở `data/indexes/`.
 - PDF: lưu dưới dạng tệp; database giữ đường dẫn và URL nguồn.
-- Nhật ký quản trị: dùng log ứng dụng trong bản đầu; chưa thêm bảng audit riêng.
+- Nhật ký quản trị: đã thêm `nhat_ky_quan_tri` ngày 30/09/2026 (mục 9); service ghi cùng transaction và xuất log chưa triển khai.
 
 ## 7. Tệp bàn giao và cách nhập
 
@@ -140,3 +142,37 @@ Khi khởi tạo Laravel, viết migrations tương đương thiết kế này h
 
 - MySQL foreign keys: https://dev.mysql.com/doc/refman/8.4/en/create-table-foreign-keys.html
 - MySQL dump: https://dev.mysql.com/doc/refman/8.4/en/mysqldump.html
+
+## 9. Đối chiếu frontend ↔ database (30/09/2026)
+
+Migration `database/migrations/20260930_bo_sung_truong_khop_frontend.sql` (đã phản ánh trong `schema.sql`; **đã áp dụng lên DB dev 30/09/2026, không chạy lại**; mật khẩu MySQL không lưu trong repo). Sau migration: **11 bảng, 101 cột**.
+
+| Thay đổi | Lý do (frontend dùng) |
+|---|---|
+| `nguoi_dung.lan_dang_nhap_cuoi` DATETIME NULL | Cột "lần đăng nhập cuối" ở trang quản trị; Laravel cập nhật khi đăng nhập thành công |
+| `dieu_khoan.tieu_de` thêm DEFAULT '' | Form không bắt buộc tiêu đề điều khoản (UI hiện "Chưa có tiêu đề") |
+| `tin_nhan.trang_thai_tra_loi`, `do_tin_cay` (0–100), `thoi_gian_xu_ly_ms` | Thẻ câu hỏi gần đây / thống kê; chỉ có ở tin nhắn assistant |
+| Bảng `nhat_ky_quan_tri` (8 cột) | Audit thao tác quản trị cùng transaction (theo `docs/security/03-logging.md`) |
+
+Không cần cột, tính bằng truy vấn: `so_hoi_thoai` = COUNT `hoi_thoai` theo người dùng; tổng quan/tăng trưởng/biểu đồ tháng/tỉ lệ loại quy định = COUNT/GROUP BY theo `ngay_tao`, `loai_quy_dinh`; trạng thái online/idle không lưu.
+
+Quy tắc chuyển đổi API (frontend dùng chuỗi rỗng, DB dùng NULL): `co_quan_ban_hanh`, `ngay_*`, `lien_ket_nguon`, `duong_dan_tep`, `chuong`, `bien_the`, `dinh_nghia` rỗng → NULL; `so_khoan`, `ky_hieu_diem` giữ `''`. Độ dài tối đa form đã khớp DB (so_hieu 100, tieu_de 500, lien_ket_nguon 2048, chuong 100, so_dieu/khoan/diem 10).
+
+Chưa có nguồn dữ liệu, giữ là dữ liệu mẫu UI (không lưu DB): `muc_phat`, nghề nghiệp/đơn vị người hỏi, phân nhóm trích dẫn pháp lý, `category/label/summary/note` của bài mẫu ở `articles.ts` (suy ra từ `dieu_khoan`/`quy_dinh` khi làm tìm kiếm thật).
+
+## 10. Xác minh email (30/09/2026)
+
+`database/migrations/20260930_xac_minh_email.sql` đã được chủ dự án chạy trong Workbench, sau đó đối chiếu chỉ đọc. Schema hiện có **12 bảng, 111 cột**; `schema.sql` đã đồng bộ cho database mới. Không chạy lại migration trên máy này. Dump cục bộ/Desktop cũ chưa được xuất lại, không dùng làm baseline mới nhất.
+
+| Bảng / cột | Ý nghĩa |
+|---|---|
+| `nguoi_dung.ngay_xac_minh_email` DATETIME NULL | Thời điểm xác minh thật, UTC |
+| `nguoi_dung.duoc_mien_xac_minh_email` TINYINT(1), default 0 | Giữ quyền truy cập tài khoản cũ hoặc do CLI tin cậy cấp; đăng ký công khai không được tự gán |
+| `yeu_cau_xac_minh_email.ma_yeu_cau` | Khóa chính |
+| `ma_nguoi_dung` | FK tài khoản, ON DELETE CASCADE |
+| `ma_xac_nhan_bam` | Bcrypt mã OTP; không lưu mã gốc |
+| `so_lan_thu` | Số lần sai, tối đa 5 |
+| `ngay_tao`, `ngay_het_han` | Thời điểm tạo và hết hạn (5 phút) |
+| `ngay_su_dung`, `ngay_huy` | Tiêu thụ một lần hoặc hủy khi gửi lại |
+
+Hai tài khoản hiện có được miễn xác minh, ngày xác minh vẫn NULL. Tài khoản đăng ký mới phải xác minh trước khi đăng nhập. Dùng session phía server để gắn yêu cầu với đúng tài khoản; transaction khóa tài khoản trước yêu cầu xác minh. Xem [luồng và kiểm thử](../backend/03-xac-minh-email.md).

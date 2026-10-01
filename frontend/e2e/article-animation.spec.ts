@@ -172,3 +172,67 @@ test("long article fits mobile and remains usable after resizing", async ({
   await closeButton.click();
   await expect(dialog).toHaveCount(0);
 });
+
+test("clicking anywhere on result card opens article popup and retains button", async ({
+  page,
+}) => {
+  await page.goto("/search");
+  const firstCard = page.locator(".cl-result").first();
+  await expect(firstCard).toBeVisible();
+
+  // Verify "Xem điều khoản" text and button are present
+  const button = firstCard.getByRole("button", { name: "Xem điều khoản" });
+  await expect(button).toBeVisible();
+  await expect(firstCard).toHaveCSS("cursor", "pointer");
+
+  // Click on the article title inside the card (not the button)
+  const title = firstCard.locator("h3");
+  await title.click();
+
+  const dialog = page.getByRole("dialog", { name: "Căn cứ pháp lý" });
+  await expect(dialog).toBeVisible();
+  await expect(dialog.getByRole("heading", { name: /Điều 1/ })).toBeVisible();
+
+  // Close dialog via Escape key
+  await page.keyboard.press("Escape");
+  await expect(dialog).toHaveCount(0);
+
+  // Focus should be restored to the link button
+  await expect(button).toBeFocused();
+
+  // Now click on blank space/body of the card
+  await firstCard.click({ position: { x: 20, y: 20 } });
+  await expect(dialog).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(dialog).toHaveCount(0);
+  await expect(button).toBeFocused();
+
+  // Click directly on the button also works
+  await button.click();
+  await expect(dialog).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(dialog).toHaveCount(0);
+  await expect(button).toBeFocused();
+
+  // Test across responsive viewports
+  const viewports = [
+    { width: 320, height: 568 },  // small phone
+    { width: 440, height: 956 },  // iPhone 16 Pro Max
+    { width: 834, height: 1194 }, // iPad / tablet
+    { width: 1280, height: 800 }, // desktop
+    { width: 956, height: 440 },  // landscape phone
+  ];
+
+  for (const vp of viewports) {
+    await page.setViewportSize(vp);
+    await firstCard.click({ position: { x: 30, y: 30 } });
+    await expect(dialog).toBeVisible();
+    const box = await dialog.boundingBox();
+    expect(box).not.toBeNull();
+    expect(box!.width).toBeLessThanOrEqual(vp.width);
+    expect(box!.height).toBeLessThanOrEqual(vp.height);
+    await page.keyboard.press("Escape");
+    await expect(dialog).toHaveCount(0);
+  }
+});
+

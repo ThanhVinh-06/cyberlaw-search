@@ -35,8 +35,8 @@ test("original public views retain filters, article references and sample chat",
   await page
     .getByRole("button", { name: "Điều 2 · Giải thích từ ngữ" })
     .click();
-  await expect(page.locator(".cl-document-card:visible")).toContainText(
-    "Trích khoản 1",
+  await expect(page.locator(".cl-library-content:visible")).toContainText(
+    "An ninh mạng là sự ổn định của không gian mạng.",
   );
   await page
     .getByRole("link", { name: "Từ điển thuật ngữ", exact: true })

@@ -38,6 +38,8 @@ backend/app/services
 trả câu trả lời + căn cứ → frontend
 ```
 
+> Cập nhật 30/09/2026: `backend/api/` là Laravel 12 (PHP) đã khởi tạo, hiện mới có model; `backend/app/` là khung Python cũ, dự kiến chuyển thành `backend/ai/` (FastAPI). Xem `backend/README.md`.
+
 - `api/`: nhận yêu cầu và trả phản hồi; không đặt thuật toán truy hồi trực tiếp trong route.
 - `schemas/`: cấu trúc câu hỏi, kết quả, citation, trạng thái lỗi.
 - `services/`: phối hợp tìm kiếm, kiểm tra căn cứ, tạo đáp án. Tích hợp LLM về sau ở lớp này.

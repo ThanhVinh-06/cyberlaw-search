@@ -1,0 +1,2 @@
+# Offline preprocessing only, separate from the future FastAPI service.
+PyMuPDF==1.28.2

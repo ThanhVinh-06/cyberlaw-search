@@ -2,6 +2,8 @@
 
 Ngày lập: 26/09/2026. Tên sản phẩm đề xuất: CyberLaw Search.
 
+**Cập nhật 29/09/2026:** Người dùng chốt bám sát Luật An ninh mạng 116/2025/QH15. [Bản chuẩn bị backend](03-chuan-bi-backend.md) ghi nhận thực trạng và kế hoạch mới nhất; database hiện có 10 bảng/89 cột. Phần kiến trúc SQLite và tên bảng tiếng Anh trong mục 6 bên dưới là phương án lịch sử, đã được thay bằng PHP/Laravel + Python/FastAPI + MySQL với schema tiếng Việt không dấu. Nội dung luật chưa được kiểm duyệt toàn bộ.
+
 **Cập nhật ngày 27/09/2026:** Frontend đã chốt React + TypeScript + Vite + Tailwind CSS + shadcn/ui + Motion. Người dùng chọn MySQL và bổ sung đăng ký, đăng nhập, phân quyền. Xem [quyết định công nghệ](../technology-decisions.md) và [yêu cầu tài khoản](02-tai-khoan-phan-quyen.md); các đề xuất SQLite và mức ưu tiên đăng nhập trong bản phân tích ban đầu được thay bởi cập nhật này.
 
 ## 1. Kết luận về hướng thực hiện

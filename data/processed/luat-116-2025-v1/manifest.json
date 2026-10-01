@@ -1,0 +1,31 @@
+{
+  "phien_ban": "116-2025-ban-goc-v1",
+  "trang_thai": "draft",
+  "nguon": "https://congbaocdn.chinhphu.vn/180507251028987904/2026/1/23/116signed-1769163678477753319408.pdf",
+  "source_sha256": "8e19e14fd57666baec8f16b7ca2832cbf7f24030a5e6ee0c574e15d0d48ad971",
+  "thong_ke": {
+    "van_ban": 1,
+    "chuong": 8,
+    "dieu": 45,
+    "khoan": 207,
+    "diem": 282,
+    "doan_goc": 494,
+    "dieu_khoan": 434,
+    "tu_khoa": 60,
+    "dieu_khoan_tu_khoa": 1326,
+    "quy_dinh": 434
+  },
+  "ngay_doi_chieu": "2026-09-30",
+  "pham_vi": "Nguyên bản ban hành 10/12/2025; chưa phải văn bản hợp nhất hiện hành.",
+  "gioi_han": [
+    "Phân loại quy định phục vụ điều hướng; chưa phải bộ luật suy diễn đầy đủ.",
+    "NULL ở trường ngữ nghĩa có nghĩa chưa tách riêng; phải đọc nguyên văn, không suy ra không có điều kiện/ngoại lệ.",
+    "Cần xác minh lịch sử sửa đổi trước công bố là luật hiện hành; không trộn 2018 hoặc 143 vào kho mặc định.",
+    "Từ khóa ngoài Điều 2 chỉ là cụm tìm kiếm có xuất hiện trong nguồn; biến thể không dấu không phải định nghĩa/đồng nghĩa pháp lý."
+  ],
+  "tep": {
+    "du-lieu-nap.json": "da64cec303b01741bc4e7773e7a470dfcd636faf632040486b2e21ebca1457ad",
+    "toan-van-cau-truc.json": "1a8436b3be3785f8558040d6a8a4aee364e899b0a2bb44e84b6cc6b6bd77f62e",
+    "ai-chunks.jsonl": "d02dcafff1dc23feeee8d7412a3f464365fc6946b94df32d530149df28c4d83c"
+  }
+}

@@ -1,6 +1,6 @@
 # Phương án công nghệ
 
-Cập nhật: 27/09/2026.
+Cập nhật: 29/09/2026. Phạm vi đã chốt là Luật An ninh mạng 116/2025/QH15; xem [bản chuẩn bị backend](requirements/03-chuan-bi-backend.md) để biết thứ tự triển khai và các phần chưa sẵn sàng.
 
 ## 1. Frontend đã được người dùng chốt
 
@@ -8,11 +8,11 @@ React + TypeScript + Vite + Tailwind CSS + shadcn/ui + Motion for React.
 
 Giữ hướng thiết kế CyberLaw: màu đỏ burgundy, vàng nhạt, menu trái luôn hiển thị trên desktop và hình robot mở chat. Khi triển khai, chuyển từng phần của bản mẫu thành component, thêm responsive và animation ngắn, đồng thời hỗ trợ giảm chuyển động.
 
-Frontend đã chuyển sang React/TypeScript/Vite với Tailwind CSS, component shadcn/ui và Motion. Có trang đăng nhập/đăng ký và tra cứu minh họa. Backend xác thực chưa được nối; mã HTML/CSS/JS cũ được lưu tại `experiments/archive/frontend-static/`.
+Frontend đã chuyển sang React/TypeScript/Vite với Tailwind CSS, component shadcn/ui và Motion. Đăng nhập/me/logout đã nối Laravel bằng session cookie + CSRF và proxy cùng origin; đăng ký/quên mật khẩu và dữ liệu nghiệp vụ còn demo. Xem [triển khai đăng nhập](backend/01-dang-nhap.md). Mã HTML/CSS/JS cũ được lưu tại `experiments/archive/frontend-static/`.
 
 ## 2. Backend được đề xuất: PHP + Python
 
-Người dùng muốn Python phụ trách AI và kết hợp PHP. Phương án đề xuất dùng **Laravel cho API nghiệp vụ**, **FastAPI cho dịch vụ AI**. Database theo lựa chọn tiếp theo của người dùng là **MySQL**. Chưa khởi tạo ứng dụng hoặc thay cấu trúc backend hiện có.
+Người dùng muốn Python phụ trách AI và kết hợp PHP. Phương án đề xuất dùng **Laravel cho API nghiệp vụ**, **FastAPI cho dịch vụ AI**. Database theo lựa chọn tiếp theo của người dùng là **MySQL**. **Cập nhật 30/09/2026:** người dùng chốt Laravel 12 + PHP 8.2; đã khởi tạo `backend/api/` (mới có model, chưa có API). FastAPI/`backend/ai/` chưa khởi tạo.
 
 ```text
 React → Laravel → FastAPI → Kho tri thức/chỉ mục AI
@@ -74,7 +74,7 @@ Chưa di chuyển `backend/app/`; đó vẫn là khung Python cũ. Việc đổi
 
 ## 5. Database và tài khoản
 
-- Đã tạo database `cyberlaw_search` trên MySQL 8.0.44, gồm 9 bảng rỗng, tên bảng/cột bằng tiếng Việt không dấu. [Thiết kế dữ liệu](design/04-co-so-du-lieu.md) và [SQL dump](../database/cyberlaw_search.sql) là cơ sở để triển khai backend; chưa có chức năng xác thực chạy thật.
+- Database `cyberlaw_search` trên MySQL 8.0.44 hiện có 10 bảng, 89 cột, gồm yêu cầu đặt lại mật khẩu; tên bảng/cột bằng tiếng Việt không dấu. [Thiết kế dữ liệu](design/04-co-so-du-lieu.md) và [SQL dump cục bộ](../database/cyberlaw_search.sql) là cơ sở để triển khai backend; chưa có chức năng xác thực chạy thật.
 - MySQL lưu tài khoản, văn bản, điều khoản, quan hệ keyphrase và dữ liệu nghiệp vụ được triển khai.
 - Laravel quản lý migration và quyền truy cập dữ liệu. Các model cần ánh xạ tên bảng, khóa, cột thời gian và trường auth theo schema tiếng Việt; không dùng nguyên quy ước tên mặc định của Laravel. Python nhận bản tri thức đã duyệt theo phiên bản để xử lý AI; không cần quyền truy cập bảng mật khẩu, session hoặc toàn bộ lịch sử người dùng.
 - Chỉ mục tìm kiếm ngữ nghĩa do Python tạo và quản lý riêng trong giai đoạn đầu. Chọn MySQL cho dữ liệu nghiệp vụ không yêu cầu đưa toàn bộ tính toán vector vào MySQL.

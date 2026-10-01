@@ -129,6 +129,48 @@ export async function mockAuth(
     });
     await route.fulfill({ status: 200, json: { items, total: items.length, page: 1, per_page: 30, law: "116/2025/QH15" } });
   });
+  await target.route("**/api/library", async (route) => {
+    await route.fulfill({
+      status: 200,
+      json: {
+        document: {
+          id: "1",
+          so_hieu: "116/2025/QH15",
+          tieu_de: "Luật An ninh mạng",
+          co_quan_ban_hanh: "Quốc hội",
+          ngay_ban_hanh: "2025-12-10",
+          ngay_hieu_luc: "2026-07-01",
+          source: "https://example.test/source",
+          pdf: false,
+          phien_ban_noi_dung: 1,
+        },
+        articles: publicArticles.map((item) => ({ ...item, chuong: "Chương I", tieu_de: item.title.replace(/^Điều\s+\d+\.\s*/, "") })),
+        total: publicArticles.length,
+        law: "116/2025/QH15",
+      },
+    });
+  });
+  await target.route("**/api/library/articles/*", async (route) => {
+    const number = new URL(route.request().url()).pathname.split("/").pop() ?? "1";
+    const article = publicArticles.find((item) => item.so_dieu === number);
+    if (!article) {
+      await route.fulfill({ status: 404, json: { message: "Not found" } });
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      json: {
+        document: {
+          so_hieu: "116/2025/QH15", tieu_de: "Luật An ninh mạng", co_quan_ban_hanh: "Quốc hội",
+          ngay_ban_hanh: "2025-12-10", ngay_hieu_luc: "2026-07-01", phien_ban_noi_dung: 1,
+          source: "https://example.test/source", pdf: false,
+        },
+        so_dieu: article.so_dieu,
+        tieu_de: article.title.replace(/^Điều\s+\d+\.\s*/, ""),
+        units: [{ id: article.id, so_khoan: article.so_khoan, ky_hieu_diem: "", noi_dung: article.text, trang_nguon: 1 }],
+      },
+    });
+  });
 }
 
 export async function fillLogin(page: Page, role: "admin" | "user") {

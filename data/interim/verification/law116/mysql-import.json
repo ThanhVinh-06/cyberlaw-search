@@ -1,0 +1,15 @@
+{
+    "ket_qua": "PASS",
+    "ngay": "2026-09-29T19:32:37+00:00",
+    "thong_ke": {
+        "van_ban": 1,
+        "dieu_khoan": 434,
+        "tu_khoa": 60,
+        "dieu_khoan_tu_khoa": 1326,
+        "quy_dinh": 434
+    },
+    "tai_khoan_hoi_thoai_ma_xac_minh_khong_doi": true,
+    "request_id": "a10ae512-6b3e-43b0-8e5c-f1c658c330bb",
+    "trang_thai": "draft",
+    "bundle_sha256": "da64cec303b01741bc4e7773e7a470dfcd636faf632040486b2e21ebca1457ad"
+}

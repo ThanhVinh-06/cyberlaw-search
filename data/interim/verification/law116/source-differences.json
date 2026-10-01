@@ -1,0 +1,499 @@
+[
+  {
+    "so_dieu": "2",
+    "official": "",
+    "web_export": "Hiệu lực: Đã biết Tình trạng hiệu lực: Đã biết",
+    "context_before": "sửa đổi trái phép, phá hoại",
+    "context_after": "hoặc hành vi khác đe dọa"
+  },
+  {
+    "so_dieu": "5",
+    "official": "mạng;",
+    "web_export": "mạng;Hướng dẫn",
+    "context_before": "gồm: a) Thẩm định an ninh",
+    "context_after": "b) Đánh giá điều kiện an"
+  },
+  {
+    "so_dieu": "5",
+    "official": "mạng;",
+    "web_export": "mạng;Hướng dẫn",
+    "context_before": "Đánh giá điều kiện an ninh",
+    "context_after": "c) Kiểm tra an ninh mạng;"
+  },
+  {
+    "so_dieu": "5",
+    "official": "mạng;",
+    "web_export": "mạng;Hướng dẫn",
+    "context_before": "mạng; c) Kiểm tra an ninh",
+    "context_after": "d) Giám sát an ninh mạng;"
+  },
+  {
+    "so_dieu": "5",
+    "official": "mạng;",
+    "web_export": "mạng;Hướng dẫn",
+    "context_before": "mạng; d) Giám sát an ninh",
+    "context_after": "đ) Ứng phó, khắc phục sự"
+  },
+  {
+    "so_dieu": "5",
+    "official": "Ứng",
+    "web_export": "ứng",
+    "context_before": "Giám sát an ninh mạng; đ)",
+    "context_after": "phó, khắc phục sự cố an"
+  },
+  {
+    "so_dieu": "5",
+    "official": "mạng;",
+    "web_export": "mạng;Hướng dẫn",
+    "context_before": "khắc phục sự cố an ninh",
+    "context_after": "e) Đấu tranh bảo vệ an"
+  },
+  {
+    "so_dieu": "5",
+    "official": "mạng;",
+    "web_export": "mạng;Hướng dẫn",
+    "context_before": "mã để bảo vệ thông tin",
+    "context_after": "h) Sử dụng giải pháp kỹ"
+  },
+  {
+    "so_dieu": "5",
+    "official": "nhân;",
+    "web_export": "nhân;Hướng dẫn",
+    "context_before": "của cơ quan, tổ chức, cá",
+    "context_after": "l) Thu thập dữ liệu điện"
+  },
+  {
+    "so_dieu": "5",
+    "official": "mạng;",
+    "web_export": "mạng;Hướng dẫn",
+    "context_before": "chức, cá nhân trên không gian",
+    "context_after": "m) Phong tỏa, hạn chế hoạt"
+  },
+  {
+    "so_dieu": "5",
+    "official": "luật;",
+    "web_export": "luật;Hướng dẫn",
+    "context_before": "miền theo quy định của pháp",
+    "context_after": "n) Khởi tố, điều tra, truy"
+  },
+  {
+    "so_dieu": "5",
+    "official": "chính.",
+    "web_export": "chính.Hướng dẫn",
+    "context_before": "về xử lý vi phạm hành",
+    "context_after": "2. Chính phủ quy định chi"
+  },
+  {
+    "so_dieu": "5",
+    "official": "",
+    "web_export": "Hướng dẫn",
+    "context_before": "điểm o khoản 1 Điều này.",
+    "context_after": ""
+  },
+  {
+    "so_dieu": "8",
+    "official": "nhân;",
+    "web_export": "nhân;Hướng dẫn",
+    "context_before": "hợp pháp của tổ chức, cá",
+    "context_after": "b) Cấp độ 2 có thể"
+  },
+  {
+    "so_dieu": "8",
+    "official": "cộng;",
+    "web_export": "cộng;Hướng dẫn",
+    "context_before": "tổn hại tới lợi ích công",
+    "context_after": "c) Cấp độ 3 có thể"
+  },
+  {
+    "so_dieu": "8",
+    "official": "gia;",
+    "web_export": "gia;Hướng dẫn",
+    "context_before": "tổn hại tới an ninh quốc",
+    "context_after": "d) Cấp độ 4 có thể"
+  },
+  {
+    "so_dieu": "8",
+    "official": "gia;",
+    "web_export": "gia;Hướng dẫn",
+    "context_before": "nghiêm trọng tới an ninh quốc",
+    "context_after": "đ) Cấp độ 5 có thể"
+  },
+  {
+    "so_dieu": "8",
+    "official": "gia.",
+    "web_export": "gia.Hướng dẫn",
+    "context_before": "nghiêm trọng tới an ninh quốc",
+    "context_after": "2. Chính phủ quy định chi"
+  },
+  {
+    "so_dieu": "8",
+    "official": "tin.",
+    "web_export": "tin.Hướng dẫn",
+    "context_before": "cấp độ của hệ thống thông",
+    "context_after": ""
+  },
+  {
+    "so_dieu": "9",
+    "official": "gia.",
+    "web_export": "gia.Hướng dẫn",
+    "context_before": "quan trọng về an ninh quốc",
+    "context_after": ""
+  },
+  {
+    "so_dieu": "10",
+    "official": "gồm:",
+    "web_export": "gồm:Hướng dẫn",
+    "context_before": "với hệ thống thông tin bao",
+    "context_after": "a) Xác định cấp độ an"
+  },
+  {
+    "so_dieu": "10",
+    "official": "gồm:",
+    "web_export": "gồm:Hướng dẫn",
+    "context_before": "với hệ thống thông tin bao",
+    "context_after": "a) Ban hành quy định về"
+  },
+  {
+    "so_dieu": "10",
+    "official": "Cấp",
+    "web_export": "cấp",
+    "context_before": "quản hệ thống thông tin thuộc",
+    "context_after": "độ 1, Cấp độ 2 thực"
+  },
+  {
+    "so_dieu": "10",
+    "official": "Cấp",
+    "web_export": "cấp",
+    "context_before": "thông tin thuộc Cấp độ 1,",
+    "context_after": "độ 2 thực hiện đầy đủ"
+  },
+  {
+    "so_dieu": "10",
+    "official": "Cấp",
+    "web_export": "cấp",
+    "context_before": "quản hệ thống thông tin thuộc",
+    "context_after": "độ 3, Cấp độ 4 không"
+  },
+  {
+    "so_dieu": "10",
+    "official": "Cấp",
+    "web_export": "cấp",
+    "context_before": "thông tin thuộc Cấp độ 3,",
+    "context_after": "độ 4 không thuộc danh mục"
+  },
+  {
+    "so_dieu": "10",
+    "official": "",
+    "web_export": "Hướng dẫn",
+    "context_before": "1 và khoản 2 Điều này.",
+    "context_after": ""
+  },
+  {
+    "so_dieu": "12",
+    "official": "luật.",
+    "web_export": "luật.Hướng dẫn",
+    "context_before": "mật theo quy định của pháp",
+    "context_after": "5. Chính phủ quy định trình"
+  },
+  {
+    "so_dieu": "12",
+    "official": "",
+    "web_export": "Hướng dẫn",
+    "context_before": "mạng quy định tại Điều này.",
+    "context_after": ""
+  },
+  {
+    "so_dieu": "14",
+    "official": "mạng",
+    "web_export": "mạngHướng dẫn",
+    "context_before": "toàn xã hội trên không gian",
+    "context_after": "1. Chủ quản hệ thống thông"
+  },
+  {
+    "so_dieu": "14",
+    "official": "",
+    "web_export": "Hướng dẫn",
+    "context_before": "quy định chi tiết Điều này.",
+    "context_after": ""
+  },
+  {
+    "so_dieu": "20",
+    "official": "này;",
+    "web_export": "này;Hướng dẫn",
+    "context_before": "và điểm b khoản 3 Điều",
+    "context_after": "b) Thủ tướng Chính phủ xem"
+  },
+  {
+    "so_dieu": "22",
+    "official": "mạng",
+    "web_export": "mạngHướng dẫn",
+    "context_before": "đột thông tin trên không gian",
+    "context_after": "1. Xung đột thông tin là"
+  },
+  {
+    "so_dieu": "22",
+    "official": "",
+    "web_export": "Hướng dẫn",
+    "context_before": "quy định chi tiết Điều này.",
+    "context_after": ""
+  },
+  {
+    "so_dieu": "25",
+    "official": "mạng",
+    "web_export": "mạngHướng dẫn",
+    "context_before": "Bảo đảm an ninh thông tin",
+    "context_after": "1. Trang thông tin điện tử,"
+  },
+  {
+    "so_dieu": "25",
+    "official": "đây:",
+    "web_export": "đây:Hướng dẫn",
+    "context_before": "Việt Nam có trách nhiệm sau",
+    "context_after": "a) Xác thực thông tin khi"
+  },
+  {
+    "so_dieu": "25",
+    "official": "giờ;",
+    "web_export": "giờ;Hướng dẫn",
+    "context_before": "thông tin chậm nhất là 03",
+    "context_after": "b) Ngăn chặn việc chia sẻ"
+  },
+  {
+    "so_dieu": "25",
+    "official": "giờ;",
+    "web_export": "giờ;Hướng dẫn",
+    "context_before": "thông tin chậm nhất là 06",
+    "context_after": "c) Không cung cấp hoặc ngừng"
+  },
+  {
+    "so_dieu": "25",
+    "official": "an;",
+    "web_export": "an;Hướng dẫn",
+    "context_before": "an ninh mạng thuộc Bộ Công",
+    "context_after": "d) Lưu trữ thông tin cá"
+  },
+  {
+    "so_dieu": "25",
+    "official": "vụ.",
+    "web_export": "vụ.Hướng dẫn",
+    "context_before": "kết thúc việc sử dụng dịch",
+    "context_after": "3. Doanh nghiệp trong nước và"
+  },
+  {
+    "so_dieu": "25",
+    "official": "Nam.",
+    "web_export": "Nam.Hướng dẫn",
+    "context_before": "văn phòng đại diện tại Việt",
+    "context_after": "4. Chính phủ quy định chi"
+  },
+  {
+    "so_dieu": "25",
+    "official": "",
+    "web_export": "Hướng dẫn",
+    "context_before": "2 và khoản 3 Điều này.",
+    "context_after": ""
+  },
+  {
+    "so_dieu": "26",
+    "official": "gồm:",
+    "web_export": "gồm:Hướng dẫn",
+    "context_before": "đảm an ninh dữ liệu bao",
+    "context_after": "a) Xây dựng chính sách, thiết"
+  },
+  {
+    "so_dieu": "26",
+    "official": "liệu.",
+    "web_export": "liệu.Hướng dẫn",
+    "context_before": "nhiệm bảo đảm an ninh dữ",
+    "context_after": ""
+  },
+  {
+    "so_dieu": "27",
+    "official": "mạng.",
+    "web_export": "mạng.Hướng dẫn",
+    "context_before": "thuật quốc gia về an ninh",
+    "context_after": "6. Bộ Quốc phòng đăng ký,"
+  },
+  {
+    "so_dieu": "28",
+    "official": "mạng",
+    "web_export": "mạngHướng dẫn",
+    "context_before": "Sản phẩm, dịch vụ an ninh",
+    "context_after": "1. Sản phẩm an ninh mạng"
+  },
+  {
+    "so_dieu": "28",
+    "official": "gồm:",
+    "web_export": "gồm:Hướng dẫn",
+    "context_before": "Sản phẩm an ninh mạng bao",
+    "context_after": "a) Sản phẩm mật mã dân"
+  },
+  {
+    "so_dieu": "28",
+    "official": "sự;",
+    "web_export": "sự;Hướng dẫn",
+    "context_before": "a) Sản phẩm mật mã dân",
+    "context_after": "b) Sản phẩm kiểm tra, đánh"
+  },
+  {
+    "so_dieu": "28",
+    "official": "gồm:",
+    "web_export": "gồm:Hướng dẫn",
+    "context_before": "Dịch vụ an ninh mạng bao",
+    "context_after": "a) Dịch vụ kiểm tra, đánh"
+  },
+  {
+    "so_dieu": "28",
+    "official": "sự;",
+    "web_export": "sự;Hướng dẫn",
+    "context_before": "c) Dịch vụ mật mã dân",
+    "context_after": "d) Dịch vụ tư vấn an"
+  },
+  {
+    "so_dieu": "28",
+    "official": "",
+    "web_export": "Hướng dẫn",
+    "context_before": "quy định chi tiết Điều này.",
+    "context_after": ""
+  },
+  {
+    "so_dieu": "29",
+    "official": "mạng.",
+    "web_export": "mạng.Hướng dẫn",
+    "context_before": "sản phẩm, dịch vụ an ninh",
+    "context_after": ""
+  },
+  {
+    "so_dieu": "30",
+    "official": "gồm:",
+    "web_export": "gồm:Hướng dẫn",
+    "context_before": "bảo vệ an ninh mạng bao",
+    "context_after": "a) Lực lượng chuyên trách bảo"
+  },
+  {
+    "so_dieu": "30",
+    "official": "phòng;",
+    "web_export": "phòng;Hướng dẫn",
+    "context_before": "tại Bộ Công an, Bộ Quốc",
+    "context_after": "b) Lực lượng bảo vệ an"
+  },
+  {
+    "so_dieu": "30",
+    "official": "mạng.",
+    "web_export": "mạng.Hướng dẫn",
+    "context_before": "lực lượng bảo vệ an ninh",
+    "context_after": ""
+  },
+  {
+    "so_dieu": "31",
+    "official": "định.",
+    "web_export": "định.Hướng dẫn",
+    "context_before": "đặc thù do Chính phủ quy",
+    "context_after": "3. Chủ quản hệ thống thông"
+  },
+  {
+    "so_dieu": "32",
+    "official": "mạng.",
+    "web_export": "mạng.Hướng dẫn",
+    "context_before": "lực lượng bảo vệ an ninh",
+    "context_after": "2. Ưu tiên đào tạo, phát"
+  },
+  {
+    "so_dieu": "34",
+    "official": "mạng",
+    "web_export": "mạngHướng dẫn",
+    "context_before": "năng chuyên sâu về an ninh",
+    "context_after": "1. Lực lượng bảo vệ an"
+  },
+  {
+    "so_dieu": "34",
+    "official": "mạng.",
+    "web_export": "mạng.Hướng dẫn",
+    "context_before": "năng chuyên sâu về an ninh",
+    "context_after": "2. Người trực tiếp quản trị,"
+  },
+  {
+    "so_dieu": "34",
+    "official": "Cấp",
+    "web_export": "cấp",
+    "context_before": "vận hành hệ thống thông tin",
+    "context_after": "độ 3, Cấp độ 4, Cấp"
+  },
+  {
+    "so_dieu": "34",
+    "official": "Cấp",
+    "web_export": "cấp",
+    "context_before": "thống thông tin Cấp độ 3,",
+    "context_after": "độ 4, Cấp độ 5 trong"
+  },
+  {
+    "so_dieu": "34",
+    "official": "Cấp",
+    "web_export": "cấp",
+    "context_before": "Cấp độ 3, Cấp độ 4,",
+    "context_after": "độ 5 trong cơ quan, tổ"
+  },
+  {
+    "so_dieu": "34",
+    "official": "mạng.",
+    "web_export": "mạng.Hướng dẫn",
+    "context_before": "đào tạo chuyên ngành an ninh",
+    "context_after": "3. Bộ Công an chủ trì,"
+  },
+  {
+    "so_dieu": "34",
+    "official": "mạng.",
+    "web_export": "mạng.Hướng dẫn",
+    "context_before": "năng chuyên sâu về an ninh",
+    "context_after": ""
+  },
+  {
+    "so_dieu": "39",
+    "official": "này:",
+    "web_export": "này:Hướng dẫn",
+    "context_before": "khoản 3 và khoản 4 Điều",
+    "context_after": "a) Ban hành hoặc trình cơ"
+  },
+  {
+    "so_dieu": "39",
+    "official": "mạng;",
+    "web_export": "mạng;Hướng dẫn",
+    "context_before": "nguy cơ đe dọa an ninh",
+    "context_after": "g) Tham mưu, đề xuất Chính"
+  },
+  {
+    "so_dieu": "41",
+    "official": "mạng.",
+    "web_export": "mạng.Hướng dẫn",
+    "context_before": "biện pháp bảo vệ an ninh",
+    "context_after": "6. Phối hợp thực hiện theo"
+  },
+  {
+    "so_dieu": "42",
+    "official": "luật.",
+    "web_export": "luật.Hướng dẫn",
+    "context_before": "thiệt hại theo quy định pháp",
+    "context_after": "3. Kịp thời cung cấp thông"
+  },
+  {
+    "so_dieu": "43",
+    "official": "hoá",
+    "web_export": "hóa",
+    "context_before": "từ của Luật Di sản văn",
+    "context_after": "số 45/2024/QH15 đã được sửa đổi,"
+  },
+  {
+    "so_dieu": "43",
+    "official": "",
+    "web_export": "17. Bãi bỏ khoản 3 Điều 49 của Luật Thư viện số 46/2019/QH14.",
+    "context_before": "số điều theo Luật số 98/2025/QH15.",
+    "context_after": "16. Bãi bỏ cụm từ “,"
+  },
+  {
+    "so_dieu": "43",
+    "official": "17. Bãi bỏ khoản 3 Điều 49 của Luật Thư viện số 46/2019/QH14.",
+    "web_export": "",
+    "context_before": "Năng lượng nguyên tử số 94/2025/QH15.",
+    "context_after": ""
+  }
+]

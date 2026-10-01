@@ -17,11 +17,31 @@ CREATE TABLE `nguoi_dung` (
   `vai_tro` ENUM('user','admin') NOT NULL DEFAULT 'user',
   `trang_thai` ENUM('active','blocked') NOT NULL DEFAULT 'active',
   `ma_ghi_nho` VARCHAR(100) DEFAULT NULL,
+  `lan_dang_nhap_cuoi` DATETIME DEFAULT NULL COMMENT 'Lan dang nhap thanh cong gan nhat',
+  `ngay_xac_minh_email` DATETIME DEFAULT NULL,
+  `duoc_mien_xac_minh_email` TINYINT(1) NOT NULL DEFAULT 0,
   `ngay_tao` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `ngay_cap_nhat` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`ma_nguoi_dung`),
   UNIQUE KEY `duy_nhat_nguoi_dung_thu_dien_tu` (`thu_dien_tu`)
 ) ENGINE=InnoDB COMMENT='Tài khoản người dùng và quản trị viên';
+
+CREATE TABLE `yeu_cau_xac_minh_email` (
+  `ma_yeu_cau` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `ma_nguoi_dung` BIGINT UNSIGNED NOT NULL,
+  `ma_xac_nhan_bam` VARCHAR(255) NOT NULL,
+  `so_lan_thu` TINYINT UNSIGNED NOT NULL DEFAULT 0,
+  `ngay_tao` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `ngay_het_han` DATETIME NOT NULL,
+  `ngay_su_dung` DATETIME DEFAULT NULL,
+  `ngay_huy` DATETIME DEFAULT NULL,
+  PRIMARY KEY (`ma_yeu_cau`),
+  KEY `chi_muc_xac_minh_email_nguoi_dung` (`ma_nguoi_dung`, `ngay_tao`),
+  KEY `chi_muc_xac_minh_email_het_han` (`ngay_het_han`),
+  CONSTRAINT `fk_xac_minh_email_nguoi_dung` FOREIGN KEY (`ma_nguoi_dung`) REFERENCES `nguoi_dung` (`ma_nguoi_dung`) ON DELETE CASCADE,
+  CONSTRAINT `kiem_tra_xac_minh_email_so_lan` CHECK (`so_lan_thu` <= 5),
+  CONSTRAINT `kiem_tra_xac_minh_email_het_han` CHECK (`ngay_het_han` > `ngay_tao`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE `van_ban` (
   `ma_van_ban` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -53,8 +73,8 @@ CREATE TABLE `dieu_khoan` (
   `chuong` VARCHAR(100) DEFAULT NULL,
   `so_dieu` VARCHAR(10) NOT NULL COMMENT 'Ví dụ: 2, 10a, 44',
   `so_khoan` VARCHAR(10) NOT NULL DEFAULT '' COMMENT 'Để chuỗi rỗng khi lưu toàn bộ điều',
-  `ky_hieu_diem` VARCHAR(10) NOT NULL DEFAULT '' COMMENT 'Để chuỗi rỗng khi không chia điểm',
-  `tieu_de` VARCHAR(500) NOT NULL,
+  `ky_hieu_diem` VARCHAR(10) COLLATE utf8mb4_0900_as_ci NOT NULL DEFAULT '' COMMENT 'Để chuỗi rỗng khi không chia điểm; phân biệt d và đ',
+  `tieu_de` VARCHAR(500) NOT NULL DEFAULT '' COMMENT 'Co the de trong; giao dien hien "Chua co tieu de"',
   `noi_dung` MEDIUMTEXT NOT NULL COMMENT 'Nguyên văn điều khoản, gồm câu dẫn và ngữ cảnh cần thiết',
   `trang_nguon` SMALLINT UNSIGNED DEFAULT NULL COMMENT 'Trang PDF bắt đầu trích dẫn, đếm từ 1',
   `thu_tu` INT UNSIGNED NOT NULL DEFAULT 0,
@@ -133,10 +153,14 @@ CREATE TABLE `tin_nhan` (
   `ma_hoi_thoai` BIGINT UNSIGNED NOT NULL,
   `nguoi_gui` ENUM('user','assistant') NOT NULL,
   `noi_dung` MEDIUMTEXT NOT NULL,
+  `trang_thai_tra_loi` ENUM('answered','no_basis','error') DEFAULT NULL COMMENT 'Chi dung cho tin nhan assistant',
+  `do_tin_cay` DECIMAL(5,2) DEFAULT NULL COMMENT '0-100, do he thong truy hoi tinh',
+  `thoi_gian_xu_ly_ms` INT UNSIGNED DEFAULT NULL COMMENT 'Thoi gian tao cau tra loi (mili giay)',
   `ngay_tao` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `ngay_cap_nhat` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`ma_tin_nhan`),
   KEY `chi_muc_tin_nhan_hoi_thoai` (`ma_hoi_thoai`,`ma_tin_nhan`),
+  CONSTRAINT `kiem_tra_tin_nhan_do_tin_cay` CHECK (`do_tin_cay` IS NULL OR (`do_tin_cay` BETWEEN 0 AND 100)),
   CONSTRAINT `khoa_ngoai_tin_nhan_hoi_thoai` FOREIGN KEY (`ma_hoi_thoai`) REFERENCES `hoi_thoai` (`ma_hoi_thoai`)
     ON DELETE CASCADE ON UPDATE RESTRICT
 ) ENGINE=InnoDB COMMENT='Câu hỏi của người dùng và câu trả lời của trợ lý AI';
@@ -194,3 +218,20 @@ CREATE TABLE `yeu_cau_dat_lai_mat_khau` (
   ),
   CONSTRAINT `kiem_tra_dat_lai_mat_khau_su_dung` CHECK (`ngay_su_dung` IS NULL OR `ngay_xac_nhan` IS NOT NULL)
 ) ENGINE=InnoDB COMMENT='Yeu cau dat lai mat khau qua email, ma chi su dung mot lan';
+
+CREATE TABLE `nhat_ky_quan_tri` (
+  `ma_nhat_ky` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `ma_nguoi_thuc_hien` BIGINT UNSIGNED DEFAULT NULL,
+  `hanh_dong` VARCHAR(100) NOT NULL COMMENT 'Vi du: admin.user.role_changed',
+  `loai_doi_tuong` VARCHAR(50) NOT NULL,
+  `ma_doi_tuong` BIGINT UNSIGNED DEFAULT NULL,
+  `ma_yeu_cau` VARCHAR(64) DEFAULT NULL COMMENT 'request_id de doi chieu log',
+  `du_lieu_them` JSON DEFAULT NULL COMMENT 'Chi khoa da allowlist; khong luu mat khau/OTP/token/noi dung chat',
+  `ngay_tao` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`ma_nhat_ky`),
+  KEY `chi_muc_nhat_ky_nguoi_thuc_hien` (`ma_nguoi_thuc_hien`,`ngay_tao`),
+  KEY `chi_muc_nhat_ky_doi_tuong` (`loai_doi_tuong`,`ma_doi_tuong`),
+  CONSTRAINT `khoa_ngoai_nhat_ky_nguoi_thuc_hien` FOREIGN KEY (`ma_nguoi_thuc_hien`) REFERENCES `nguoi_dung` (`ma_nguoi_dung`)
+    ON DELETE SET NULL ON UPDATE RESTRICT,
+  CONSTRAINT `kiem_tra_nhat_ky_du_lieu_them` CHECK (`du_lieu_them` IS NULL OR JSON_TYPE(`du_lieu_them`) = 'OBJECT')
+) ENGINE=InnoDB COMMENT='Audit thao tac quan tri, ghi cung transaction voi thao tac';
