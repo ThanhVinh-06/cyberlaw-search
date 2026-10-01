@@ -5,6 +5,12 @@ import { type articles } from "../lib/articles";
 
 type Article = (typeof articles)[number];
 
+// Exit animation can overlap the next dialog. Restore scrolling only after
+// the last mounted dialog releases its lock.
+let scrollLocks = 0;
+let savedOverflow = "";
+let savedPadding = "";
+
 type Props = {
   article: Article;
   trigger: HTMLElement;
@@ -29,8 +35,11 @@ export function ArticleDialog({
 
   // Lock body scroll while open and restore on unmount
   useLayoutEffect(() => {
-    const previousOverflow = document.body.style.overflow;
-    const previousPadding = document.body.style.paddingRight;
+    if (scrollLocks === 0) {
+      savedOverflow = document.body.style.overflow;
+      savedPadding = document.body.style.paddingRight;
+    }
+    scrollLocks++;
     const scrollbar = window.innerWidth - document.documentElement.clientWidth;
 
     document.body.style.overflow = "hidden";
@@ -39,9 +48,12 @@ export function ArticleDialog({
     }
 
     return () => {
-      document.body.style.overflow = previousOverflow;
-      document.body.style.paddingRight = previousPadding;
-      if (trigger && trigger.isConnected) {
+      scrollLocks--;
+      if (scrollLocks === 0) {
+        document.body.style.overflow = savedOverflow;
+        document.body.style.paddingRight = savedPadding;
+      }
+      if (scrollLocks === 0 && trigger && trigger.isConnected) {
         trigger.focus({ preventScroll: true });
       }
     };

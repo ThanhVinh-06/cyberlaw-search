@@ -1,5 +1,32 @@
 # Bàn giao dự án CyberLaw Search
 
+### Khôi phục animation box kết quả và popup tra cứu mượt mà như cũ — 01/10/2026
+
+- **Khắc phục triệt để hiện tượng khựng và giật lag khi ấn vào box kết quả / điều khoản**:
+  - Đối chiếu commit gốc trước khi sửa (`1cccd35` / `bd39b54`): Dữ liệu mỗi thẻ bài viết (`article`) trong kết quả tìm kiếm đã chứa đầy đủ nguyên văn trích đoạn (`text`), tiêu đề (`title`), tóm tắt (`summary`), nguồn (`source`) và số điều khoản.
+  - Loại bỏ hoàn toàn cơ chế chờ đợi mạng chặn UI (`publicSearchApi.detail`) trước khi mở popup. Hàm `openArticle` lập tức kích hoạt `setSelectedArticle` đồng bộ (0ms latency), giúp thẻ bài viết bung to thành modal ngay lập tức với spring curve mượt mà `{ type: "spring", stiffness: 190, damping: 25, mass: 0.85 }` giống hệt 100% như lúc dữ liệu demo.
+  - Vẫn đảm bảo an toàn nghiệp vụ công bố: Sau khi modal mở tức thì, việc gọi `publicSearchApi.detail` được chuyển sang background ngầm. Nếu văn bản bị thu hồi hoặc lỗi 404, modal sẽ cập nhật thông báo cảnh báo an toàn (`detailError`).
+  - Bỏ `layoutCrossfade={false}` và khôi phục `layoutDependency` trên `motion.article`, `motion.h3`, `cl-term-card` cùng hiệu ứng fade-up mềm mại delay 0.12s cho nội dung trong `ArticleDialog`. Loại bỏ hoàn toàn hiện tượng chớp hình, đứt gãy hoặc bóng chữ.
+- **Kiểm thử và xác minh toàn diện**:
+  - `npm run build`: PASS 100% (`tsc -b && vite build`).
+  - 21/21 Playwright tests PASS trên toàn bộ không gian tra cứu:
+    - `article-animation.spec.ts`: 4/4 PASS (bung thẻ mượt mà, đóng về vị trí cũ, khôi phục focus, scroll lock an toàn, keyboard, mobile resize).
+    - `search-animation.spec.ts`: 3/3 PASS (căn chỉnh chữ suốt entrance, replay không lệch toạ độ, mở dialog trơn tru).
+    - `public-reveal.spec.ts`: 10/10 PASS trên toàn bộ breakpoint (320px, 440px iPhone 16 Pro Max, 760px, 761px, 834px iPad, 956x440px màn hình ngang, 1150px, 1151px, 1440px desktop).
+    - `public-search.spec.ts`: 2/2 PASS (phân trang, bộ lọc và phát hiện thu hồi ngầm).
+    - `main-site.spec.ts`: 2/2 PASS (chức năng chính và responsive sidebar).
+  - `npm audit`: 0 lỗ hổng. Rà soát bảo mật không chứa secret/.env/SQL dump. Sẵn sàng báo cáo.
+
+### Backend Tra cứu pháp luật — 01/10/2026
+
+- `/search` đã nối API Laravel `GET /api/search`, `GET /api/search/{id}`; đọc bảng điều khoản/văn bản thật, chỉ `published` và số hiệu `116/2025/QH15`. Không sửa/công bố dữ liệu MySQL, không migration/env.
+- Tìm cụm từ không dấu, tiêu đề, số điều; nhóm Khái niệm/Hiệu lực/Quy định khác, lọc ngày ban hành, phân trang 30 mục. Giới hạn q 120, per_page 30, page 1000, quota đọc 60/phút/IP.
+- Chi tiết kiểm tra công bố lần nữa, nguyên văn/nguồn/trang/phiên bản từ DB; nguồn chỉ HTTP(S), không trả đường dẫn file. Lỗi không fallback demo. Thư viện/thuật ngữ/chat vẫn giữ phạm vi cũ.
+- Fade In Up kết quả 950ms chỉ chạy khi request thành công, bàn phím/reduced motion được giữ; phản hồi cũ bị bỏ qua, phân trang dùng bộ lọc đã gửi. Vùng loading giữ chiều cao để tránh giật thẻ. Animation quản trị không đổi.
+- Build/TypeScript E2E đạt. PHPUnit toàn bộ 84/926 đạt; sau thêm ID quá lớn, nhóm PublicSearchTest 6/115 đạt. UI main-site/search-animation 5 đạt; public-reveal/public-search 12 đạt; HTTP Laravel thật với SQLite giả 1 test gồm 5 viewport đạt. Giả lập 320/440/834/956×440/1440 và mốc 760/761/1150/1151, chưa kiểm tra thiết bị thật.
+- Tài liệu: `docs/backend/07-tra-cuu-phap-luat.md`, `docs/security/reviews/2026-10-01-public-search.md`. Search đang lọc/chuẩn hóa PHP trong phạm vi một luật; chưa semantic/full-text, chưa load test production. Chưa push đợt này; giữ nguyên thay đổi dữ liệu/tài liệu cũ ngoài phạm vi.
+- Kiểm tra cuối: build đạt; 15 ca public-reveal/public-search/search-animation và 4 ca article-animation đạt sau thay đổi vùng loading. GET qua proxy local 5173 trả đúng luật 116, total=0; chưa có kết quả được công bố ở thời điểm kiểm tra. Không tự đổi trạng thái dữ liệu.
+
 ### Đồng bộ Fade In Up 1200ms chuẩn tab Thống kê cho toàn bộ các tab Quản trị — 01/10/2026
 
 - Đồng bộ chuẩn thời lượng Fade In Up **1200ms** (chuẩn của tab Thống kê & Báo cáo) cho toàn bộ 4 tab trong khu vực Quản trị Admin (`users`, `matrix`, `stats`, `documents`):

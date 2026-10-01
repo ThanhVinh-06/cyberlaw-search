@@ -18,8 +18,15 @@ import { Brand } from "./components/Brand";
 import { AdminTabReveal } from "./components/admin/AdminTabReveal";
 import { publicNavigation, historyNavigation } from "./lib/navigation";
 import { motion, AnimatePresence } from "motion/react";
+import { publicSearchApi } from "./lib/public-search-api";
 
-type Article = (typeof articles)[number];
+type Article = (typeof articles)[number] & {
+  source?: string;
+  so_dieu?: string;
+  so_khoan?: string;
+  ngay_ban_hanh?: string | null;
+  co_quan_ban_hanh?: string | null;
+};
 type Filters = {
   query: string;
   mode: string;
@@ -63,9 +70,9 @@ function ArticleContent({
         <p key={paragraph}>{paragraph}</p>
       ))}
       <p className="cl-document-meta">{article.note}</p>
-      <a href={source} target="_blank" rel="noopener noreferrer">
-        Đối chiếu văn bản trên Cổng thông tin Chính phủ ↗
-      </a>
+      {(article.source || !article.so_dieu) && <a href={article.source || source} target="_blank" rel="noopener noreferrer">
+        Đối chiếu văn bản nguồn ↗
+      </a>}
     </>
   );
 }
@@ -81,13 +88,19 @@ export default function MainSite() {
     ...emptyFilters,
     query: "an ninh mạng",
   });
-  const [results, setResults] = useState(articles);
+  const [results, setResults] = useState<Article[]>([]);
   const [resultEntrance, setResultEntrance] = useState({
     run: 0,
     instant: true,
   });
   const searchInstantRef = useRef(false);
   const [error, setError] = useState("");
+  const [searchLoading, setSearchLoading] = useState(false);
+  const searchRequestRef = useRef(0);
+  const [pagination, setPagination] = useState({ page: 1, total: 0 });
+  const appliedFilters = useRef(filters);
+  const [detailError, setDetailError] = useState("");
+  const detailRequestRef = useRef(0);
   const [libraryArticle, setLibraryArticle] = useState(articles[0]);
   const [selectedArticle, setSelectedArticle] = useState<{
     article: Article;
@@ -95,7 +108,11 @@ export default function MainSite() {
     origin: HTMLElement;
     instant: boolean;
   } | null>(null);
-  const closeArticle = useCallback(() => setSelectedArticle(null), []);
+  const closeArticle = useCallback(() => {
+    detailRequestRef.current++;
+    setDetailError("");
+    setSelectedArticle(null);
+  }, []);
   const [chatOpen, setChatOpen] = useState(false);
   const [chatInstant, setChatInstant] = useState(false);
   const [question, setQuestion] = useState("");
@@ -137,62 +154,80 @@ export default function MainSite() {
     return () => window.removeEventListener("keydown", escape);
   }, [chatOpen, selectedArticle]);
 
-  function search(next = filters) {
+  async function search(next = filters, initial = false, page = 1) {
+    detailRequestRef.current++;
+    setDetailError("");
+    const requestNumber = ++searchRequestRef.current;
     if (next.from && next.to && next.from > next.to) {
+      setSearchLoading(false);
       setError("Ngày bắt đầu cần trước hoặc bằng ngày kết thúc.");
       return;
     }
     setError("");
-    setResultEntrance((previous) => ({
-      run: previous.run + 1,
-      instant: searchInstantRef.current,
-    }));
-    const q = normalize(next.query.trim());
-    setResults(
-      articles.filter((article) => {
-        if (next.category !== "all" && article.category !== next.category)
-          return false;
-        if (
-          (next.from && "2025-12-10" < next.from) ||
-          (next.to && "2025-12-10" > next.to)
-        )
-          return false;
-        if (!q) return true;
-        if (next.mode === "article")
-          return article.id === q.replace(/dieu\s*/, "").trim();
-        const target = normalize(
-          next.mode === "title"
-            ? article.title
-            : [
-                article.title,
-                article.text,
-                article.summary,
-                article.label,
-              ].join(" "),
-        );
-        return (
-          target.includes(q) ||
-          (/^dieu\s*\d+$/.test(q) && article.id === q.replace(/dieu\s*/, ""))
-        );
-      }),
-    );
+    setSearchLoading(true);
+    const instant = initial || searchInstantRef.current;
+    try {
+      const response = await publicSearchApi.search({ ...next, q: next.query, page });
+      if (requestNumber !== searchRequestRef.current) return;
+      setResults(response.items);
+      appliedFilters.current = next;
+      setPagination({ page: response.page, total: response.total });
+      setResultEntrance((previous) => ({ run: previous.run + 1, instant }));
+    } catch (caught) {
+      if (requestNumber !== searchRequestRef.current) return;
+      setResults([]);
+      setPagination({ page: 1, total: 0 });
+      setError(caught instanceof Error ? caught.message : "Không thể tải dữ liệu tra cứu.");
+    } finally {
+      if (requestNumber === searchRequestRef.current) setSearchLoading(false);
+    }
   }
+  useEffect(() => {
+    if (view === "/search") void search({ ...filters }, true);
+    return () => {
+      searchRequestRef.current++;
+      detailRequestRef.current++;
+    };
+    // Route change is the deliberate fetch boundary; typing does not call the API.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [view]);
   function suggest(query: string) {
-    const next = { ...filters, query, mode: "all", category: "all" };
+    const next = {
+      ...filters,
+      query: query === "khái niệm" ? "" : query,
+      mode: query === "Điều 44" ? "article" : "all",
+      category: query === "khái niệm" ? "definition" : "all",
+    };
     setFilters(next);
-    search(next);
+    void search(next);
   }
   function openArticle(
     article: Article,
     trigger: HTMLElement,
     instant: boolean,
   ) {
-    setSelectedArticle({
+    const requestNumber = ++detailRequestRef.current;
+    setDetailError("");
+    const selection = {
       article,
       trigger,
       instant,
       origin: trigger.closest<HTMLElement>(".cl-result, .cl-term-card") ?? trigger,
-    });
+    };
+    setSelectedArticle(selection);
+
+    if (article.so_dieu) {
+      void publicSearchApi.detail(article.id).then((fresh) => {
+        if (requestNumber === detailRequestRef.current && trigger.isConnected) {
+          setSelectedArticle((prev) => (prev && prev.article.id === fresh.id ? { ...prev, article: fresh } : prev));
+        }
+      }).catch(() => {
+        if (requestNumber === detailRequestRef.current && trigger.isConnected) {
+          setDetailError("Không thể tải điều khoản. Nội dung có thể đã ngừng công bố; bạn đóng cửa sổ và tìm lại nhé.");
+          setSelectedArticle((prev) => (prev && prev.article.id === article.id ? { ...prev, article: { ...article, text: "", note: "" } } : prev));
+        }
+      });
+    }
   }
   const closeChat = useCallback((instant = false, restoreFocus = true) => {
     setChatInstant(instant);
@@ -446,7 +481,7 @@ export default function MainSite() {
               <div>
                 <span className="cl-eyebrow">TRA CỨU KIẾN THỨC</span>
                 <h1>Tìm kiếm quy định pháp luật</h1>
-                <p>Tìm theo từ khóa, điều khoản hoặc câu hỏi của bạn.</p>
+                <p>Tìm theo từ khóa, tiêu đề hoặc số điều của Luật An ninh mạng.</p>
               </div>
               <span className="cl-section-number">
                 01 <span>/ TRA CỨU</span>
@@ -463,7 +498,7 @@ export default function MainSite() {
               }}
               onSubmit={(event) => {
                 event.preventDefault();
-                search();
+                void search();
               }}
             >
               <div className="cl-search-primary">
@@ -492,11 +527,11 @@ export default function MainSite() {
                       onKeyDown={(event) => {
                         if (event.ctrlKey && event.key === "Enter") {
                           event.preventDefault();
-                          search();
+                          void search();
                         }
                       }}
-                      placeholder="Ví dụ: an ninh mạng là gì?"
-                      maxLength={1000}
+                      placeholder="Ví dụ: an ninh mạng hoặc Điều 2"
+                      maxLength={120}
                     />
                   </div>
                 </label>
@@ -515,7 +550,7 @@ export default function MainSite() {
                     }
                   >
                     <option value="all">Tất cả nội dung</option>
-                    <option value="general">Quy định chung</option>
+                    <option value="general">Quy định khác</option>
                     <option value="definition">Khái niệm</option>
                     <option value="effect">Hiệu lực thi hành</option>
                   </select>
@@ -561,19 +596,14 @@ export default function MainSite() {
                     className="cl-text-button"
                     onClick={() => {
                       setFilters(emptyFilters);
-                      setError("");
-                      setResults(articles);
-                      setResultEntrance((previous) => ({
-                        run: previous.run + 1,
-                        instant: searchInstantRef.current,
-                      }));
+                      void search(emptyFilters);
                     }}
                   >
                     Đặt lại
                   </button>
                   <button className="cl-primary" type="submit">
                     <Search aria-hidden="true" />
-                    Tìm kiếm
+                    {searchLoading ? "Đang tìm…" : "Tìm kiếm"}
                   </button>
                 </div>
               </div>
@@ -585,11 +615,12 @@ export default function MainSite() {
             </form>
             <div className="cl-results-heading" data-admin-reveal="160">
               <h2 aria-live="polite">
-                Tìm thấy <strong>{results.length} kết quả</strong>
+                Tìm thấy <strong>{pagination.total} kết quả</strong>
               </h2>
-              <span>Dữ liệu minh họa · 3 điều luật</span>
+              <span>Dữ liệu đã công bố · Luật số 116/2025/QH15</span>
             </div>
             <div data-admin-reveal="240">
+              <div className="cl-search-status" role="status">{searchLoading ? "Đang tải kết quả…" : null}</div>
               {results.map((article, index) => (
                 <ResultReveal
                   key={article.id}
@@ -633,7 +664,7 @@ export default function MainSite() {
                       </motion.h3>
                       <p>{article.summary}</p>
                       <span className="cl-result-meta">
-                        Ban hành: 10/12/2025 &nbsp;·&nbsp; Quốc hội
+                        {article.ngay_ban_hanh ? `Ban hành: ${article.ngay_ban_hanh.split("-").reverse().join("/")}` : "Luật số 116/2025/QH15"} {article.co_quan_ban_hanh ? ` · ${article.co_quan_ban_hanh}` : ""}
                       </span>
                     </div>
                     <div className="cl-result-bottom">
@@ -642,17 +673,22 @@ export default function MainSite() {
                   </motion.article>
                 </ResultReveal>
               ))}
-              {!results.length && (
+              {!results.length && !searchLoading && !error && (
                 <div className="cl-empty-state">
                   <h3>Chưa tìm thấy kết quả phù hợp</h3>
                   <p>
                     Thử từ khóa “an ninh mạng”, “khái niệm” hoặc “Điều 44”.
                     <br />
-                    Bản giao diện hiện minh họa 3 điều luật.
+                    Chỉ nội dung đã được duyệt và công bố mới xuất hiện trong kết quả.
                   </p>
                 </div>
               )}
             </div>
+            {pagination.total > 30 && <nav aria-label="Phân trang kết quả" className="cl-search-pagination">
+              <button className="cl-text-button" disabled={searchLoading || pagination.page <= 1} onClick={(event) => { searchInstantRef.current = event.detail === 0; void search(appliedFilters.current, false, pagination.page - 1); }}>Trang trước</button>
+              <span>Trang {pagination.page} / {Math.ceil(pagination.total / 30)}</span>
+              <button className="cl-text-button" disabled={searchLoading || pagination.page >= Math.ceil(pagination.total / 30)} onClick={(event) => { searchInstantRef.current = event.detail === 0; void search(appliedFilters.current, false, pagination.page + 1); }}>Trang sau</button>
+            </nav>}
             <div className="cl-source-note" data-admin-reveal="320">
               <BookOpen aria-hidden="true" />
               <span>
@@ -889,7 +925,7 @@ export default function MainSite() {
             instant={selectedArticle.instant}
             onClose={closeArticle}
           >
-            <ArticleContent article={selectedArticle.article} sharedTitle />
+            {detailError ? <p role="alert">{detailError}</p> : <ArticleContent article={selectedArticle.article} sharedTitle />}
           </ArticleDialog>
         )}
       </AnimatePresence>

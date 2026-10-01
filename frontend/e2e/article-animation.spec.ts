@@ -96,7 +96,7 @@ test("article expands, closes back to the result and restores focus", async ({
   await dialog.getByRole("button", { name: "Đóng căn cứ" }).click();
   await expect(dialog).toHaveCount(0);
   await expect(trigger).toBeFocused();
-  expect(await page.evaluate(() => document.body.style.overflow)).not.toBe(
+  await expect.poll(() => page.evaluate(() => document.body.style.overflow)).not.toBe(
     "hidden",
   );
 
@@ -110,7 +110,7 @@ test("article expands, closes back to the result and restores focus", async ({
   // Escape key closes modal and restores body scroll
   await page.keyboard.press("Escape");
   await expect(dialog).toHaveCount(0);
-  expect(await page.evaluate(() => document.body.style.overflow)).not.toBe(
+  await expect.poll(() => page.evaluate(() => document.body.style.overflow)).not.toBe(
     "hidden",
   );
 });

@@ -7,6 +7,8 @@ use App\Http\Controllers\KnowledgeController;
 use App\Http\Controllers\PasswordResetController;
 use App\Http\Controllers\PermissionMatrixController;
 use App\Http\Controllers\RegistrationController;
+use App\Services\PublicKnowledgeSearch;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 // Deliberately in the web group: every request has encrypted cookies, server session and CSRF.
@@ -43,6 +45,11 @@ Route::prefix('api/admin/users')->middleware(['account.active', 'role.admin', 'c
 Route::get('api/admin/permission-matrix', [PermissionMatrixController::class, 'index'])
     ->middleware(['account.active', 'role.admin', 'can:quan_ly_phan_quyen', 'throttle:admin-users-read'])
     ->name('admin.permission-matrix.index');
+
+Route::get('api/search', fn (Request $request, PublicKnowledgeSearch $search) => response()->json($search->search($request)))
+    ->middleware('throttle:public-search')->name('public.search');
+Route::get('api/search/{id}', fn (int $id, PublicKnowledgeSearch $search) => response()->json($search->detail($id)))
+    ->where('id', '[1-9][0-9]{0,17}')->middleware('throttle:public-search')->name('public.search.detail');
 
 Route::get('/', function () {
     return view('welcome');

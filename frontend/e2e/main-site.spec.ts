@@ -80,6 +80,7 @@ test("public layout stays responsive and retains the original sidebar", async ({
   for (const width of [1440, 1024, 768, 390, 320]) {
     await page.setViewportSize({ width, height: width >= 768 ? 1000 : 844 });
     await page.goto("/");
+    await expect(page.locator(".cl-result")).toHaveCount(3);
     await page.evaluate(() => document.fonts.ready);
     await expect(page.locator(".cl-sidebar")).toBeVisible();
     if (width >= 768)
@@ -97,6 +98,7 @@ test("public layout stays responsive and retains the original sidebar", async ({
       ).toBe(true);
     }
     await page.goto("/");
+    await expect(page.locator(".cl-result")).toHaveCount(3);
     const centerOffsets = await page
       .locator(".cl-result-bottom > .cl-link-button")
       .evaluateAll((buttons) =>
