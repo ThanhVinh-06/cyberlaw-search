@@ -6,6 +6,32 @@ Hỏi đáp dùng tài khoản đã xác thực và chỉ đọc văn bản `116
 
 Bản đầu là **truy hồi trích đoạn**, chưa phải mô hình sinh câu trả lời. Phản hồi nêu rõ khi chưa có căn cứ; giao diện hiển thị nguyên văn trích dẫn, số điều/khoản/điểm, phiên bản và trang nguồn. Bản nháp không được đưa vào truy hồi.
 
+## Câu trả lời tóm lược + dẫn chiếu (từ 02/10/2026)
+
+Khi có căn cứ, `LocalAnswer::composeAnswer()` ghép câu trả lời **một khối văn bản thuần** từ chính dòng `dieu_khoan` đã công bố trong snapshot:
+
+> Theo Luật 116/2025/QH15, nội dung bạn hỏi được quy định tại **Điều X khoản Y điểm Z (tiêu đề)**: “<220 ký tự đầu của nguyên văn>…” — Các căn cứ nguyên văn được liệt kê bên dưới. Bạn cần đọc cả điều kiện, ngoại lệ và văn bản được dẫn chiếu trước khi áp dụng.
+
+- Không sinh văn bản mới: chỉ cắt (`Str::limit`, 220 ký tự) và gộp khoảng trắng từ `noi_dung` của dòng đứng đầu `ids`. Toàn bộ nguyên văn vẫn nằm ở danh sách căn cứ bên dưới.
+- Trả lời là **một khối, không xuống dòng**: bong bóng chat (`MainSite.tsx`) render `{message.text}` trực tiếp trong `<div className="cl-message">` (không có `white-space: pre-line`), nên dấu phân cách là ` — ` thay vì `\n\n`.
+- Nhánh `no_basis` giữ nguyên câu từ chối hiện có.
+- Hội thoại **cũ** vẫn giữ nguyên câu tĩnh đã lưu: lịch sử là snapshot tại thời điểm trả lời, hệ thống không viết lại.
+
+## Hai trường kết quả trong `tin_nhan`
+
+`LocalAnswer` ghi hai cột đã có sẵn trong schema (`database/schema.sql:151-166`, **không cần migration**):
+
+| Cột | Nguồn | Ý nghĩa |
+|---|---|---|
+| `do_tin_cay` | `retriever.py` → `confidence` (0–100) | **Điểm bằng chứng truy hồi**, không phải độ chính xác pháp lý |
+| `thoi_gian_xu_ly_ms` | `hrtime(true)` từ đầu `answer()` đến khi tạo tin nhắn | Thời gian xử lý một lượt trả lời (ms) |
+
+- `confidence` là số nguyên 0–100 trong mọi nhánh của `retrieve()`: `no_basis` → `0`; khớp cấu trúc điều/khoản/điểm (`exact_reference`) → `95`; truy hồi theo độ phủ từ khoá (`relevant_excerpts`) → `min(88, max(40, round(coverage*100)))`. Trần 88 để không ngụ ý chắc chắn tuyệt đối.
+- `LocalRetriever` kiểm tra biên `is_int($confidence) && 0 <= $confidence <= 100`, sai thì `503`.
+- `LocalAnswer` chỉ lưu `do_tin_cay` khi `status='answered'`; nhánh `no_basis` để `null` (không có câu trả lời được chứng minh ⇒ không gán điểm). `thoi_gian_xu_ly_ms` luôn được ghi.
+- Hiển thị hai trường ở **thống kê quản trị** đã nối: `AdminStatisticsController::recentQuestions()` đọc `do_tin_cay`/`thoi_gian_xu_ly_ms` và trả `do_tin_cay` dạng `"88%"` (1 chữ số thập phân), `thoi_gian_xu_ly` dạng `"0.41s"`; `null` → `"Chưa đánh giá"`/`"Chưa ghi nhận"`. Giao diện `RecentQuestionsCard` đã có sẵn hai badge và hiển thị `confidence_note` qua tooltip: *"Điểm bằng chứng truy hồi, không phải độ chính xác pháp lý"*. Lịch sử chat của người dùng (`HistoryView`) chưa hiển thị hai trường này.
+
+
 ## Luồng request
 
 1. `POST /api/answer` yêu cầu session cookie, CSRF, tài khoản active và quyền `chat_ai_cyberlaw`.
@@ -28,6 +54,7 @@ python -X utf8 evaluate.py
 ## Giới hạn cần xử lý trước khi deploy
 
 - Chưa có semantic embeddings/reranker hoặc LLM diễn giải; chưa đo latency/load production.
+- `do_tin_cay` là tín hiệu truy hồi (khớp cấu trúc + độ phủ từ khoá), **không phải** độ đúng pháp lý; không dùng làm căn cứ kết luận chất lượng và không hiển thị như một chỉ số chắc chắn cho người dùng cuối.
 - Cần chỉ mục phiên bản hóa, pipeline phê duyệt dữ liệu và bộ đánh giá độc lập có người rà soát.
 - Cần cấu hình rotation/quyền đọc log, backup audit, timeout process và giám sát disk ở môi trường triển khai.
 - Không gọi endpoint này là tư vấn pháp lý; người dùng phải đối chiếu toàn văn và văn bản được dẫn chiếu.

@@ -234,6 +234,7 @@ export interface ThongKeTongQuan {
   tang_truong_quy_dinh: string;
   tong_cuoc_hoi_dap: number;
   tang_truong_hoi_dap: string;
+  so_bang?: number;
 }
 
 export const thongKeTongQuanData: ThongKeTongQuan = {
@@ -245,6 +246,7 @@ export const thongKeTongQuanData: ThongKeTongQuan = {
   tang_truong_quy_dinh: "+8.5% vừa chuẩn hóa",
   tong_cuoc_hoi_dap: 3450,
   tang_truong_hoi_dap: "+28.6% lượt truy vấn",
+  so_bang: 12,
 };
 
 export interface DuLieuThang {
@@ -416,6 +418,7 @@ export interface CauHoiGanDay {
   trich_doan_luat: string;
   do_tin_cay: string;
   thoi_gian_xu_ly: string;
+  confidence_note?: string;
   loai_quy_dinh: string;
   muc_phat?: string;
   dieu_so: number;

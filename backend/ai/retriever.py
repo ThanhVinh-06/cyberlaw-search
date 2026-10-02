@@ -2,6 +2,10 @@
 
 Laravel supplies only a bounded published snapshot via stdin. This module returns
 IDs, never invented legal text. Scores are relevance signals, not legal accuracy.
+
+`confidence` (0-100) is a retrieval-evidence signal only: how strongly the question
+matched article/clause/point structure and keyword coverage. It is not a measure of
+legal correctness and must never be presented as one.
 """
 import json
 import math
@@ -32,7 +36,7 @@ def retrieve(question, chunks):
               'xoa tai khoan', 'hop nhat', 'hien hanh', 'hom nay', 'phat bao nhieu',
               'bao nhieu tien', 'may nam tu', 'bao nhieu nam tu')
     if any(x in q for x in unsafe):
-        return {'status': 'no_basis', 'reason': 'unsupported', 'ids': [], 'engine': VERSION}
+        return {'status': 'no_basis', 'reason': 'unsupported', 'ids': [], 'confidence': 0, 'engine': VERSION}
     article = re.search(r'\bdieu\s+(\d{1,3})\b', q)
     clause = re.search(r'\bkhoan\s+(\d{1,3})\b', q)
     # Keep d and đ distinct in point identifiers before accent folding.
@@ -45,12 +49,13 @@ def retrieve(question, chunks):
         if point:
             candidates = [c for c in candidates if c['point'] == point[1]]
         if not candidates:
-            return {'status': 'no_basis', 'reason': 'not_found', 'ids': [], 'engine': VERSION}
+            return {'status': 'no_basis', 'reason': 'not_found', 'ids': [], 'confidence': 0, 'engine': VERSION}
         # Never present an incomplete requested article as a complete answer.
         if len(candidates) <= 4:
-            return {'status': 'answered', 'reason': 'exact_reference', 'ids': [c['id'] for c in candidates], 'engine': VERSION}
+            return {'status': 'answered', 'reason': 'exact_reference', 'ids': [c['id'] for c in candidates],
+                    'confidence': 95, 'engine': VERSION}
     if not candidates or len(q)<3:
-        return {'status': 'no_basis', 'reason': 'not_found', 'ids': [], 'engine': VERSION}
+        return {'status': 'no_basis', 'reason': 'not_found', 'ids': [], 'confidence': 0, 'engine': VERSION}
     docs = [features(c['title']+' '+c['text']) for c in candidates]
     df = Counter(t for doc in docs for t in doc)
     query = features(question)
@@ -77,9 +82,11 @@ def retrieve(question, chunks):
     ranked.sort(key=lambda x:x[0],reverse=True)
     best=ranked[0]
     if not article and (best[0]<5 or best[1]<.45):
-        return {'status':'no_basis','reason':'low_evidence','ids':[],'engine':VERSION}
+        return {'status':'no_basis','reason':'low_evidence','ids':[],'confidence':0,'engine':VERSION}
     selected=[c['id'] for score,coverage,c in ranked[:4] if score>=best[0]*.65 and (article or coverage>=.4)]
-    return {'status':'answered','reason':'relevant_excerpts','ids':selected,'engine':VERSION}
+    # Coverage-based evidence signal, capped below certainty (88) and floored at 40.
+    confidence=min(88, max(40, round(best[1]*100)))
+    return {'status':'answered','reason':'relevant_excerpts','ids':selected,'confidence':confidence,'engine':VERSION}
 
 
 def main():

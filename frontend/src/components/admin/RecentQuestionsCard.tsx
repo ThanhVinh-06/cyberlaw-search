@@ -205,7 +205,13 @@ function QuestionDetail({
                       Phản hồi của Trợ lý AI
                     </h4>
                     <div className="cl-ai-box-badges">
-                      <span className="cl-ai-badge-confidence">
+                      <span
+                        className="cl-ai-badge-confidence"
+                        title={
+                          item.confidence_note ??
+                          "Điểm bằng chứng truy hồi, không phải độ chính xác pháp lý"
+                        }
+                      >
                         <ShieldCheck size={12} />
                         Độ tin cậy: {item.do_tin_cay}
                       </span>
@@ -311,7 +317,13 @@ export function RecentQuestionsCard({ items = danhSachCauHoiGanDay }: { items?: 
         >
           <div className="cl-comments-list">
             {items.length === 0 ? (
-              <p className="cl-question-empty">Chưa có câu hỏi trong khoảng thời gian này.</p>
+              <div className="cl-question-empty-wrapper">
+                <MessageSquare size={26} className="cl-question-empty-icon" aria-hidden="true" />
+                <p className="cl-question-empty">Chưa có câu hỏi trong khoảng thời gian này.</p>
+                <span className="cl-question-empty-hint">
+                  Các câu hỏi mới trao đổi với trợ lý AI sẽ tự động xuất hiện tại đây cùng căn cứ pháp lý được trích dẫn.
+                </span>
+              </div>
             ) : items.map((item, index) => (
               <motion.button
                 type="button"

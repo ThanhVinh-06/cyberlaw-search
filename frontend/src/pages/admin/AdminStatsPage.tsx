@@ -17,11 +17,20 @@ import {
   AlertCircle,
   ExternalLink,
   Bot,
+  RefreshCw,
 } from "lucide-react";
 import "@/admin-stats.css";
 import { RecentQuestionsCard } from "@/components/admin/RecentQuestionsCard";
 import { RegulationBreakdownCard } from "@/components/admin/RegulationBreakdownCard";
 import { loadAdminStatistics, type AdminStatistics } from "@/lib/admin-statistics-api";
+import {
+  danhSachCauHoiGanDay,
+  danhSachNguoiDungNoiBat,
+  nhomQuyDinhData,
+  thongKeTheoThangData,
+  thongKeTongQuanData,
+  tyLeTrichDanData,
+} from "@/lib/admin-data";
 
 interface AdminStatsPageProps {
   onNavigateTab?: (tab: string) => void;
@@ -36,20 +45,47 @@ export default function AdminStatsPage({ onNavigateTab }: AdminStatsPageProps) {
   const [selectedDonutSegment, setSelectedDonutSegment] = useState<
     number | null
   >(null);
-  const [statistics, setStatistics] = useState<AdminStatistics | null>(null);
+  const [statistics, setStatistics] = useState<AdminStatistics>(() => ({
+    period: "year",
+    range: "01/01/2026 – 31/12/2026",
+    year: 2026,
+    search_available: true,
+    overview: thongKeTongQuanData,
+    months: thongKeTheoThangData,
+    regulations: nhomQuyDinhData,
+    recent_questions: danhSachCauHoiGanDay,
+    top_users: danhSachNguoiDungNoiBat,
+    citation_rates: tyLeTrichDanData,
+  }));
   const [statisticsError, setStatisticsError] = useState("");
   const [statisticsLoading, setStatisticsLoading] = useState(true);
   const [reload, setReload] = useState(0);
+
   useEffect(() => {
     const controller = new AbortController();
-    setStatisticsLoading(true); setStatisticsError("");
-    loadAdminStatistics(filterPeriod, controller.signal).then(setStatistics).catch((error) => { if (!controller.signal.aborted) { setStatistics(null); setStatisticsError(error instanceof Error ? error.message : "Không thể tải báo cáo."); } }).finally(() => { if (!controller.signal.aborted) setStatisticsLoading(false); });
+    setStatisticsLoading(true);
+    setStatisticsError("");
+    loadAdminStatistics(filterPeriod, controller.signal)
+      .then(data => {
+        if (!controller.signal.aborted) {
+          setStatistics(data);
+        }
+      })
+      .catch((error) => {
+        if (!controller.signal.aborted) {
+          setStatisticsError(error instanceof Error ? error.message : "Không thể tải báo cáo.");
+        }
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setStatisticsLoading(false);
+      });
     return () => controller.abort();
   }, [filterPeriod, reload]);
-  const overview = statistics?.overview ?? { tong_nguoi_dung: 0, tang_truong_nguoi_dung: "", tong_dieu_khoan: 0, tong_van_ban: 0, tong_quy_dinh: 0, tang_truong_quy_dinh: "", tong_cuoc_hoi_dap: 0, tang_truong_hoi_dap: "" };
-  const currentMonths = statistics?.months ?? [];
-  const topUsers = statistics?.top_users ?? [];
-  const citationRates = statistics?.citation_rates ?? [];
+
+  const overview = statistics.overview;
+  const currentMonths = statistics.months;
+  const topUsers = statistics.top_users;
+  const citationRates = statistics.citation_rates;
 
   // Filter months data based on active period
   const maxVal = Math.max(
@@ -65,7 +101,18 @@ export default function AdminStatsPage({ onNavigateTab }: AdminStatsPageProps) {
 
   return (
     <div className="cl-admin-stats-dashboard" aria-busy={statisticsLoading}>
-      <div className="cl-stats-data-status"><button className="cl-admin-btn-outline" disabled={statisticsLoading} onClick={() => setReload(value => value + 1)}>Tải lại dữ liệu</button><span role="status">{statisticsLoading ? "Đang tải báo cáo…" : statistics?.range ?? "Chưa có dữ liệu"}</span></div>
+      <div className="cl-stats-data-status">
+        <button
+          className="cl-admin-btn-outline"
+          disabled={statisticsLoading}
+          onClick={() => setReload(value => value + 1)}
+          title="Tải lại dữ liệu"
+        >
+          <RefreshCw size={14} className={statisticsLoading ? "cl-spin" : ""} aria-hidden="true" />
+          <span>Tải lại dữ liệu</span>
+        </button>
+        <span role="status">{statistics.range}</span>
+      </div>
       {statisticsError && <p role="alert" className="cl-stats-load-error">{statisticsError}</p>}
       {/* Header with Title and Filter Tabs */}
       <div className="cl-stats-header" data-admin-reveal="0">
@@ -242,8 +289,8 @@ export default function AdminStatsPage({ onNavigateTab }: AdminStatsPageProps) {
 
                   {/* Columns of Animated Bars with Wave Effect */}
                   <div
-                    key={filterPeriod}
-                    className="cl-barchart-columns-wrapper"
+                    key={statistics.period}
+                    className={`cl-barchart-columns-wrapper ${statisticsLoading && filterPeriod !== statistics.period ? "is-period-changing" : ""}`}
                   >
                     {currentMonths.map((item, index) => {
                       const isHovered = hoveredBarIndex === index;
@@ -348,7 +395,7 @@ export default function AdminStatsPage({ onNavigateTab }: AdminStatsPageProps) {
           </motion.div>
 
           {/* Bottom Row: 2 Cards (Sparklines & Recent Comments) */}
-          <RecentQuestionsCard items={statistics?.recent_questions} />
+          <RecentQuestionsCard items={statistics.recent_questions} />
         </div>
 
         {/* Right Column (4 cols): Profile Card + Active Users + Donut Chart */}
@@ -373,7 +420,9 @@ export default function AdminStatsPage({ onNavigateTab }: AdminStatsPageProps) {
                 <span className="cl-status-live-dot" />
                 Hệ thống CSDL
               </span>
-              <strong style={{ color: "#211618" }}>MySQL 8.0 • 9 bảng</strong>
+              <strong style={{ color: "#211618" }}>
+                MySQL 8.0 • {overview.so_bang ?? 12} bảng
+              </strong>
             </div>
           </motion.div>
 
@@ -520,7 +569,7 @@ export default function AdminStatsPage({ onNavigateTab }: AdminStatsPageProps) {
               </div>
             </div>
           </motion.div>
-          <RegulationBreakdownCard items={statistics?.regulations} />
+          <RegulationBreakdownCard items={statistics.regulations} />
         </div>
       </div>
     </div>

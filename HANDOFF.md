@@ -1,5 +1,66 @@
 # Bàn giao dự án CyberLaw Search
 
+### Cập nhật số lượng bảng CSDL MySQL 8.0 động trong trang Thống kê Quản trị — 02/10/2026
+
+- **Mục tiêu**: Kiểm tra và đếm chính xác số lượng bảng thực tế trong cơ sở dữ liệu `cyberlaw_search`, sửa dòng hiển thị tĩnh `"MySQL 8.0 • 9 bảng"` thành số lượng bảng chuẩn xác lấy động từ hệ thống.
+- **Kết quả kiểm tra CSDL**:
+  - Truy vấn `SHOW TABLES` và `Schema::getTableListing()` trong database `cyberlaw_search` (MySQL 8.0.44): có đúng **12 bảng**:
+    1. `dieu_khoan`
+    2. `dieu_khoan_tu_khoa`
+    3. `hoi_thoai`
+    4. `nguoi_dung`
+    5. `nhat_ky_quan_tri`
+    6. `quy_dinh`
+    7. `tin_nhan`
+    8. `trich_dan`
+    9. `tu_khoa`
+    10. `van_ban`
+    11. `yeu_cau_dat_lai_mat_khau`
+    12. `yeu_cau_xac_minh_email`
+- **Backend**:
+  - `AdminStatisticsController.php`: Bổ sung `'so_bang' => count(Schema::getTableListing())` vào mảng `overview` trả về từ API `/api/admin/statistics` (tự động thích ứng an toàn trên cả MySQL production và SQLite unit test).
+  - `AdminStatisticsTest.php`: Cập nhật assertion xác minh `overview.so_bang >= 1`.
+- **Frontend**:
+  - `admin-data.ts`: Bổ sung trường `so_bang?: number` vào interface `ThongKeTongQuan` và `so_bang: 12` vào `thongKeTongQuanData`.
+  - `AdminStatsPage.tsx`: Cập nhật thẻ Profile Card hiển thị `MySQL 8.0 • {overview.so_bang ?? 12} bảng`.
+- **Kiểm thử đã chạy**:
+  - Backend: `php artisan test tests/Feature/AdminStatisticsTest.php`: **5/5 PASS** (30 assertions).
+  - Toàn bộ backend: `php artisan test`: **109/109 PASS** (1.220 assertions).
+  - Frontend: `npm run build`: **PASS 100%**.
+  - Playwright E2E: `admin-stats.spec.ts` + `admin-responsive.spec.ts`: **16/16 PASS** (toàn bộ các mốc 320px, 440px iPhone 16 Pro Max, 834px iPad, 900px, 901px, 956px, 1024px, 1440px desktop).
+
+### Nối độ tin cậy/thời gian xử lý AI vào trang thống kê quản trị (bước 2) — 02/10/2026
+
+- **Mục tiêu**: hiển thị thật `do_tin_cay`/`thoi_gian_xu_ly_ms` ở dashboard "Hỏi đáp AI & Căn cứ Pháp lý gần đây" thay cho "Chưa đánh giá"/"Chưa ghi nhận".
+- **Backend** (`AdminStatisticsController::recentQuestions`): SELECT thêm `a.do_tin_cay`, `a.thoi_gian_xu_ly_ms`; hai helper `confidenceLabel()` → `"88%"` (1 chữ số thập phân), `durationLabel()` → `"0.41s"`; `null` → giữ "Chưa đánh giá"/"Chưa ghi nhận". Thêm `confidence_note` để frontend hiển thị tooltip.
+- **Frontend**: `CauHoiGanDay` thêm `confidence_note?: string`; badge "Độ tin cậy" trong `RecentQuestionsCard` có `title` = `confidence_note` (mặc định "Điểm bằng chứng truy hồi, không phải độ chính xác pháp lý"). Không đổi CSS/bố cục.
+- **Lưu ý hiển thị**: dashboard chỉ liệt kê tin nhắn **của chính admin đang đăng nhập** (giữ nguyên `h.ma_nguoi_dung = user`, không lộ chat người khác). Tin nhắn tạo **trước** bước 1 để trống hai cột → hiện placeholder.
+- **Kiểm thử đã chạy**:
+  - `php artisan test --filter=AdminStatisticsTest`: **5/5 PASS** (thêm `test_recent_questions_expose_stored_confidence_and_duration`, `test_missing_confidence_and_duration_show_placeholders`).
+  - `php artisan test` toàn bộ: **109 PASS (1218 assertions)**.
+  - `npm run build`: PASS.
+  - Playwright: `admin-stats.spec.ts` **7/7 PASS** (gồm 440px, 834px), `admin-responsive.spec.ts` + `admin-dialog.spec.ts` **15/15 PASS** (320/440/834/900/901/956/1024/1440px).
+  - Xác minh dữ liệu dev (chỉ đọc): tin nhắn 14 lưu `do_tin_cay=88.00`, `thoi_gian_xu_ly_ms=410`; chủ sở hữu là tài khoản admin.
+- **Còn lại**: kết nối LLM API (làm sau); lịch sử chat người dùng (`HistoryView`) chưa hiển thị hai trường.
+
+### Lưu độ tin cậy/thời gian xử lý và ghép câu trả lời AI (bước 1) — 02/10/2026
+
+- **Mục tiêu**: hoàn chỉnh tầng trả lời cục bộ — lưu hai trường kết quả vào `tin_nhan` và thay 2 chuỗi trả lời tĩnh bằng câu trả lời ghép từ chính trích đoạn đã duyệt. Không đổi giao diện, không đổi shape JSON, không đổi `engine`.
+- **Backend**:
+  - `backend/ai/retriever.py`: mọi nhánh `retrieve()` trả thêm `confidence` (int 0–100) — `no_basis` → 0, khớp cấu trúc điều/khoản/điểm (`exact_reference`) → 95, truy hồi theo độ phủ (`relevant_excerpts`) → `min(88, max(40, round(coverage*100)))`. `status`/`reason`/`ids`/`engine` giữ nguyên.
+  - `backend/api/app/Services/LocalRetriever.php`: kiểm tra biên `is_int($confidence) && 0..100`, sai thì 503.
+  - `backend/api/app/Services/LocalAnswer.php`: thêm `composeAnswer(DieuKhoan $row)` ghép câu trả lời **một khối văn bản thuần** (cắt 220 ký tự đầu của `noi_dung`, gộp khoảng trắng, dấu phân cách ` — ` vì bong bóng chat không có `white-space: pre-line`); ghi `do_tin_cay` (chỉ khi `answered`, lấy `confidence`) và `thoi_gian_xu_ly_ms` (`hrtime(true)` từ đầu `answer()`) vào tin nhắn assistant. Hai cột đã có sẵn trong `database/schema.sql` — **không cần migration**.
+  - Nhánh `no_basis` giữ nguyên câu từ chối. Hội thoại cũ giữ nguyên câu tĩnh đã lưu (lịch sử là snapshot, không viết lại).
+- **Kiểm thử đã chạy**:
+  - `python -m unittest test_retriever.py`: **5/5 PASS** (thêm `test_confidence_is_bounded_signal`).
+  - `python -X utf8 evaluate.py`: **28/28 hit, mean_recall 1.0** (tập phát triển nội bộ, không phải test độc lập).
+  - `php artisan test --filter=LocalAnswerTest`: **7/7 PASS** (60 assertions).
+  - `php artisan test` toàn bộ: **107 PASS (1211 assertions)**.
+  - `npm run build`: PASS (cảnh báo chunk >500 kB có sẵn từ trước, không liên quan).
+- **Không áp dụng kiểm tra responsive**: bước này chỉ sửa backend Laravel + `retriever.py`, không đổi giao diện/CSS/layout, nên không có bố cục để kiểm.
+- **Tài liệu**: `docs/backend/11-ai-truy-hoi-cuc-bo.md` (mô tả câu trả lời ghép + ý nghĩa hai trường), `docs/security/reviews/2026-10-02-ai-answer-fields.md` (review bảo mật).
+- **Còn lại (bước sau)**: hiển thị `do_tin_cay`/`thoi_gian_xu_ly_ms` thật ở `AdminStatisticsController`/`RecentQuestionsCard`; semantic search, LLM sinh câu trả lời, FastAPI, đánh giá độc lập. `do_tin_cay` là tín hiệu truy hồi, **không phải** độ đúng pháp lý.
+
 ### Chuẩn hóa animation Fade In Up cho các box thuật ngữ (TermsView) — 02/10/2026
 
 - **Khắc phục triệt để hiện tượng giật hình và thiếu animation Fade In Up khi tải lại dữ liệu**:

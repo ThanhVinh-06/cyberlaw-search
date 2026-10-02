@@ -23,6 +23,9 @@ class LocalRetriever
             && is_array($result['ids'] ?? null) && count($result['ids']) <= 4
             && count(array_filter($result['ids'], 'is_string')) === count($result['ids']), 503);
         abort_unless(($result['status'] === 'answered') === (count($result['ids']) > 0), 503);
+        // Retrieval-evidence signal only; bounded so it can never imply legal certainty.
+        $confidence = $result['confidence'] ?? null;
+        abort_unless(is_int($confidence) && $confidence >= 0 && $confidence <= 100, 503);
         return $result;
     }
 }

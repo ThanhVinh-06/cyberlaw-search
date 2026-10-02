@@ -6,6 +6,7 @@ use App\Support\SafeLog;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\Rule;
 
 final class AdminStatisticsController extends Controller
@@ -119,6 +120,7 @@ final class AdminStatisticsController extends Controller
                 'tong_dieu_khoan' => (clone $clauses)->count(), 'tong_van_ban' => (clone $docs)->count(),
                 'tong_quy_dinh' => (clone $rules)->count(), 'tang_truong_quy_dinh' => 'Luật 116/2025/QH15 đã công bố',
                 'tong_cuoc_hoi_dap' => $total, 'tang_truong_hoi_dap' => 'Phản hồi đã lưu trong kỳ',
+                'so_bang' => count(Schema::getTableListing()),
             ],
             'months' => $buckets, 'regulations' => $groups, 'top_users' => $top,
             // Aggregates above are system-wide. Private message bodies remain owner-only.
@@ -138,7 +140,8 @@ final class AdminStatisticsController extends Controller
             ->where('h.ma_nguoi_dung', $request->user()->getKey())->where('a.nguoi_gui', 'assistant')
             ->where('a.ngay_tao', '>=', $start)->where('a.ngay_tao', '<', $end)
             ->orderByDesc('a.ma_tin_nhan')->limit(5)
-            ->select('a.ma_tin_nhan','a.ma_hoi_thoai','a.ngay_tao')->selectRaw('SUBSTR(a.noi_dung, 1, 16000) AS noi_dung')->get();
+            ->select('a.ma_tin_nhan','a.ma_hoi_thoai','a.ngay_tao','a.do_tin_cay','a.thoi_gian_xu_ly_ms')
+            ->selectRaw('SUBSTR(a.noi_dung, 1, 16000) AS noi_dung')->get();
         return $messages->map(function ($a) use ($request) {
             $question = DB::table('tin_nhan')->where('ma_hoi_thoai', $a->ma_hoi_thoai)->where('nguoi_gui', 'user')
                 ->where('ma_tin_nhan', '<', $a->ma_tin_nhan)->orderByDesc('ma_tin_nhan')->selectRaw('SUBSTR(noi_dung, 1, 1000) AS text')->first();
@@ -150,8 +153,22 @@ final class AdminStatisticsController extends Controller
                 'cau_hoi' => $question->text ?? 'Không còn câu hỏi gốc', 'tra_loi_ai' => $a->noi_dung,
                 'dieu_khoan_trich_dan' => $citations->map($label)->join('; ') ?: 'Chưa có trích dẫn',
                 'trich_doan_luat' => $citations->map(fn ($c) => $label($c).' · Phiên bản '.$c->phien_ban_noi_dung.' · Trang '.($c->trang_nguon ?? '—')."\n".$c->text)->join("\n\n") ?: 'Phản hồi này không có căn cứ được lưu.',
-                'thoi_gian' => $a->ngay_tao, 'vai_tro' => 'Của bạn', 'do_tin_cay' => 'Chưa đánh giá',
-                'thoi_gian_xu_ly' => 'Chưa ghi nhận', 'loai_quy_dinh' => 'Bản lưu khi trả lời', 'dieu_so' => 0];
+                'thoi_gian' => $a->ngay_tao, 'vai_tro' => 'Của bạn',
+                'do_tin_cay' => $this->confidenceLabel($a->do_tin_cay),
+                'thoi_gian_xu_ly' => $this->durationLabel($a->thoi_gian_xu_ly_ms),
+                'confidence_note' => 'Điểm bằng chứng truy hồi, không phải độ chính xác pháp lý',
+                'loai_quy_dinh' => 'Bản lưu khi trả lời', 'dieu_so' => 0];
         })->all();
+    }
+
+    /** Retrieval-evidence score (0-100) stored per assistant message; null when there was no basis. */
+    private function confidenceLabel($value): string
+    {
+        return $value === null ? 'Chưa đánh giá' : round((float) $value, 1).'%';
+    }
+
+    private function durationLabel($value): string
+    {
+        return $value === null ? 'Chưa ghi nhận' : round((int) $value / 1000, 2).'s';
     }
 }

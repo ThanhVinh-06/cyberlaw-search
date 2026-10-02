@@ -37,6 +37,20 @@ class LocalAnswer
         return HoiThoai::where('ma_nguoi_dung', $request->user()->getKey())->whereKey($id)->firstOrFail();
     }
 
+    /** Composed summary + citation from the approved snapshot row; never invents legal text. */
+    private function composeAnswer(DieuKhoan $row): string
+    {
+        $label = 'Điều '.$row->so_dieu
+            .($row->so_khoan !== '' ? ' khoản '.$row->so_khoan : '')
+            .($row->ky_hieu_diem !== '' ? ' điểm '.$row->ky_hieu_diem : '');
+        $title = $row->tieu_de !== '' ? ' ('.$row->tieu_de.')' : '';
+        // One plain-text block: the chat bubble renders the string directly (no pre-line).
+        $excerpt = Str::limit((string) preg_replace('/\s+/u', ' ', trim((string) $row->noi_dung)), 220, '…');
+        return "Theo Luật 116/2025/QH15, nội dung bạn hỏi được quy định tại {$label}{$title}: "
+            ."“{$excerpt}” — Các căn cứ nguyên văn được liệt kê bên dưới. Bạn cần đọc cả điều kiện, "
+            ."ngoại lệ và văn bản được dẫn chiếu trước khi áp dụng.";
+    }
+
     private function result(Request $request, int $threadId, int $messageId): array
     {
         $this->owned($request, (string) $threadId);
@@ -86,7 +100,7 @@ class LocalAnswer
             $ids=$retrieved['ids'];
             abort_unless(count(array_unique($ids))===count($ids),503);
             foreach($ids as $id) abort_unless($snapshot['rows']->has($id),503);
-            $result=$this->knowledge->serialized(function () use ($request,$input,$digest,$snapshot,$retrieved,$ids,$question) {
+            $result=$this->knowledge->serialized(function () use ($request,$input,$digest,$snapshot,$retrieved,$ids,$question,$started) {
                 // Recheck after computation; never save citations from an old/draft revision.
                 $fresh=$this->snapshot();
                 abort_unless(hash_equals($snapshot['digest'],$fresh['digest']),409,'Văn bản vừa được cập nhật. Bạn gửi lại câu hỏi nhé.');
@@ -98,10 +112,13 @@ class LocalAnswer
                     : HoiThoai::create(['ma_nguoi_dung'=>$user->getKey(),'tieu_de'=>Str::limit($question,120)]);
                 $text=$retrieved['status']==='no_basis'
                     ? 'Chưa đủ căn cứ trong nguyên bản Luật 116/2025/QH15 để trả lời câu hỏi này. Bạn nêu rõ vấn đề hoặc số điều/khoản; hệ thống không tự suy ra mức phạt hay tình trạng pháp luật hiện hành.'
-                    : 'Các trích đoạn liên quan trong nguyên bản Luật 116/2025/QH15 được liệt kê bên dưới. Đây là kết quả truy hồi; bạn cần đọc cả điều kiện, ngoại lệ và văn bản được dẫn chiếu trước khi áp dụng.';
+                    : $this->composeAnswer($snapshot['rows']->get($ids[0]));
+                $elapsed=(int) ((hrtime(true) - $started) / 1_000_000);
                 TinNhan::create(['ma_hoi_thoai'=>$thread->getKey(),'nguoi_gui'=>'user','noi_dung'=>$question]);
                 $message=TinNhan::create(['ma_hoi_thoai'=>$thread->getKey(),'nguoi_gui'=>'assistant','noi_dung'=>$text,
-                    'trang_thai_tra_loi'=>$retrieved['status'],'do_tin_cay'=>null]);
+                    'trang_thai_tra_loi'=>$retrieved['status'],
+                    'do_tin_cay'=>$retrieved['status']==='answered' ? (float) ($retrieved['confidence'] ?? 0) : null,
+                    'thoi_gian_xu_ly_ms'=>$elapsed]);
                 $doc=$snapshot['doc'];
                 $source=(string)$doc->lien_ket_nguon;
                 if(!preg_match('~^https?://~i',$source)||!filter_var($source,FILTER_VALIDATE_URL)) $source='';
