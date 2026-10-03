@@ -401,3 +401,65 @@ for (const vp of EMPTY_VIEWPORTS) {
   });
 }
 
+test("no vertical layout shift when switching period tabs or clicking reload", async ({ page }) => {
+  await mockAuth(page, "admin");
+  await page.goto("/admin/stats");
+  await page.evaluate(() => document.fonts.ready);
+  await page.waitForSelector(".cl-admin-stats-dashboard[aria-busy='false']");
+  await page.waitForFunction(() =>
+    [...document.querySelectorAll("[data-admin-reveal]")].every((el) =>
+      el.getAnimations().every((animation) => animation.playState !== "running")
+    )
+  );
+
+  const getYPositions = async () => {
+    return await page.evaluate(() => {
+      const statGrid = document.querySelector(".cl-stats-cards-grid")?.getBoundingClientRect();
+      const mainGrid = document.querySelector(".cl-stats-main-grid")?.getBoundingClientRect();
+      const questions = document.querySelector(".cl-recent-questions")?.getBoundingClientRect();
+      const reg = document.querySelector(".cl-reg-card")?.getBoundingClientRect();
+      return {
+        statGridTop: statGrid?.top ?? 0,
+        statGridHeight: statGrid?.height ?? 0,
+        mainGridTop: mainGrid?.top ?? 0,
+        questionsTop: questions?.top ?? 0,
+        questionsHeight: questions?.height ?? 0,
+        regTop: reg?.top ?? 0,
+        regHeight: reg?.height ?? 0,
+      };
+    });
+  };
+
+  const initial = await getYPositions();
+
+  // Switch to "6 tháng gần nhất"
+  await page.getByRole("button", { name: "6 tháng gần nhất" }).click();
+  await page.waitForSelector(".cl-admin-stats-dashboard[aria-busy='false']");
+  const tab6m = await getYPositions();
+
+  expect(Math.abs(tab6m.statGridTop - initial.statGridTop)).toBeLessThanOrEqual(1);
+  expect(Math.abs(tab6m.statGridHeight - initial.statGridHeight)).toBeLessThanOrEqual(1);
+  expect(Math.abs(tab6m.mainGridTop - initial.mainGridTop)).toBeLessThanOrEqual(1);
+  expect(Math.abs(tab6m.questionsTop - initial.questionsTop)).toBeLessThanOrEqual(1);
+
+  // Switch to "30 ngày qua"
+  await page.getByRole("button", { name: "30 ngày qua" }).click();
+  await page.waitForSelector(".cl-admin-stats-dashboard[aria-busy='false']");
+  const tab30d = await getYPositions();
+
+  expect(Math.abs(tab30d.statGridTop - initial.statGridTop)).toBeLessThanOrEqual(1);
+  expect(Math.abs(tab30d.statGridHeight - initial.statGridHeight)).toBeLessThanOrEqual(1);
+  expect(Math.abs(tab30d.mainGridTop - initial.mainGridTop)).toBeLessThanOrEqual(1);
+  expect(Math.abs(tab30d.questionsTop - initial.questionsTop)).toBeLessThanOrEqual(1);
+
+  // Click "Tải lại dữ liệu"
+  await page.getByTitle("Tải lại dữ liệu").click();
+  await page.waitForSelector(".cl-admin-stats-dashboard[aria-busy='false']");
+  const reloaded = await getYPositions();
+
+  expect(Math.abs(reloaded.statGridTop - initial.statGridTop)).toBeLessThanOrEqual(1);
+  expect(Math.abs(reloaded.statGridHeight - initial.statGridHeight)).toBeLessThanOrEqual(1);
+  expect(Math.abs(reloaded.mainGridTop - initial.mainGridTop)).toBeLessThanOrEqual(1);
+  expect(Math.abs(reloaded.questionsTop - initial.questionsTop)).toBeLessThanOrEqual(1);
+});
+

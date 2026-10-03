@@ -40,12 +40,21 @@ interface AdminStatsPageProps {
 const SKELETON_USERS = [0, 1, 2, 3];
 const SKELETON_CITATIONS = [0, 1, 2];
 
-function StatValuesSkeleton({ subRows = 1 }: { subRows?: number }) {
+function StatValuesSkeleton({
+  subRows = 1,
+  multilineIndex,
+}: {
+  subRows?: number;
+  multilineIndex?: number;
+}) {
   return (
     <>
       <span className="cl-skeleton-block cl-skeleton-line is-stat-value" />
       {Array.from({ length: subRows }, (_, index) => (
-        <span key={index} className="cl-skeleton-block cl-skeleton-line is-stat-sub" />
+        <span
+          key={index}
+          className={`cl-skeleton-block cl-skeleton-line is-stat-sub ${multilineIndex === index ? "is-multiline" : ""}`}
+        />
       ))}
     </>
   );
@@ -271,7 +280,7 @@ export default function AdminStatsPage({ onNavigateTab }: AdminStatsPageProps) {
           <div className="cl-stat-info">
             <span className="cl-stat-info-label">Lượt hỏi đáp AI</span>
             {statisticsLoading ? (
-              <StatValuesSkeleton subRows={3} />
+              <StatValuesSkeleton subRows={3} multilineIndex={1} />
             ) : (
               <>
                 <span className="cl-stat-info-value">

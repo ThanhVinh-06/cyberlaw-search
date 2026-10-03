@@ -326,11 +326,30 @@ export function RecentQuestionsCard({
           <div className="cl-comments-list" aria-busy={loading}>
             {loading ? (
               SKELETON_QUESTIONS.map((index) => (
-                <span
+                <div
                   key={index}
-                  className="cl-skeleton-block cl-skeleton-question"
+                  className="cl-question-card is-skeleton"
+                  style={{ borderRadius: 20 }}
                   aria-hidden="true"
-                />
+                >
+                  <div className="cl-question-summary">
+                    <span className="cl-skeleton-block cl-skeleton-avatar-sm" />
+                    <div className="cl-question-summary-text">
+                      <div className="cl-question-byline">
+                        <span className="cl-skeleton-block cl-skeleton-line is-question-author" />
+                        <span className="cl-skeleton-block cl-skeleton-line is-question-time" />
+                      </div>
+                      <span className="cl-skeleton-block cl-skeleton-line is-question-role" />
+                      <span
+                        className={`cl-skeleton-block cl-skeleton-line is-question-title ${index === 0 ? "is-multi-line" : ""}`}
+                      />
+                      <div className="cl-question-meta">
+                        <span className="cl-skeleton-block cl-skeleton-line is-question-badge" />
+                        <span className="cl-skeleton-block cl-skeleton-line is-question-hint" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
               ))
             ) : items.length === 0 ? (
               <div className="cl-question-empty-wrapper">

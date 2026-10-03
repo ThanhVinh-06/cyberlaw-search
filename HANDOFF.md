@@ -1,6 +1,30 @@
 # Bàn giao dự án CyberLaw Search
 
-### Hoàn thiện bảo mật B4, M5 & hiển thị tên quản trị viên thật trên trang Thống kê — 04/10/2026
+### Khắc phục triệt để hiện tượng giật nhẹ (Layout Shift) khi tải lại hoặc chuyển tab trên trang Thống kê — 04/10/2026
+
+- **Yêu cầu chủ dự án:** Khi ấn "Tải lại dữ liệu" hoặc chuyển tab bộ lọc kỳ hạn ("Năm 2026", "6 tháng gần nhất", "30 ngày qua"), trong lúc hiệu ứng mờ đang chờ load dữ liệu và khi load xong hiển thị lên làm giao diện bị giật nhẹ hình như do kích thước không khớp; kiểm tra, sửa lỗi và test kỹ lại để tránh vỡ giao diện.
+- **Nguyên nhân cốt lõi phát hiện qua đo đạc Playwright thực tế:**
+  1. *Khối Hỏi đáp AI & Căn cứ Pháp lý gần đây (`RecentQuestionsCard`)*:
+     - Trước sửa: `.cl-skeleton-question` là 1 khối xám cứng có `height: 175px`. 6 thẻ skeleton = 1050px (danh sách 1120px kèm gap). Trong khi 6 thẻ thật chỉ cao tổng cộng 935.65px (danh sách 1005.65px). Chênh lệch lên tới **+114.3px**! Khi API trả về, cả cột trái co rút 114.3px đột ngột gây giật nảy màn hình.
+  2. *Hàng 4 thẻ chỉ số Top Stat Cards (`.cl-stat-box`)*:
+     - Thẻ 4 ("Lượt hỏi đáp AI"): Ở trạng thái có dữ liệu, dòng sub thứ 2 (*"1.240 lượt từ khách vãng lai"*) bị rớt dòng thành 2 dòng (34.5px). Tổng chiều cao thẻ thật là 179.64px. Trong khi lúc skeleton `StatValuesSkeleton subRows={3}` các dòng sub chỉ cao 17.25px (tổng thẻ chỉ 162.38px). Do CSS Grid stretch cả hàng, cả 4 thẻ Top Stats bị giật giãn ra **+17.3px** khi load xong, đẩy toàn bộ biểu đồ và nội dung phía dưới tụt xuống.
+- **Giải pháp đã xử lý & chuẩn hóa:**
+  - **Khớp chuẩn Pixel-Perfect cho Thẻ Hỏi đáp gần đây (`RecentQuestionsCard.tsx`, `admin-stats.css`)**:
+    - Dựng cấu trúc skeleton thẻ câu hỏi chuẩn `cl-question-card is-skeleton` với đúng khung viền trắng `#ebe4df`, bo góc 20px, padding 20px, avatar tròn 40px và các vạch shimmer: tác giả (`height: 20.25px`), vai trò (`height: 17.25px`), câu hỏi (`height: 23.09px` cho câu 1 dòng, `height: 46.19px` cho câu 2 dòng), badge căn cứ (`height: 22.5px`).
+    - Đo đạc thực tế sau sửa: Chiều cao danh sách lúc loading là **1005.58px**, lúc loaded là **1005.66px** -> Độ lệch còn **-0.08px** (gần như 0 tuyệt đối).
+  - **Khớp chuẩn 100% cho Top 4 Stat Cards (`AdminStatsPage.tsx`, `admin-stats.css`)**:
+    - Thêm `min-height: 180px; box-sizing: border-box;` cho `.cl-stat-box`.
+    - Hỗ trợ `multilineIndex={1}` trong `StatValuesSkeleton` với `.is-multiline { height: 34.5px; }`.
+    - Đo đạc thực tế sau sửa: Cả 4 thẻ lúc loading và lúc loaded đều đạt **180.0px vs 180.0px** -> Độ lệch chính xác **0.0px**!
+  - **Biểu đồ & các thành phần khác**:
+    - Giữ nguyên 100% animation gợn sóng cột biểu đồ (Mazer Liquid Wave).
+    - Độ lệch Active Users: **0.0px**, Donut Chart: **0.0px**, Phân loại quy định: **0.0px**, Khung Main Grid: **0.0px**.
+- **Kiểm thử tự động đã chạy & kết quả xác minh**:
+  - Viết test đo đạc tự động `no vertical layout shift when switching period tabs or clicking reload` tích hợp vào `frontend/e2e/admin-stats.spec.ts`. Kiểm tra tọa độ `top` và `height` của `statGrid`, `mainGrid`, `questions`, `regCard` khi chuyển đổi qua lại giữa cả 3 tab kỳ hạn và khi bấm "Tải lại dữ liệu": độ dịch chuyển **<= 1px** (khử làm tròn subpixel trình duyệt), **PASS 100%**.
+  - Playwright E2E full admin suite: **29/29 tests PASS** (gồm `admin-stats` 15 tests, `admin-responsive` 9 tests đa kích thước 320px→1440px, `admin-users-reveal` 3 tests, `admin-access-denied` 2 tests).
+  - `npm run build`: **PASS 100%**. Quét bundle: không rò rỉ bất kỳ thông tin nhạy cảm nào (`admin@cyberlaw.vn` 0, `Super Admin` 0, `Quản trị viên Hệ thống` 0, `Lê Hoàng Long` 0, `admin12345` 0, `1.280` 0, `4.430` 0).
+  - PHPUnit Backend: **121/121 PASS (1296 assertions)**.
+
 
 - **Yêu cầu chủ dự án:** 
   1. Xác nhận hành vi đúng của B4: Khi API lỗi hoặc chưa có dữ liệu, hiển thị dữ liệu rỗng (ô số `—`, biểu đồ/danh sách rỗng kèm alert lỗi), tuyệt đối không hiển thị số liệu demo (`1.280`, `3.450`, `4.430`).

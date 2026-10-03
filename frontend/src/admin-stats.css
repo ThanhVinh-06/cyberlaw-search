@@ -217,6 +217,8 @@
   display: flex;
   align-items: center;
   gap: 18px;
+  min-height: 180px;
+  box-sizing: border-box;
   transition:
     translate 0.2s ease,
     box-shadow 0.2s ease;
@@ -1406,6 +1408,53 @@
   height: 17.25px;
   width: 150px;
   margin-top: 4px;
+}
+
+.cl-skeleton-line.is-stat-sub.is-multiline {
+  height: 34.5px;
+}
+
+.cl-question-card.is-skeleton {
+  cursor: default !important;
+  pointer-events: none;
+}
+
+.cl-skeleton-line.is-question-author {
+  width: 120px;
+  height: 20.25px;
+}
+
+.cl-skeleton-line.is-question-time {
+  width: 75px;
+  height: 17.25px;
+}
+
+.cl-skeleton-line.is-question-role {
+  width: 105px;
+  height: 17.25px;
+  margin-top: 3px;
+}
+
+.cl-skeleton-line.is-question-title {
+  width: 85%;
+  height: 23.09px;
+  margin: 12px 0;
+}
+
+.cl-skeleton-line.is-question-title.is-multi-line {
+  width: 95%;
+  height: 46.19px;
+}
+
+.cl-skeleton-line.is-question-badge {
+  width: 130px;
+  height: 22.5px;
+  border-radius: 6px;
+}
+
+.cl-skeleton-line.is-question-hint {
+  width: 85px;
+  height: 18px;
 }
 
 .cl-skeleton-line.is-user-name {
