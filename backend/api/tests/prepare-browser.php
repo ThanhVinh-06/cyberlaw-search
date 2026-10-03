@@ -18,7 +18,8 @@ if (config('database.default') !== 'sqlite' || $actual !== $expected) {
 KnowledgeSchema::create(true);
 Schema::create('hoi_thoai', function (Blueprint $t) {
     $t->id('ma_hoi_thoai');
-    $t->foreignId('ma_nguoi_dung')->constrained('nguoi_dung', 'ma_nguoi_dung')->cascadeOnDelete();
+    // Nullable mirrors production: NULL = a guest conversation (see 20261002 migration).
+    $t->foreignId('ma_nguoi_dung')->nullable()->constrained('nguoi_dung', 'ma_nguoi_dung')->cascadeOnDelete();
 });
 Schema::create('trich_dan', function (Blueprint $t) {
     $t->id();

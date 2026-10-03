@@ -18,18 +18,21 @@ final class HistoryTest extends TestCase
     private NguoiDung $b;
     private int $aThread;
     private int $bThread;
+    private int $guestThread;
 
     protected function setUp(): void
     {
         parent::setUp(); AccountSchema::create();
         $this->app->bind(ValidateCsrfToken::class, HistoryRealCsrf::class);
         foreach (['application','audit','security'] as $channel) config(['logging.channels.'.$channel => config('logging.channels.null')]);
-        Schema::create('hoi_thoai', function (Blueprint $t) { $t->id('ma_hoi_thoai'); $t->unsignedBigInteger('ma_nguoi_dung'); $t->string('tieu_de'); $t->dateTime('ngay_tao'); $t->dateTime('ngay_cap_nhat'); });
+        Schema::create('hoi_thoai', function (Blueprint $t) { $t->id('ma_hoi_thoai'); $t->unsignedBigInteger('ma_nguoi_dung')->nullable(); $t->string('tieu_de'); $t->dateTime('ngay_tao'); $t->dateTime('ngay_cap_nhat'); });
         Schema::create('tin_nhan', function (Blueprint $t) { $t->id('ma_tin_nhan'); $t->foreignId('ma_hoi_thoai')->constrained('hoi_thoai', 'ma_hoi_thoai')->cascadeOnDelete(); $t->string('nguoi_gui'); $t->text('noi_dung'); $t->string('trang_thai_tra_loi')->nullable(); $t->decimal('do_tin_cay',5,2)->nullable(); $t->integer('thoi_gian_xu_ly_ms')->nullable(); $t->dateTime('ngay_tao'); $t->dateTime('ngay_cap_nhat'); });
         Schema::create('trich_dan', function (Blueprint $t) { $t->id('ma_trich_dan'); $t->foreignId('ma_tin_nhan')->constrained('tin_nhan', 'ma_tin_nhan')->cascadeOnDelete(); $t->unsignedBigInteger('ma_dieu_khoan')->nullable(); $t->unsignedSmallInteger('thu_tu_trich_dan'); $t->string('so_hieu'); $t->string('tieu_de_van_ban'); $t->unsignedInteger('phien_ban_noi_dung'); $t->string('so_dieu'); $t->string('so_khoan')->default(''); $t->string('ky_hieu_diem')->default(''); $t->text('noi_dung_trich_dan'); $t->string('lien_ket_nguon')->nullable(); $t->unsignedSmallInteger('trang_nguon')->nullable(); $t->dateTime('ngay_tao'); });
         $this->a=$this->account('a'); $this->b=$this->account('b'); $now=now();
         $this->aThread=(int) DB::table('hoi_thoai')->insertGetId(['ma_nguoi_dung'=>$this->a->getKey(),'tieu_de'=>'Câu hỏi riêng A','ngay_tao'=>$now,'ngay_cap_nhat'=>$now]);
         $this->bThread=(int) DB::table('hoi_thoai')->insertGetId(['ma_nguoi_dung'=>$this->b->getKey(),'tieu_de'=>'Câu hỏi riêng B','ngay_tao'=>$now,'ngay_cap_nhat'=>$now]);
+        // Guest conversations have no owner (ma_nguoi_dung IS NULL) and must never be listed back.
+        $this->guestThread=(int) DB::table('hoi_thoai')->insertGetId(['ma_nguoi_dung'=>null,'tieu_de'=>'Câu hỏi của khách vãng lai','ngay_tao'=>$now,'ngay_cap_nhat'=>$now]);
         $message=(int) DB::table('tin_nhan')->insertGetId(['ma_hoi_thoai'=>$this->aThread,'nguoi_gui'=>'assistant','noi_dung'=>'<script>alert(1)</script> Căn cứ','trang_thai_tra_loi'=>'answered','ngay_tao'=>$now,'ngay_cap_nhat'=>$now]);
         DB::table('trich_dan')->insert(['ma_tin_nhan'=>$message,'thu_tu_trich_dan'=>1,'so_hieu'=>'116/2025/QH15','tieu_de_van_ban'=>'Luật thử','phien_ban_noi_dung'=>1,'so_dieu'=>'2','so_khoan'=>'1','ky_hieu_diem'=>'','noi_dung_trich_dan'=>'Nội dung căn cứ','lien_ket_nguon'=>'javascript:alert(1)','ngay_tao'=>$now]);
     }
@@ -40,6 +43,7 @@ final class HistoryTest extends TestCase
         $this->getJson('/api/history')->assertUnauthorized(); $this->login($this->a);
         $response=$this->getJson('/api/history')->assertOk()->assertJsonPath('items.0.title','Câu hỏi riêng A');
         $response->assertJsonMissing(['title'=>'Câu hỏi riêng B']);
+        $response->assertJsonMissing(['title'=>'Câu hỏi của khách vãng lai']);
         $this->getJson('/api/history/'.$this->bThread)->assertNotFound();
         $this->deleteJson('/api/history/'.$this->bThread,[],['X-CSRF-TOKEN'=>'history-csrf'])->assertNotFound();
         $this->getJson('/api/history/'.$this->aThread)->assertOk()->assertJsonPath('messages.0.citations.0.source','');
@@ -59,9 +63,26 @@ final class HistoryTest extends TestCase
         $this->a->vai_tro='admin'; $this->a->save(); $this->login($this->a);
         $this->getJson('/api/history/'.$this->bThread)->assertNotFound();
         $this->deleteJson('/api/history/'.$this->bThread, [], ['X-CSRF-TOKEN'=>'history-csrf'])->assertNotFound();
-        $this->assertDatabaseCount('hoi_thoai', 2);
+        $this->assertDatabaseCount('hoi_thoai', 3);
         $this->a->trang_thai='blocked'; $this->a->save();
         $this->getJson('/api/history')->assertUnauthorized();
+    }
+
+    public function test_guest_cannot_read_or_delete_any_history(): void
+    {
+        // A guest is a browser session: no account, CSRF token only. Their conversations are
+        // stored (see LocalAnswerTest) but the history endpoints must stay closed to them.
+        auth()->logout();
+        $this->flushSession();
+        $this->withSession(['_token' => 'history-csrf']);
+        $this->getJson('/api/history')->assertUnauthorized();
+        $this->getJson('/api/history/'.$this->guestThread)->assertUnauthorized();
+        $this->getJson('/api/history/'.$this->aThread)->assertUnauthorized();
+        $this->deleteJson('/api/history/'.$this->guestThread, [], ['X-CSRF-TOKEN' => 'history-csrf'])->assertUnauthorized();
+        $this->deleteJson('/api/history/'.$this->aThread, [], ['X-CSRF-TOKEN' => 'history-csrf'])->assertUnauthorized();
+        // The stored guest conversation survives; a guest just has no way back to it.
+        $this->assertDatabaseHas('hoi_thoai', ['ma_hoi_thoai' => $this->guestThread]);
+        $this->assertDatabaseCount('hoi_thoai', 3);
     }
 
     public function test_input_origin_pagination_and_rate_limit(): void
@@ -71,7 +92,7 @@ final class HistoryTest extends TestCase
         $this->getJson('/api/history/'.$this->aThread.'?page=10001')->assertUnprocessable();
         $this->getJson('/api/history/999999999999999999999')->assertNotFound();
         $this->deleteJson('/api/history/'.$this->aThread, [], ['Origin'=>'https://evil.test', 'X-CSRF-TOKEN'=>'history-csrf'])->assertForbidden();
-        $this->assertDatabaseCount('hoi_thoai', 2);
+        $this->assertDatabaseCount('hoi_thoai', 3);
         $this->getJson('/api/history/'.$this->aThread.'?page=2')->assertOk()->assertJsonPath('messages', [])->assertJsonPath('total', 1);
         for ($i=0; $i<57; $i++) $this->getJson('/api/history')->assertOk();
         $this->getJson('/api/history')->assertStatus(429);

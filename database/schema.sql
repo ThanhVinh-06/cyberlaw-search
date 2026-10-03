@@ -138,7 +138,7 @@ CREATE TABLE `quy_dinh` (
 
 CREATE TABLE `hoi_thoai` (
   `ma_hoi_thoai` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-  `ma_nguoi_dung` BIGINT UNSIGNED NOT NULL,
+  `ma_nguoi_dung` BIGINT UNSIGNED NULL COMMENT 'NULL = khách vãng lai',
   `tieu_de` VARCHAR(255) NOT NULL DEFAULT 'Cuộc trò chuyện mới',
   `ngay_tao` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `ngay_cap_nhat` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -146,7 +146,7 @@ CREATE TABLE `hoi_thoai` (
   KEY `chi_muc_hoi_thoai_nguoi_dung_ngay` (`ma_nguoi_dung`,`ngay_cap_nhat`),
   CONSTRAINT `khoa_ngoai_hoi_thoai_nguoi_dung` FOREIGN KEY (`ma_nguoi_dung`) REFERENCES `nguoi_dung` (`ma_nguoi_dung`)
     ON DELETE CASCADE ON UPDATE RESTRICT
-) ENGINE=InnoDB COMMENT='Hội thoại riêng của từng người dùng';
+) ENGINE=InnoDB COMMENT='Hội thoại của người dùng hoặc khách vãng lai (NULL)';
 
 CREATE TABLE `tin_nhan` (
   `ma_tin_nhan` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,

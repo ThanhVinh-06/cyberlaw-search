@@ -39,12 +39,10 @@ test("account popovers share the morph, fit the viewport and preserve the form",
     const dialog = page.getByRole("dialog", {
       name: "Trò chuyện với trợ lý CyberLaw",
     });
-    await expect(
-      dialog.getByRole("link", { name: "Khám phá thư viện luật" }),
-    ).toBeFocused();
-    await expect(dialog).toContainText(
-      "Tính năng hỏi đáp AI đang được hoàn thiện",
-    );
+    // The account pages run the same assistant as the public site, so the panel opens
+    // on the real conversation rather than a "coming soon" placeholder.
+    await expect(page.getByLabel("Câu hỏi cho trợ lý AI")).toBeFocused();
+    await expect(dialog).toContainText("Xin chào, tôi là trợ lý CyberLaw.");
     await settle(page);
     const box = await dialog.boundingBox();
     expect(box!.x).toBeGreaterThanOrEqual(0);
@@ -66,7 +64,7 @@ test("account popovers share the morph, fit the viewport and preserve the form",
   expect(errors).toEqual([]);
 });
 
-test("account popover supports keyboard, reduced motion and navigation", async ({
+test("account popover supports keyboard, reduced motion and a real answer", async ({
   page,
 }) => {
   await page.goto("/login");
@@ -81,9 +79,17 @@ test("account popover supports keyboard, reduced motion and navigation", async (
   await page.emulateMedia({ reducedMotion: "reduce" });
   await launcher.click();
   await expect(page.locator("#cl-chat-panel")).toHaveCSS("transform", "none");
-  await page.getByRole("link", { name: "Khám phá thư viện luật" }).click();
-  await expect(page).toHaveURL(/\/search$/);
-  await expect(page.getByRole("dialog")).toHaveCount(0);
+  // An anonymous visitor on the account pages is answered like a signed-in user.
+  await page.getByRole("button", { name: "An ninh mạng là gì?" }).click();
+  await expect(page.getByRole("log")).toContainText("Phản hồi mẫu");
+  await page.getByRole("button", { name: "Mở Điều 2" }).click();
+  await expect(
+    page.getByRole("dialog", { name: "Căn cứ pháp lý" }),
+  ).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(
+    page.getByRole("dialog", { name: "Căn cứ pháp lý" }),
+  ).toHaveCount(0);
 });
 
 test("chat morphs from its launcher and keeps draft and messages on reopen", async ({

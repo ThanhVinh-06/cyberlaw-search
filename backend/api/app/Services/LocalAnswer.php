@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\DieuKhoan;
 use App\Models\HoiThoai;
+use App\Models\NguoiDung;
 use App\Models\TinNhan;
 use App\Models\TrichDan;
 use App\Models\VanBan;
@@ -16,6 +17,15 @@ use Illuminate\Support\Str;
 
 class LocalAnswer
 {
+    /**
+     * Guest identity is the browser session itself: no account row, no PII. The session keeps
+     * the ids of the threads this browser created so a guest can continue its own thread but
+     * never open someone else's (see owned()/replay()).
+     */
+    private const SESSION_KEY = 'guest_chat_threads';
+
+    private const SESSION_CAP = 20;
+
     public function __construct(private LocalRetriever $retriever, private KnowledgeAdmin $knowledge) {}
 
     private function snapshot(): array
@@ -32,9 +42,45 @@ class LocalAnswer
             'digest'=>hash('sha256', json_encode([$doc->toArray(), $chunks], JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE))];
     }
 
+    /** The caller: a signed-in account, or an anonymous visitor bound to this browser session. */
+    private function actor(Request $request): ?NguoiDung
+    {
+        $user = $request->user();
+
+        return $user instanceof NguoiDung ? $user : null;
+    }
+
+    /** Thread ids this guest session created, newest first. Empty for signed-in accounts. */
+    private function guestThreadIds(Request $request): array
+    {
+        if ($this->actor($request) !== null) {
+            return [];
+        }
+        $ids = $request->session()->get(self::SESSION_KEY, []);
+
+        return is_array($ids) ? array_values(array_filter($ids, 'is_string')) : [];
+    }
+
+    private function rememberGuestThread(Request $request, int $id): void
+    {
+        if ($this->actor($request) !== null) {
+            return;
+        }
+        $ids = array_values(array_diff($this->guestThreadIds($request), [(string) $id]));
+        array_unshift($ids, (string) $id);
+        // Keep only the most recent threads; older ones degrade to a 404 on continue.
+        $request->session()->put(self::SESSION_KEY, array_slice($ids, 0, self::SESSION_CAP));
+    }
+
+    /** A guest may only open a thread with no owner that this very session created. */
     private function owned(Request $request, string $id)
     {
-        return HoiThoai::where('ma_nguoi_dung', $request->user()->getKey())->whereKey($id)->firstOrFail();
+        $user = $this->actor($request);
+        $query = $user !== null
+            ? HoiThoai::where('ma_nguoi_dung', $user->getKey())
+            : HoiThoai::whereNull('ma_nguoi_dung')->whereIn('ma_hoi_thoai', $this->guestThreadIds($request));
+
+        return $query->whereKey($id)->firstOrFail();
     }
 
     /** Composed summary + citation from the approved snapshot row; never invents legal text. */
@@ -67,8 +113,14 @@ class LocalAnswer
 
     private function replay(Request $request, array $input, string $digest): ?array
     {
-        $event=DB::table('nhat_ky_quan_tri')->where('hanh_dong','ai.answer.completed')
-            ->where('ma_nguoi_thuc_hien',$request->user()->getKey())->where('ma_yeu_cau',$input['request_id'])->first();
+        $user = $this->actor($request);
+        // Explicit whereNull for guests: never rely on the implicit where($col, null) behaviour.
+        $event = $user !== null
+            ? DB::table('nhat_ky_quan_tri')->where('hanh_dong', 'ai.answer.completed')
+                ->where('ma_nguoi_thuc_hien', $user->getKey())->where('ma_yeu_cau', $input['request_id'])->first()
+            : DB::table('nhat_ky_quan_tri')->where('hanh_dong', 'ai.answer.completed')
+                ->whereNull('ma_nguoi_thuc_hien')->whereIn('ma_doi_tuong', $this->guestThreadIds($request))
+                ->where('ma_yeu_cau', $input['request_id'])->first();
         if (!$event) return null;
         $metadata=json_decode($event->du_lieu_them,true,32,JSON_THROW_ON_ERROR);
         abort_unless(hash_equals($metadata['request_digest'],$digest),409,'Mã yêu cầu đã được dùng cho câu hỏi khác.');
@@ -82,11 +134,16 @@ class LocalAnswer
         $question=trim($input['question']);
         abort_if(mb_strlen($question)<3,422,'Bạn nhập câu hỏi cụ thể hơn nhé.');
         $digest=hash_hmac('sha256',json_encode([$question,$input['conversation_id']??null]),config('app.key'));
-        // One in-flight job per account; never queue unbounded model jobs.
-        $lock=Cache::lock('ai-account:'.$request->user()->getKey(),30);
+        $user=$this->actor($request);
+        $actorId=$user?->getKey();
+        // One in-flight job per account, and one per guest session; never queue unbounded model jobs.
+        $lockKey = $user !== null
+            ? 'ai-account:'.$user->getKey()
+            : 'ai-guest:'.hash_hmac('sha256', (string) $request->session()->getId(), config('app.key'));
+        $lock=Cache::lock($lockKey,30);
         abort_unless($lock->get(),429,'Bạn chờ câu trả lời hiện tại hoàn tất nhé.');
         $started = hrtime(true);
-        $logContext = ['request_id' => $request->attributes->get('request_id'), 'actor_id' => $request->user()->getKey(), 'route' => 'ai.answer'];
+        $logContext = ['request_id' => $request->attributes->get('request_id'), 'actor_id' => $actorId, 'route' => 'ai.answer'];
         SafeLog::write('application', 'ai.answer.started', 'started', $logContext);
         try {
             $replay=$this->knowledge->serialized(fn ()=>$this->replay($request,$input,$digest));
@@ -100,16 +157,22 @@ class LocalAnswer
             $ids=$retrieved['ids'];
             abort_unless(count(array_unique($ids))===count($ids),503);
             foreach($ids as $id) abort_unless($snapshot['rows']->has($id),503);
-            $result=$this->knowledge->serialized(function () use ($request,$input,$digest,$snapshot,$retrieved,$ids,$question,$started) {
+            $result=$this->knowledge->serialized(function () use ($request,$input,$digest,$snapshot,$retrieved,$ids,$question,$started,$user) {
                 // Recheck after computation; never save citations from an old/draft revision.
                 $fresh=$this->snapshot();
                 abort_unless(hash_equals($snapshot['digest'],$fresh['digest']),409,'Văn bản vừa được cập nhật. Bạn gửi lại câu hỏi nhé.');
-                $user=$request->user()->fresh();
-                abort_unless($user && $user->trang_thai==='active' && $user->canUseAccount()
-                    && hash_equals(PasswordSession::fingerprint($user),(string)$request->session()->get('auth_password_fingerprint')),401);
+                // Guests have no account state to re-verify; accounts keep the full check.
+                if($user!==null) {
+                    $current=$user->fresh();
+                    abort_unless($current && $current->trang_thai==='active' && $current->canUseAccount()
+                        && hash_equals(PasswordSession::fingerprint($current),(string)$request->session()->get('auth_password_fingerprint')),401);
+                }
                 if($replay=$this->replay($request,$input,$digest)) return $replay;
                 $thread=!empty($input['conversation_id']) ? $this->owned($request,$input['conversation_id'])
-                    : HoiThoai::create(['ma_nguoi_dung'=>$user->getKey(),'tieu_de'=>Str::limit($question,120)]);
+                    : HoiThoai::create(['ma_nguoi_dung'=>$user?->getKey(),'tieu_de'=>Str::limit($question,120)]);
+                // Session writes only persist when the response completes normally: if the
+                // transaction rolls back, no orphan thread id is left in the guest session.
+                if($user===null) $this->rememberGuestThread($request,$thread->getKey());
                 $text=$retrieved['status']==='no_basis'
                     ? 'Chưa đủ căn cứ trong nguyên bản Luật 116/2025/QH15 để trả lời câu hỏi này. Bạn nêu rõ vấn đề hoặc số điều/khoản; hệ thống không tự suy ra mức phạt hay tình trạng pháp luật hiện hành.'
                     : $this->composeAnswer($snapshot['rows']->get($ids[0]));
@@ -131,13 +194,13 @@ class LocalAnswer
                 }
                 $thread->touch();
                 // Durable request deduplication + audit, same transaction as the answer.
-                DB::table('nhat_ky_quan_tri')->insert(['ma_nguoi_thuc_hien'=>$user->getKey(),'hanh_dong'=>'ai.answer.completed',
+                DB::table('nhat_ky_quan_tri')->insert(['ma_nguoi_thuc_hien'=>$user?->getKey(),'hanh_dong'=>'ai.answer.completed',
                     'loai_doi_tuong'=>'hoi_thoai','ma_doi_tuong'=>$thread->getKey(),'ma_yeu_cau'=>$input['request_id'],
                     'du_lieu_them'=>json_encode(['request_digest'=>$digest,'message_id'=>$message->getKey()]),'ngay_tao'=>now()]);
                 return $this->result($request,$thread->getKey(),$message->getKey());
             });
             SafeLog::write('application','ai.answer.completed','success',['request_id'=>$request->attributes->get('request_id'),
-                'actor_id'=>$request->user()->getKey(),'route'=>'ai.answer', 'duration_ms' => (int) ((hrtime(true) - $started) / 1000000)]);
+                'actor_id'=>$actorId,'route'=>'ai.answer', 'duration_ms' => (int) ((hrtime(true) - $started) / 1000000)]);
             return $result;
         } catch (\Throwable $error) {
             SafeLog::write('application', 'ai.answer.failed', 'failure', [...$logContext,

@@ -27,7 +27,7 @@ Chọn trường `vai_tro` cho phân quyền; không thêm bộ bảng quyền n
 | `tu_khoa` | Cụm từ và khái niệm | ma_tu_khoa, cum_tu, bien_the, dinh_nghia, ma_dieu_khoan_dinh_nghia |
 | `dieu_khoan_tu_khoa` | Liên kết nhiều cụm từ với nhiều điều khoản | ma_dieu_khoan, ma_tu_khoa; hai cột tạo thành khóa chính |
 | `quy_dinh` | Đặc tả dạng luật | ma_quy_dinh, ma_dieu_khoan, loai_quy_dinh, chu_the, hanh_vi, doi_tuong, dieu_kien, ngoai_le, trich_nguyen_van |
-| `hoi_thoai` | Hội thoại của một người dùng | ma_hoi_thoai, ma_nguoi_dung, tieu_de, ngay_tao, ngay_cap_nhat |
+| `hoi_thoai` | Hội thoại của một người dùng, hoặc của khách vãng lai (`ma_nguoi_dung` NULL) | ma_hoi_thoai, ma_nguoi_dung, tieu_de, ngay_tao, ngay_cap_nhat |
 | `tin_nhan` | Câu hỏi và trả lời trong hội thoại | ma_tin_nhan, ma_hoi_thoai, nguoi_gui, noi_dung |
 | `trich_dan` | Căn cứ của câu trả lời | ma_trich_dan, ma_tin_nhan, ma_dieu_khoan, so_hieu, phien_ban_noi_dung, vị trí điều khoản, noi_dung_trich_dan |
 
@@ -40,7 +40,7 @@ Chọn trường `vai_tro` cho phân quyền; không thêm bộ bảng quyền n
 ```mermaid
 erDiagram
     nguoi_dung ||--o{ yeu_cau_dat_lai_mat_khau : khoi_phuc_truy_cap
-    nguoi_dung ||--o{ hoi_thoai : so_huu
+    nguoi_dung o|--o{ hoi_thoai : so_huu
     hoi_thoai ||--o{ tin_nhan : chua
     tin_nhan ||--o{ trich_dan : co_can_cu
     van_ban ||--o{ dieu_khoan : chua
@@ -98,11 +98,13 @@ erDiagram
 - Mỗi trích dẫn lưu bản chụp nội dung, số hiệu, tiêu đề, phiên bản và vị trí điều khoản ở thời điểm trả lời. Nhờ vậy câu trả lời cũ vẫn có căn cứ dù văn bản được sửa.
 - Cho phép nhiều trích đoạn từ cùng một điều khoản trong một câu trả lời; `thu_tu_trich_dan` đánh số các nguồn trong từng tin nhắn.
 - Laravel kiểm tra người dùng chỉ truy cập hội thoại của mình; admin không mặc nhiên được xem chat riêng. Khi ghi citation, kiểm tra tin nhắn là của trợ lý và snapshot khớp nguồn.
+- **Khách vãng lai (từ 02/10/2026)**: `hoi_thoai.ma_nguoi_dung` cho phép `NULL` — `NULL` nghĩa là hội thoại không thuộc tài khoản nào. Không tạo tài khoản giả. Danh tính khách neo theo phiên trình duyệt (danh sách `ma_hoi_thoai` trong session server-side, tối đa 20 id), nên khách chỉ mở được hội thoại do chính phiên mình tạo. Khách **không** đọc được `/api/history*`; hội thoại khách vẫn lưu và hiện trong trang thống kê admin với nhãn "Khách vãng lai" (ngoại lệ sản phẩm có chủ đích, xem `docs/security/reviews/2026-10-02-khach-vang-lai-chat.md`). Migration: `database/migrations/20261002_hoi_thoai_khach_vang_lai.sql`.
 - Chỉ cập nhật `hoi_thoai.ngay_cap_nhat` khi gửi/nhận tin nhắn bằng logic ứng dụng; thời gian cập nhật ở bảng con không tự cập nhật bảng cha.
 
 ## 5. Xóa dữ liệu và tính toàn vẹn
 
 - Xóa tài khoản sẽ xóa hội thoại, tin nhắn và trích dẫn thuộc tài khoản đó; bình thường ưu tiên khóa tài khoản thay vì xóa.
+- Hội thoại khách vãng lai (`ma_nguoi_dung IS NULL`) **không** bị xóa theo tài khoản nào. Chưa có job dọn theo thời hạn — cần cân nhắc khi vận hành thật.
 - Xóa hội thoại sẽ xóa tin nhắn và trích dẫn trong hội thoại.
 - Văn bản có điều khoản không bị xóa trực tiếp. Nên chuyển `archived` để giữ nguồn.
 - Điều khoản đang làm nguồn định nghĩa/quy định cần được xử lý các liên kết trước khi xóa. Liên kết keyphrase được dọn theo khóa ngoại.

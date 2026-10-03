@@ -29,12 +29,31 @@ class AppServiceProvider extends ServiceProvider
         // private-resource policies must also enforce ownership of each record.
         foreach (PermissionMatrix::rules() as $rule) {
             if (in_array($rule['ma_chuc_nang'], ['quan_ly_van_ban', 'duyet_tri_thuc', 'quan_ly_phan_quyen', 'xem_lich_su_chat', 'chat_ai_cyberlaw'], true)) {
-                Gate::define($rule['ma_chuc_nang'], fn (NguoiDung $user) => $user->canUseAccount() && ($rule[$user->vai_tro] ?? false));
+                // First parameter must be nullable so Laravel invokes the closure for guests
+                // (Gate::canBeCalledWithUser) and the permission matrix decides for them.
+                Gate::define($rule['ma_chuc_nang'], fn (?NguoiDung $user) => $user === null
+                    ? ($rule['khach'] ?? false)
+                    : ($user->canUseAccount() && ($rule[$user->vai_tro] ?? false)));
             }
         }
         RateLimiter::for('admin-users-read', fn (Request $request) => Limit::perMinute(120)->by('admin-users-read:'.$request->user()?->getAuthIdentifier()));
         RateLimiter::for('history-read', fn (Request $request) => Limit::perMinute(60)->by('history-read:'.$request->user()?->getAuthIdentifier()));
-        RateLimiter::for('ai-answer', fn (Request $request) => [Limit::perMinute(6)->by('ai-minute:'.$request->user()?->getAuthIdentifier()), Limit::perHour(60)->by('ai-hour:'.$request->user()?->getAuthIdentifier())]);
+        RateLimiter::for('ai-answer', function (Request $request) {
+            $user = $request->user();
+            if ($user instanceof NguoiDung) {
+                return [Limit::perMinute(6)->by('ai-minute:'.$user->getAuthIdentifier()), Limit::perHour(60)->by('ai-hour:'.$user->getAuthIdentifier())];
+            }
+            // Guest: bind to the session AND keep a per-IP ceiling (API6: never only by IP).
+            // Keys are HMACs so raw session ids/IPs never reach the cache filenames.
+            $session = hash_hmac('sha256', (string) $request->session()->getId(), config('app.key'));
+            $ip = hash_hmac('sha256', (string) $request->ip(), config('app.key'));
+
+            return [
+                Limit::perMinute(4)->by('ai-guest-minute:'.$session),
+                Limit::perHour(20)->by('ai-guest-hour:'.$session),
+                Limit::perHour(40)->by('ai-guest-ip:'.$ip),
+            ];
+        });
         RateLimiter::for('history-write', fn (Request $request) => Limit::perMinute(10)->by('history-write:'.$request->user()?->getAuthIdentifier()));
         RateLimiter::for('admin-users-write', fn (Request $request) => Limit::perMinute(30)->by('admin-users-write:'.$request->user()?->getAuthIdentifier()));
         RateLimiter::for('knowledge-read', fn (Request $request) => Limit::perMinute(120)->by('knowledge-read:'.$request->user()?->getAuthIdentifier()));

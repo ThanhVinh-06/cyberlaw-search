@@ -26,7 +26,7 @@ Mức độ theo tác động/khả năng khai thác: Critical (chiếm hệ th�
 
 ## Ranh giới bản đầu
 
-- Laravel sở hữu MySQL và quyền; FastAPI chỉ nhận ngữ cảnh cần cho truy hồi. Admin không mặc nhiên đọc chat riêng. Luật 2025 đã duyệt là nguồn mặc định; bản nháp/demo không được công bố nhầm.
+- Laravel sở hữu MySQL và quyền; FastAPI chỉ nhận ngữ cảnh cần cho truy hồi. Admin không mặc nhiên đọc chat riêng — **ngoại lệ có chủ đích**: hội thoại **khách vãng lai** (`hoi_thoai.ma_nguoi_dung IS NULL`) được hiển thị đầy đủ trong trang thống kê admin; chat của người dùng đã đăng nhập khác vẫn chỉ chủ sở hữu xem. Xem `reviews/2026-10-02-khach-vang-lai-chat.md`. Luật 2025 đã duyệt là nguồn mặc định; bản nháp/demo không được công bố nhầm.
 - Backend chưa khởi tạo: logging, phiên, upload server và authorization trong tài liệu là yêu cầu, chưa chạy thật.
 - Test thường dùng localhost/test DB và tài khoản giả. Quét chủ động production/dịch vụ khác cần phạm vi cho phép cụ thể; không test phá hủy trên DB phát triển đang dùng.
 

@@ -18,7 +18,7 @@ use Illuminate\Support\Facades\Route;
 
 // Deliberately in the web group: every request has encrypted cookies, server session and CSRF.
 Route::post('api/answer', fn (Request $request, LocalAnswer $answer) => response()->json($answer->answer($request)))
-    ->middleware(['account.active', 'can:chat_ai_cyberlaw', 'throttle:ai-answer'])->block(20, 20)->name('ai.answer');
+    ->middleware(['account.active:guest', 'can:chat_ai_cyberlaw', 'throttle:ai-answer'])->block(20, 20)->name('ai.answer');
 Route::prefix('api/history')->middleware(['account.active', 'can:xem_lich_su_chat'])->group(function () {
     Route::get('/', [HistoryController::class, 'index'])->middleware('throttle:history-read')->name('history.index');
     Route::get('/{id}', [HistoryController::class, 'show'])->where('id', '[1-9][0-9]{0,17}')->middleware('throttle:history-read')->name('history.show');

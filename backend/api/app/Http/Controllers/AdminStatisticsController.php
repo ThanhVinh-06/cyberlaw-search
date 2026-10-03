@@ -26,6 +26,9 @@ final class AdminStatisticsController extends Controller
         $rules = DB::table('quy_dinh')->whereIn('ma_dieu_khoan', (clone $clauses)->select('ma_dieu_khoan'));
         $answers = DB::table('tin_nhan')->where('nguoi_gui', 'assistant')->where('ngay_tao', '>=', $start)->where('ngay_tao', '<', $end);
         $total = (clone $answers)->count();
+        // Guest answers are part of the same system-wide figures; this is the guest-only slice.
+        $guestAnswers = (clone $answers)->whereIn('ma_hoi_thoai',
+            DB::table('hoi_thoai')->whereNull('ma_nguoi_dung')->select('ma_hoi_thoai'))->count();
         $cited = (clone $answers)->whereExists(fn ($q) => $q->selectRaw('1')->from('trich_dan')->whereColumn('trich_dan.ma_tin_nhan', 'tin_nhan.ma_tin_nhan'))->count();
         $buckets = [];
         if ($period === '30d') {
@@ -105,13 +108,15 @@ final class AdminStatisticsController extends Controller
                 'sparkline' => array_map(fn ($date) => (clone $query)->where('ngay_tao', '<', $date->addDay())->count(), $dates)];
         }
         $top = DB::table('tin_nhan AS t')->join('hoi_thoai AS h', 'h.ma_hoi_thoai', '=', 't.ma_hoi_thoai')
-            ->join('nguoi_dung AS u', 'u.ma_nguoi_dung', '=', 'h.ma_nguoi_dung')
+            // Left join so guest threads (ma_nguoi_dung IS NULL) still become one labelled row.
+            ->leftJoin('nguoi_dung AS u', 'u.ma_nguoi_dung', '=', 'h.ma_nguoi_dung')
             ->where('t.nguoi_gui', 'user')->where('t.ngay_tao', '>=', $start)->where('t.ngay_tao', '<', $end)
             ->groupBy('u.ma_nguoi_dung', 'u.ho_ten', 'u.vai_tro')->orderByDesc('total')->orderBy('u.ma_nguoi_dung')
             ->limit(5)->get(['u.ma_nguoi_dung', 'u.ho_ten', 'u.vai_tro', DB::raw('COUNT(*) AS total')])
-            ->map(fn ($u) => ['ma_nguoi_dung' => (int) $u->ma_nguoi_dung, 'ho_ten' => $u->ho_ten,
-                'avatar' => mb_substr($u->ho_ten, 0, 1), 'email' => '', 'so_cuoc_hoi' => (int) $u->total,
-                'vai_tro_nhan' => $u->vai_tro === 'admin' ? 'Quản trị viên' : 'Người dùng', 'trang_thai' => 'offline'])->all();
+            ->map(fn ($u) => ['ma_nguoi_dung' => (int) ($u->ma_nguoi_dung ?? 0), 'ho_ten' => $u->ho_ten ?? 'Khách vãng lai',
+                'avatar' => $u->ho_ten ? mb_substr($u->ho_ten, 0, 1) : 'KV', 'email' => '', 'so_cuoc_hoi' => (int) $u->total,
+                'vai_tro_nhan' => match (true) { $u->vai_tro === 'admin' => 'Quản trị viên', $u->vai_tro === null => 'Không đăng nhập', default => 'Người dùng' },
+                'trang_thai' => 'offline'])->all();
         $result = [
             'period' => $period, 'year' => $today->year, 'range' => $start->format('d/m/Y').' – '.$today->format('d/m/Y'),
             'search_available' => false, 'regulation_dates' => array_map(fn ($date) => $date->format('d/m'), $dates),
@@ -120,10 +125,13 @@ final class AdminStatisticsController extends Controller
                 'tong_dieu_khoan' => (clone $clauses)->count(), 'tong_van_ban' => (clone $docs)->count(),
                 'tong_quy_dinh' => (clone $rules)->count(), 'tang_truong_quy_dinh' => 'Luật 116/2025/QH15 đã công bố',
                 'tong_cuoc_hoi_dap' => $total, 'tang_truong_hoi_dap' => 'Phản hồi đã lưu trong kỳ',
+                'hoi_dap_khach' => $guestAnswers,
                 'so_bang' => count(Schema::getTableListing()),
             ],
             'months' => $buckets, 'regulations' => $groups, 'top_users' => $top,
-            // Aggregates above are system-wide. Private message bodies remain owner-only.
+            // Aggregates above are system-wide, guests included. Guest message bodies are shown to
+            // admins by product decision (see docs/security/reviews/2026-10-02-khach-vang-lai-chat.md);
+            // registered users' message bodies remain owner-only.
             'recent_questions' => $this->recentQuestions($request, $start, $end),
             'citation_rates' => [
                 ['nhom' => 'Có trích dẫn', 'ti_le' => $total ? round(100 * $cited / $total, 1) : 0, 'mau_sac' => '#059669', 'so_luot' => (string) $cited, 'mo_ta' => 'Có bản lưu căn cứ'],
@@ -137,10 +145,12 @@ final class AdminStatisticsController extends Controller
     private function recentQuestions(Request $request, $start, $end): array
     {
         $messages = DB::table('tin_nhan AS a')->join('hoi_thoai AS h', 'h.ma_hoi_thoai', '=', 'a.ma_hoi_thoai')
-            ->where('h.ma_nguoi_dung', $request->user()->getKey())->where('a.nguoi_gui', 'assistant')
+            // This admin's own threads plus guest threads; never another account's messages.
+            ->where(fn ($w) => $w->where('h.ma_nguoi_dung', $request->user()->getKey())->orWhereNull('h.ma_nguoi_dung'))
+            ->where('a.nguoi_gui', 'assistant')
             ->where('a.ngay_tao', '>=', $start)->where('a.ngay_tao', '<', $end)
             ->orderByDesc('a.ma_tin_nhan')->limit(5)
-            ->select('a.ma_tin_nhan','a.ma_hoi_thoai','a.ngay_tao','a.do_tin_cay','a.thoi_gian_xu_ly_ms')
+            ->select('a.ma_tin_nhan','a.ma_hoi_thoai','a.ngay_tao','a.do_tin_cay','a.thoi_gian_xu_ly_ms','h.ma_nguoi_dung')
             ->selectRaw('SUBSTR(a.noi_dung, 1, 16000) AS noi_dung')->get();
         return $messages->map(function ($a) use ($request) {
             $question = DB::table('tin_nhan')->where('ma_hoi_thoai', $a->ma_hoi_thoai)->where('nguoi_gui', 'user')
@@ -149,11 +159,13 @@ final class AdminStatisticsController extends Controller
                 ->select('so_hieu','so_dieu','so_khoan','ky_hieu_diem','phien_ban_noi_dung','trang_nguon')
                 ->selectRaw('SUBSTR(noi_dung_trich_dan, 1, 16000) AS text')->get();
             $label = fn ($c) => $c->so_hieu.' · Điều '.$c->so_dieu.($c->so_khoan ? ' khoản '.$c->so_khoan : '').($c->ky_hieu_diem ? ' điểm '.$c->ky_hieu_diem : '');
-            return ['ma_tin_nhan' => (int) $a->ma_tin_nhan, 'nguoi_gui' => $request->user()->ho_ten, 'avatar' => 'AD',
+            $isGuest = $a->ma_nguoi_dung === null;
+            return ['ma_tin_nhan' => (int) $a->ma_tin_nhan, 'nguoi_gui' => $isGuest ? 'Khách vãng lai' : $request->user()->ho_ten,
+                'avatar' => $isGuest ? 'KV' : 'AD',
                 'cau_hoi' => $question->text ?? 'Không còn câu hỏi gốc', 'tra_loi_ai' => $a->noi_dung,
                 'dieu_khoan_trich_dan' => $citations->map($label)->join('; ') ?: 'Chưa có trích dẫn',
                 'trich_doan_luat' => $citations->map(fn ($c) => $label($c).' · Phiên bản '.$c->phien_ban_noi_dung.' · Trang '.($c->trang_nguon ?? '—')."\n".$c->text)->join("\n\n") ?: 'Phản hồi này không có căn cứ được lưu.',
-                'thoi_gian' => $a->ngay_tao, 'vai_tro' => 'Của bạn',
+                'thoi_gian' => $a->ngay_tao, 'vai_tro' => $isGuest ? 'Không đăng nhập' : 'Của bạn',
                 'do_tin_cay' => $this->confidenceLabel($a->do_tin_cay),
                 'thoi_gian_xu_ly' => $this->durationLabel($a->thoi_gian_xu_ly_ms),
                 'confidence_note' => 'Điểm bằng chứng truy hồi, không phải độ chính xác pháp lý',

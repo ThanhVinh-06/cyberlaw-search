@@ -36,7 +36,7 @@ export async function mockAdminUsers(target: Page | BrowserContext) {
     return route.fulfill({json: {van_ban: [], dieu_khoan: [], tu_khoa: [], quy_dinh: [], dieu_khoan_tu_khoa: [], revision: '1'.repeat(64)}});
   });
   await target.route('**/api/admin/permission-matrix**', async route => {
-    return route.fulfill({json: {version: '2026-09-30', roles: ['khach', 'user', 'admin'], rules: maTranPhanQuyen}});
+    return route.fulfill({json: {version: '2026-10-02', roles: ['khach', 'user', 'admin'], rules: maTranPhanQuyen}});
   });
   await target.route('**/api/admin/statistics**', async route => {
     const url = new URL(route.request().url());

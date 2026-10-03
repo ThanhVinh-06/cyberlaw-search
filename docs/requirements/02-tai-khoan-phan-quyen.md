@@ -15,14 +15,14 @@ Cập nhật ngày 30/09/2026. Database hiện có 11 bảng theo [thiết kế 
 | ---------------------------------------- | ------------------------------------ | ----------- | -------------------------- |
 | Tra cứu công khai, xem luật và thuật ngữ | Có                                   | Có          | Có                         |
 | Đăng ký, đăng nhập                       | Có                                   | Đã có phiên | Đã có phiên                |
-| Chat AI                                  | Mời đăng nhập, giữ câu hỏi đang soạn | Có          | Có                         |
+| Chat AI                                  | Có (hội thoại lưu nhãn khách vãng lai) | Có          | Có                         |
 | Xem lịch sử chat                         | Không                                | Của mình    | Của mình                   |
 | Sửa hồ sơ, đổi mật khẩu, đăng xuất       | Không                                | Của mình    | Của mình                   |
 | Quản lý văn bản, điều khoản và keyphrase | Không                                | Không       | Có                         |
 | Duyệt tri thức và yêu cầu lập chỉ mục    | Không                                | Không       | Có                         |
 | Quản lý vai trò và trạng thái tài khoản  | Không                                | Không       | Có, có kiểm tra và nhật ký |
 
-Chat, lịch sử, hồ sơ và quản trị là các phần được đề xuất đi kèm tài khoản; ưu tiên thực hiện theo từng giai đoạn. Vai trò admin không tự cho quyền đọc hội thoại riêng của người khác.
+Chat, lịch sử, hồ sơ và quản trị là các phần được đề xuất đi kèm tài khoản; ưu tiên thực hiện theo từng giai đoạn. Vai trò admin không tự cho quyền đọc hội thoại riêng của người khác. Từ 02/10/2026 khách vãng lai **dùng được** Chat AI (hội thoại lưu với `hoi_thoai.ma_nguoi_dung IS NULL`, nhãn "Khách vãng lai", hiện trong trang thống kê admin) nhưng **không** xem được lịch sử chat; xem `docs/backend/11-ai-truy-hoi-cuc-bo.md` và `docs/security/reviews/2026-10-02-khach-vang-lai-chat.md`.
 
 ## 3. Các màn hình
 

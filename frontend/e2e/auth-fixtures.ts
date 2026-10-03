@@ -150,33 +150,77 @@ export async function mockAuth(
       },
     });
   });
+  // Signed-in history is stateful so tests can ask a question and then find it stored.
+  // Guests keep getting 401: they may chat, but they can never list their threads back.
+  const conversations: {
+    id: string;
+    title: string;
+    updated_at: string;
+    messages: { id: string; role: "user" | "assistant"; text: string; status: string; created_at: string; citations: object[] }[];
+  }[] = [];
   await target.route("**/api/history**", async (route) => {
     if (!currentRole) {
       await route.fulfill({ status: 401, json: { message: "Unauthenticated" } });
       return;
     }
-    await route.fulfill({ status: 200, json: { items: [], total: 0, page: 1, per_page: 12 } });
-  });
-  // The browser suite is UI-only. Keep the AI transport deterministic here;
-  // the real Laravel route is covered by LocalAnswerTest.
-  await target.route("**/api/answer", async (route) => {
-    if (!currentRole) {
-      await route.fulfill({ status: 401, json: { message: "Unauthenticated" } });
+    const url = new URL(route.request().url());
+    const id = url.pathname.match(/\/api\/history\/([^/]+)$/)?.[1];
+    if (route.request().method() === "DELETE") {
+      const index = conversations.findIndex((item) => item.id === id);
+      if (index >= 0) conversations.splice(index, 1);
+      await route.fulfill({ status: 200, json: { deleted: true } });
       return;
     }
+    if (id) {
+      const conversation = conversations.find((item) => item.id === id);
+      await route.fulfill({
+        status: conversation ? 200 : 404,
+        json: conversation
+          ? { id: conversation.id, title: conversation.title, page: 1, total: conversation.messages.length, per_page: 20, messages: conversation.messages }
+          : { message: "Not found" },
+      });
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      json: { items: conversations.map(({ id, title, updated_at }) => ({ id, title, updated_at })), total: conversations.length, page: 1, per_page: 12 },
+    });
+  });
+  // The browser suite is UI-only. Keep the AI transport deterministic here;
+  // the real Laravel route is covered by LocalAnswerTest. Guests get the same
+  // 200 as signed-in users: the assistant is open to anonymous visitors.
+  await target.route("**/api/answer", async (route) => {
     const input = route.request().postDataJSON() as { question?: string; request_id?: string };
+    const question = input.question ?? "";
+    // Mirror the real retriever: the citation follows the question, so a test that asks
+    // about the effective date gets Điều 44 and everything else gets Điều 2.
+    const article = /hiệu lực/i.test(question) ? publicArticles[2] : publicArticles[1];
+    const answer = "Phản hồi mẫu từ căn cứ đã được duyệt.";
+    const citation = {
+      id: "ui-fixture-citation", law: "116/2025/QH15", title: "Luật An ninh mạng", article: article.so_dieu,
+      clause: "1", point: "", text: article.text, source: "https://example.test/source", version: 1, page: 1,
+    };
+    // A signed-in question shows up in the history list, exactly like the real backend.
+    if (currentRole) {
+      let conversation = conversations[0];
+      if (!conversation) {
+        conversation = { id: "ui-fixture-conversation", title: question.slice(0, 80), updated_at: "2026-10-02T10:00:00Z", messages: [] };
+        conversations.unshift(conversation);
+      }
+      conversation.messages.push(
+        { id: `ui-fixture-q-${conversation.messages.length}`, role: "user", text: question, status: "answered", created_at: "2026-10-02T10:00:00Z", citations: [] },
+        { id: `ui-fixture-a-${conversation.messages.length}`, role: "assistant", text: answer, status: "answered", created_at: "2026-10-02T10:00:01Z", citations: [citation] },
+      );
+    }
     await route.fulfill({
       status: 200,
       json: {
         conversation_id: "ui-fixture-conversation",
         message_id: input.request_id ?? "ui-fixture-message",
         status: "answered",
-        answer: "Phản hồi mẫu từ căn cứ đã được duyệt.",
+        answer,
         engine: "fixture",
-        citations: [{
-          id: "ui-fixture-citation", law: "116/2025/QH15", article: "2", clause: "1", point: "",
-          text: "An ninh mạng là sự ổn định của không gian mạng.", source: "https://example.test/source", version: 1, page: 1,
-        }],
+        citations: [citation],
       },
     });
   });

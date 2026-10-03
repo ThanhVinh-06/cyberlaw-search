@@ -165,34 +165,174 @@
     height: 19px;
   }
 
-  .cl-auth-chat-body {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 16px;
-    overflow-y: auto;
+  /* Chat body. Lives here (not in main-site.css) so the account pages get the exact
+     same assistant: same markup, same styling, same animations everywhere. */
+  .cl-chat-messages {
     min-height: 0;
-    padding: 24px;
+    padding: 20px 17px;
+    overflow-y: auto;
+    flex: 1;
+    background: #fcfafb;
+  }
+  .cl-chat-date {
     text-align: center;
+    color: #a59aa0;
+    font-size: 9px;
+    letter-spacing: 1px;
+    margin-bottom: 20px;
   }
-  .cl-auth-chat-body > img {
-    width: 120px;
-    height: 120px;
-    flex-shrink: 0;
-  }
-  .cl-auth-chat-body h2 {
-    font-size: 17px;
-    font-weight: 600;
-    line-height: 1.5;
-  }
-  .cl-auth-chat-body p {
-    font-size: 13px;
+  .cl-message {
+    border-radius: 10px;
+    padding: 13px 14px;
+    font-size: 12px;
     line-height: 1.8;
+    margin-bottom: 12px;
+    max-width: 92%;
+    overflow-wrap: anywhere;
+  }
+  .cl-message strong {
+    font-weight: 550;
+  }
+  .cl-message p {
+    margin: 7px 0 0;
+  }
+  .cl-message.cl-assistant {
+    background: white;
+    border: 1px solid #eee6ea;
+  }
+  .cl-message.cl-user {
+    background: #f6e5ea;
+    margin-left: auto;
+    color: #7b1832;
+  }
+  .cl-chat-prompts {
+    display: grid;
+    justify-items: start;
+    gap: 8px;
+    margin-top: 16px;
+    margin-bottom: 16px;
+  }
+  .cl-chat-prompts button {
+    background: white;
+    border: 1px solid #e4c8d0;
+    border-radius: 6px;
+    font-size: 11px;
+    padding: 8px 10px;
+    color: var(--red);
+    transition: background 0.15s ease, border-color 0.15s ease;
+  }
+  .cl-chat-prompts button:hover:not(:disabled) {
+    background: #fdf5f7;
+    border-color: #d4a5b2;
+  }
+  .cl-chat-prompts button:disabled,
+  #cl-chat-form button:disabled {
+    opacity: 0.55;
+    cursor: wait;
+  }
+  #cl-chat-form {
+    flex-shrink: 0;
+    display: flex;
+    gap: 8px;
+    padding: 13px 13px 8px;
+    border-top: 1px solid #f1e8ed;
+  }
+  #cl-chat-input {
+    min-width: 0;
+    flex: 1;
+    border: 0;
+    background: #f7f5f7;
+    padding: 10px 12px;
+    font-size: 12px;
+    border-radius: 7px;
+  }
+  #cl-chat-form button {
+    background: var(--red);
+    color: white;
+    border: 0;
+    border-radius: 7px;
+    width: 40px;
+    display: grid;
+    place-items: center;
+  }
+  #cl-chat-form svg {
+    width: 18px;
+    height: 18px;
+  }
+  .cl-chat-disclaimer {
+    font-size: 9px;
+    color: #a29aa0;
+    text-align: center;
+    padding: 0 5px 10px;
+  }
+  .cl-chat-citation {
+    margin-top: 12px;
+    padding: 10px;
+    border-radius: 8px;
+    background: #faf6f7;
+    box-shadow: 0 0 0 1px #eee6ea;
+  }
+  .cl-chat-citation summary {
+    color: var(--red);
+    cursor: pointer;
+  }
+  .cl-chat-citation p {
+    white-space: pre-wrap;
+  }
+  .cl-chat-citation small {
+    display: block;
+    margin-top: 8px;
     color: #71747e;
   }
-  .cl-auth-chat-body a {
+  .cl-chat-status {
     flex-shrink: 0;
+    margin: 0;
+    padding: 8px 14px;
+    font-size: 12px;
+    overflow-wrap: anywhere;
   }
+  .cl-chat-status button {
+    margin-left: 8px;
+    padding: 6px 10px;
+    border: 1px solid #e4c8d0;
+    border-radius: 6px;
+    color: var(--red);
+    background: white;
+  }
+  .cl-text-button {
+    background: none;
+    border: 0;
+    font-size: 11px;
+    color: #71747e;
+    padding: 8px 0;
+    white-space: nowrap;
+  }
+  .cl-link-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 11px;
+    color: var(--red);
+    background: none;
+    border: 0;
+    padding: 0;
+    font-weight: 500;
+    transition: color 0.15s ease;
+  }
+  .cl-link-button svg {
+    width: 15px;
+    height: 15px;
+    transition: transform 0.15s ease;
+  }
+  .cl-sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+  }
+
   @media (max-width: 760px) {
     :scope {
       right: 12px;
@@ -214,9 +354,22 @@
       width: calc(100vw - 24px);
       height: min(520px, calc(100dvh - 32px));
     }
-
     .cl-chat-launcher .cl-launcher-label small {
       display: none;
+    }
+    .cl-message {
+      font-size: 14px;
+    }
+    .cl-chat-prompts button {
+      font-size: 12px;
+    }
+    .cl-chat-date,
+    .cl-chat-disclaimer {
+      font-size: 11px;
+    }
+    /* 16px avoids the iOS zoom-on-focus jump in the input. */
+    #cl-chat-input {
+      font-size: 16px;
     }
     :scope.cl-auth-chat[data-open="false"] {
       position: absolute;

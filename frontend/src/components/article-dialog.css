@@ -1,0 +1,187 @@
+/*
+ * Styles for ArticleDialog. Kept out of main-site.css on purpose: that file is wrapped in
+ * @scope (.cl-site), which only exists on the public pages, so the dialog rendered from the
+ * chat on /login, /register, /forgot-password and /verify-email got no styles at all
+ * (position: static, no backdrop, off-screen). Everything here is namespaced under
+ * .cl-article-dialog-root, which the dialog always renders, so one file styles every host.
+ */
+.cl-article-dialog-root {
+  /* --muted and the reds live in @scope (.cl-site); redeclare them for other hosts. */
+  --red: var(--primary);
+  --red-dark: var(--primary-hover);
+  --muted: #71747e;
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+}
+.cl-article-dialog-root .cl-article-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(22, 10, 17, 0.68);
+  backdrop-filter: blur(14px) saturate(180%);
+  -webkit-backdrop-filter: blur(14px) saturate(180%);
+  z-index: 1;
+}
+.cl-article-dialog-root .cl-article-dialog-container {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  z-index: 2;
+  pointer-events: none;
+}
+.cl-article-dialog-root #cl-article-dialog.cl-article-modal {
+  pointer-events: auto;
+  width: min(720px, calc(100vw - 32px));
+  max-height: 86vh;
+  background: #ffffff;
+  border-radius: 18px;
+  border: 1px solid rgba(220, 210, 215, 0.8);
+  box-shadow:
+    0 28px 75px -12px rgba(24, 8, 17, 0.38),
+    0 0 0 1px rgba(255, 255, 255, 0.8) inset;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  outline: none;
+}
+.cl-article-dialog-root .cl-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 24px;
+  background: #faf8f9;
+  border-bottom: 1px solid #f0edf0;
+  flex-shrink: 0;
+}
+.cl-article-dialog-root .cl-modal-meta-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.cl-article-dialog-root .cl-eyebrow {
+  color: var(--red);
+  font-size: 10px;
+  letter-spacing: 1.8px;
+  font-weight: 650;
+}
+.cl-article-dialog-root .cl-modal-header .cl-eyebrow {
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  font-weight: 700;
+  color: var(--red);
+}
+.cl-article-dialog-root .cl-result-category {
+  font-size: 9px;
+  font-weight: 600;
+  color: var(--red);
+  letter-spacing: 0.35px;
+}
+.cl-article-dialog-root .cl-modal-scroll-area {
+  flex: 1;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 24px 28px 30px;
+}
+.cl-article-dialog-root .cl-modal-scroll-area h2 {
+  font-size: 21px;
+  font-weight: 650;
+  color: #1c1a22;
+  line-height: 1.45;
+  margin: 6px 0 16px;
+  letter-spacing: -0.4px;
+}
+.cl-article-dialog-root .cl-modal-scroll-area p {
+  font-size: 14px;
+  line-height: 1.85;
+  color: #373943;
+  margin-bottom: 14px;
+}
+.cl-article-dialog-root .cl-modal-scroll-area .cl-document-meta {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  color: #8a737a;
+  background: #fbf2f4;
+  border-left: 3px solid var(--red);
+  padding: 9px 14px;
+  border-radius: 0 6px 6px 0;
+  margin: 16px 0;
+}
+.cl-article-dialog-root .cl-modal-scroll-area a {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 550;
+  color: var(--red);
+  text-decoration: none;
+  margin-top: 8px;
+}
+@media (hover: hover) and (pointer: fine) {
+  .cl-article-dialog-root .cl-modal-scroll-area a:hover {
+    text-decoration: underline;
+    color: var(--red-dark);
+  }
+}
+/* The article body itself; #cl-article-content only ever exists inside this dialog. */
+.cl-article-dialog-root #cl-article-content h2 {
+  font-size: 21px;
+  color: var(--red-dark);
+}
+.cl-article-dialog-root #cl-article-content p {
+  font-size: 15px;
+  line-height: 1.9;
+}
+.cl-article-dialog-root #cl-article-content a {
+  font-size: 12px;
+}
+.cl-article-dialog-root .cl-document-meta {
+  font-size: 11px !important;
+  color: var(--muted);
+}
+.cl-article-dialog-root .cl-icon-button {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  border: 1px solid #e7e4e7;
+  background: #ffffff;
+  color: #5a5762;
+  cursor: pointer;
+  padding: 0;
+  transition:
+    background 160ms var(--ease-out),
+    transform 160ms var(--ease-out),
+    color 160ms;
+}
+@media (hover: hover) and (pointer: fine) {
+  .cl-article-dialog-root .cl-icon-button:hover {
+    background: #f0edf0;
+    color: var(--red);
+  }
+}
+.cl-article-dialog-root .cl-icon-button:active {
+  transform: scale(0.92);
+}
+@media (max-width: 760px) {
+  .cl-article-dialog-root .cl-result-category {
+    font-size: 12px;
+  }
+  .cl-article-dialog-root .cl-article-dialog-container {
+    padding: 16px;
+  }
+  .cl-article-dialog-root #cl-article-dialog.cl-article-modal {
+    max-height: 90vh;
+  }
+  .cl-article-dialog-root .cl-modal-header {
+    padding: 14px 16px;
+  }
+  .cl-article-dialog-root .cl-modal-scroll-area {
+    padding: 18px 16px 24px;
+  }
+}

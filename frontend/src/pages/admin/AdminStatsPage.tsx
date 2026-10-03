@@ -223,6 +223,12 @@ export default function AdminStatsPage({ onNavigateTab }: AdminStatsPageProps) {
               <Sparkles size={13} />
               {overview.tang_truong_hoi_dap}
             </span>
+            {/* Khách vãng lai hỏi đáp như người đã đăng nhập nhưng không có tài khoản,
+                nên số lượt của họ được tách riêng thay vì cộng vào Người dùng hệ thống. */}
+            <span className="cl-stat-info-sub" style={{ color: "#71747e" }}>
+              <Bot size={13} />
+              {(overview.hoi_dap_khach ?? 0).toLocaleString("vi-VN")} lượt từ khách vãng lai
+            </span>
           </div>
         </motion.div>
       </div>

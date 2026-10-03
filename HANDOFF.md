@@ -1,5 +1,30 @@
 # Bàn giao dự án CyberLaw Search
 
+### Khách vãng lai dùng trợ lý AI như đã đăng nhập — 02–03/10/2026
+
+- **Mục tiêu (yêu cầu chủ dự án)**: khách chưa đăng nhập hỏi đáp AI **y hệt** người đã đăng nhập; hội thoại **vẫn lưu MySQL** với nhãn "Khách vãng lai"; hiện **đầy đủ** trong trang thống kê quản trị; khách **không xem lại được** lịch sử chat của mình; chatbot ở trang tài khoản chạy thật; animation mở điều luật giống hệt giữa khách và người đã đăng nhập.
+- **✅ Migration đã được chủ dự án chạy tay trên MySQL (03/10/2026)**: `database/migrations/20261002_hoi_thoai_khach_vang_lai.sql` (`ALTER TABLE hoi_thoai MODIFY COLUMN ma_nguoi_dung BIGINT UNSIGNED NULL;`). Đã kiểm tra trực tiếp trên MySQL: `hoi_thoai.ma_nguoi_dung` = `IS_NULLABLE YES`, `bigint unsigned`, key `MUL`; khóa ngoại `khoa_ngoai_hoi_thoai_nguoi_dung` (ON DELETE CASCADE) và index `chi_muc_hoi_thoai_nguoi_dung_ngay` còn nguyên; thử ghi một hội thoại `ma_nguoi_dung = NULL` trong transaction rồi rollback thành công, DB không đổi (5 dòng, 0 dòng NULL). Nếu chưa áp, route khách lỗi 500 khi tạo hội thoại — **test SQLite không phát hiện được**.
+- **Dump local đã làm mới**: `database/cyberlaw_search.sql` (gitignored) trước đây là bản cũ 29/09 chỉ 10 bảng, nay là dump cấu trúc-only đúng **12 bảng** khớp DB thật và `database/schema.sql` (111 cột), gồm `nhat_ky_quan_tri` và `yeu_cau_xac_minh_email` và `hoi_thoai.ma_nguoi_dung DEFAULT NULL`. Không chứa dữ liệu (0 `INSERT`). Bản Desktop vẫn là bản cũ, chưa cập nhật.
+- **Backend**:
+  - `PermissionMatrix.php`: `chat_ai_cyberlaw.khach = true`; `xem_lich_su_chat.khach` giữ `false`; `VERSION` → `'2026-10-02'`.
+  - `AppServiceProvider.php`: Gate nhận `?NguoiDung` (bắt buộc nullable để Laravel gọi closure cho khách — `Gate::canBeCalledWithUser`); `RateLimiter::for('ai-answer')` tách hạn mức khách 4/phút + 20/giờ mỗi phiên, trần 40/giờ mỗi IP, khoá HMAC.
+  - `ActiveAccount.php`: tham số tuỳ chọn `?string $mode`; `account.active:guest` chỉ nới cho route AI — tài khoản bị khoá/sai fingerprint **vẫn 401**.
+  - `routes/web.php`: `POST /api/answer` → `account.active:guest`. `GET/DELETE /api/history*` không đổi (khách 401).
+  - `LocalAnswer.php`: danh tính khách = phiên trình duyệt (`SESSION_KEY='guest_chat_threads'`, tối đa 20 id); `owned()`/`replay()` tách nhánh user/guest; `ma_nguoi_dung = null` cho khách; ghi id vào session **bên trong transaction** nên rollback không để lại tham chiếu mồ côi.
+  - `AdminStatisticsController.php`: `recent_questions` gộp hội thoại khách + của chính admin (nhãn "Khách vãng lai", avatar "KV"); `top_users` dùng `leftJoin`; `overview.hoi_dap_khach` (không cộng vào `tong_nguoi_dung` vì khách không phải tài khoản).
+- **Frontend**:
+  - `components/AiChat.tsx` (mới): một trợ lý dùng chung cho trang chính và trang tài khoản; `forwardRef` mở panel (`AiChatHandle.open`). `MainSite.tsx` và `App.tsx::Companion()` cùng dùng component này.
+  - Mở điều luật theo **mọi** citation qua `libraryApi.article()` (trước chỉ 3 điều hardcode trong `articles.ts`).
+  - `components/article-dialog.css` (mới): dialog trước đây **không có CSS** ở trang tài khoản vì mọi selector nằm trong `@scope (.cl-site)` (chỉ tồn tại ở trang công khai) → nay tách file không scope, namespace `.cl-article-dialog-root`.
+  - `admin-data.ts` + `AdminStatsPage.tsx`: thẻ "lượt từ khách vãng lai".
+- **Kiểm thử đã chạy**:
+  - Backend: `LocalAnswerTest` + `HistoryTest` + `AdminUserTest` + `AdminStatisticsTest` **31/31 PASS** (351 assertions).
+  - Frontend: `npx tsc --noEmit` sạch; `npm run build` PASS.
+  - Playwright: `guest-chat.spec.ts` **15/15 PASS** (gồm so khớp animation khách vs. đã đăng nhập, hình học dialog 5 kích thước, reduced motion + bàn phím); các suite liên quan **50/50 PASS**; **bộ đầy đủ 149/149 PASS (12.4 phút, 1 worker, msedge)** sau các chỉnh sửa cuối.
+- **Bảo mật**: `docs/security/reviews/2026-10-02-khach-vang-lai-chat.md` — ghi rõ **ngoại lệ sản phẩm**: admin **được** xem thân hội thoại khách (khác "admin không mặc nhiên đọc chat riêng" ở `docs/security/README.md:29`); chat của người dùng đã đăng nhập khác vẫn chỉ chủ sở hữu xem.
+- **Tài liệu đã cập nhật**: `HANDOFF.md`; `docs/backend/11-ai-truy-hoi-cuc-bo.md` (mục "Khách vãng lai"); `docs/design/04-co-so-du-lieu.md` (mô tả bảng `hoi_thoai`, quy ước chat, xóa dữ liệu, sơ đồ quan hệ `o|--o{`); `docs/requirements/02-tai-khoan-phan-quyen.md` (ma trận: khách dùng được Chat AI); `docs/security/README.md` (ngoại lệ) + `docs/security/02-feature-checklist.md` (hàng AI, hàng Lịch sử); `docs/technology-decisions.md` (sửa "10 bảng/89 cột" → "12 bảng/111 cột"); review mới trong `docs/security/reviews/`.
+- **Giới hạn**: khách không xem lại được hội thoại của mình (đúng yêu cầu); session hết hạn thì mất khả năng nối tiếp thread; chưa có job dọn hội thoại khách cũ; chưa kết nối LLM API (làm sau). Nút chặn migration đã gỡ (đã áp trên MySQL 03/10); **vẫn chưa deploy-ready** vì còn các mục tồn ở các mục khác trong file (staging, backup/restore, rà dependency trước phát hành, job dọn dữ liệu khách).
+
 ### Cập nhật số lượng bảng CSDL MySQL 8.0 động trong trang Thống kê Quản trị — 02/10/2026
 
 - **Mục tiêu**: Kiểm tra và đếm chính xác số lượng bảng thực tế trong cơ sở dữ liệu `cyberlaw_search`, sửa dòng hiển thị tĩnh `"MySQL 8.0 • 9 bảng"` thành số lượng bảng chuẩn xác lấy động từ hệ thống.

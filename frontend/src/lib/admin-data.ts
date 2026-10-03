@@ -167,10 +167,10 @@ export const maTranPhanQuyen: QuyTacPhanQuyen[] = [
     ten_chuc_nang: "Đặt câu hỏi với Trợ lý AI",
     mo_ta: "Hỏi đáp với AI và nhận câu trả lời có trích dẫn điều khoản căn cứ",
     nhom: "chat_ai",
-    khach: false,
+    khach: true,
     user: true,
     admin: true,
-    ghi_chu: "Khách được mời đăng nhập để lưu giữ phiên hỏi đáp",
+    ghi_chu: "Khách dùng được; hội thoại lưu với nhãn khách vãng lai, không xem lại được.",
   },
   {
     ma_chuc_nang: "xem_lich_su_chat",
@@ -234,6 +234,8 @@ export interface ThongKeTongQuan {
   tang_truong_quy_dinh: string;
   tong_cuoc_hoi_dap: number;
   tang_truong_hoi_dap: string;
+  /** Số lượt trợ lý AI đã trả lời cho hội thoại không thuộc tài khoản nào (khách vãng lai). */
+  hoi_dap_khach?: number;
   so_bang?: number;
 }
 
@@ -246,6 +248,7 @@ export const thongKeTongQuanData: ThongKeTongQuan = {
   tang_truong_quy_dinh: "+8.5% vừa chuẩn hóa",
   tong_cuoc_hoi_dap: 3450,
   tang_truong_hoi_dap: "+28.6% lượt truy vấn",
+  hoi_dap_khach: 412,
   so_bang: 12,
 };
 
@@ -521,6 +524,26 @@ export const danhSachCauHoiGanDay: CauHoiGanDay[] = [
     loai_quy_dinh: "Quy trình kiểm tra",
     muc_phat: "Bắt buộc chấp hành lệnh kiểm tra của lực lượng chuyên trách",
     dieu_so: 13,
+  },
+  {
+    // Khách vãng lai: không có tài khoản, hội thoại lưu với ma_nguoi_dung IS NULL.
+    ma_tin_nhan: 106,
+    nguoi_gui: "Khách vãng lai",
+    avatar: "KV",
+    cau_hoi:
+      "Hành vi tấn công mạng trái phép vào hệ thống thông tin của cơ quan nhà nước bị xử lý ra sao?",
+    dieu_khoan_trich_dan: "Điều 9, Khoản 2",
+    thoi_gian: "3 giờ trước",
+    vai_tro: "Không đăng nhập",
+    tra_loi_ai:
+      "Hành vi truy cập trái phép, làm thay đổi hoặc phá hoại thông tin trên hệ thống thông tin của cơ quan nhà nước là hành vi bị nghiêm cấm, tùy mức độ thiệt hại có thể bị xử phạt vi phạm hành chính hoặc truy cứu trách nhiệm hình sự.",
+    trich_doan_luat:
+      '"Nghiêm cấm hành vi truy cập trái phép, làm sai lệch, phá hoại thông tin trên hệ thống thông tin." (Điều 9 Khoản 2)',
+    do_tin_cay: "92.0%",
+    thoi_gian_xu_ly: "0.51s",
+    loai_quy_dinh: "Hành vi bị nghiêm cấm",
+    muc_phat: "Xử lý theo mức độ thiệt hại thực tế",
+    dieu_so: 9,
   },
 ];
 

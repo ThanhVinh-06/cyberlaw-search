@@ -7,9 +7,8 @@ import { historyApi, HistoryError, type HistoryPage, type HistoryDetail } from '
 
 const date=(value:string|null)=>value && !Number.isNaN(Date.parse(value)) ? new Date(value).toLocaleString('vi-VN') : '';
 const message=(error:unknown)=>error instanceof Error ? error.message : 'Không thể tải lịch sử. Bạn thử lại nhé.';
-type PreviewArticle = (typeof import('../lib/articles').articles)[number];
-type PreviewMessage = {text:string; kind:'user'|'assistant'; article?:PreviewArticle};
-export function HistoryView({previewMessages=[],articleButton,onOpenChat,revision=0}:{previewMessages?:PreviewMessage[]; articleButton?:(article:PreviewArticle,label?:string)=>ReactNode; onOpenChat?:()=>void; revision?:number}) {
+type Article = (typeof import('../lib/articles').articles)[number];
+export function HistoryView({articleButton,onOpenChat,revision=0}:{articleButton?:(article:Article,label?:string)=>ReactNode; onOpenChat?:()=>void; revision?:number}) {
   const shouldReduceMotion = useReducedMotion();
   const [request,setRequest]=useState({page:1,run:0});
   const [data,setData]=useState<HistoryPage|null>(null);
@@ -78,15 +77,12 @@ export function HistoryView({previewMessages=[],articleButton,onOpenChat,revisio
         <div className="cl-document-card" aria-busy={loading}>
           {error && <p role="alert">{error}</p>}
           {loading ? <p role="status">Đang tải lịch sử…</p> : data && <>
-            {!data.items.length && !previewMessages.length ? <div className="cl-history-empty"><History size={28}/><h2>Bạn chưa có cuộc hỏi đáp nào</h2><p>Khi bạn hỏi đáp cùng trợ lý AI, các cuộc trao đổi sẽ tự động được lưu tại đây.</p>{onOpenChat && <button className="cl-primary" onClick={onOpenChat}>Hỏi đáp cùng AI</button>}</div> : <>
-              {data.items.length === 0 && previewMessages.length > 0 && <div className="cl-history-preview"><p className="cl-muted">Trao đổi thử trong phiên hiện tại, chưa lưu lên hệ thống.</p>{previewMessages.filter(m=>m.kind==='user').map((m,index)=><article className="cl-document-card cl-history-item" key={`preview-${index}`}><span className="cl-eyebrow">CÂU HỎI {index+1}</span><h2>{m.text}</h2><p>{previewMessages[index*2+1]?.text}</p>{previewMessages[index*2+1]?.article && articleButton?.(previewMessages[index*2+1].article!)}</article>)}</div>}
-              {data.items.length > 0 && <>
+            {!data.items.length ? <div className="cl-history-empty"><History size={28}/><h2>Bạn chưa có cuộc hỏi đáp nào</h2><p>Khi bạn hỏi đáp cùng trợ lý AI, các cuộc trao đổi sẽ tự động được lưu tại đây.</p>{onOpenChat && <button className="cl-primary" onClick={onOpenChat}>Hỏi đáp cùng AI</button>}</div> : <>
               <h2>Hội thoại của bạn</h2>
               <nav className="cl-history-list" aria-label="Danh sách hội thoại">{data.items.map((item, index)=><motion.button disabled={deleting} className="cl-history-select" key={item.id} aria-current={selected.id===item.id?'true':undefined} onClick={()=>setSelected({id:item.id,page:1,run:selected.run+1})} initial={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: shouldReduceMotion ? 0.16 : 0.85, delay: shouldReduceMotion ? 0 : Math.min(index * 0.07, 0.42), ease: [0.16, 1, 0.3, 1] }}>
                 <strong>{item.title}</strong><time>{date(item.updated_at)}</time>
               </motion.button>)}</nav>
               {data.total>12 && <nav className="cl-history-pages" aria-label="Phân trang hội thoại"><button disabled={request.page===1||deleting} onClick={()=>{setSelected({id:'',page:1,run:0});setRequest({...request,page:request.page-1});}}>Trước</button><span>Trang {data.page} / {Math.ceil(data.total/12)}</span><button disabled={request.page*12>=data.total||deleting} onClick={()=>{setSelected({id:'',page:1,run:0});setRequest({...request,page:request.page+1});}}>Sau</button></nav>}
-              </>}
             </>}
           </>}
         </div>

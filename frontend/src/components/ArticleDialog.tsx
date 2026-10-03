@@ -1,9 +1,10 @@
 import { useEffect, useLayoutEffect, useRef, type ReactNode } from "react";
 import { motion, useReducedMotion, type Transition } from "motion/react";
 import { X } from "lucide-react";
-import { type articles } from "../lib/articles";
+import "./article-dialog.css";
 
-type Article = (typeof articles)[number];
+/** Minimal shape the dialog renders; both lib/articles and chat-built articles satisfy it. */
+type DialogArticle = { id: string; title: string; label: string; text: string };
 
 // Exit animation can overlap the next dialog. Restore scrolling only after
 // the last mounted dialog releases its lock.
@@ -12,7 +13,7 @@ let savedOverflow = "";
 let savedPadding = "";
 
 type Props = {
-  article: Article;
+  article: DialogArticle;
   trigger: HTMLElement;
   origin: HTMLElement;
   instant?: boolean;

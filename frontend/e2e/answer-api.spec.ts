@@ -13,8 +13,24 @@ test("authenticated chat renders bounded citations and prevents duplicate submit
   await expect(page.getByText("Cuộc trò chuyện mới")).toBeVisible();
 });
 
+test("anonymous visitor gets the same answered reply and article link", async ({ page }) => {
+  await page.goto("/search");
+  await page.getByRole("button", { name: "Mở trò chuyện với trợ lý AI" }).click();
+  const input = page.getByLabel("Câu hỏi cho trợ lý AI");
+  await input.fill("Luật có hiệu lực từ khi nào?");
+  await input.press("Enter");
+  await expect(page.getByRole("log")).toContainText("Phản hồi mẫu");
+  await expect(page.locator(".cl-chat-citation")).toContainText("Điều 44");
+  // The citation number is resolved through the public library endpoint, so guests can
+  // open any cited article, not only the ones bundled in the frontend.
+  await page.getByRole("button", { name: "Mở Điều 44" }).click();
+  await expect(
+    page.getByRole("dialog", { name: "Căn cứ pháp lý" }),
+  ).toContainText("Điều 44.");
+});
+
 for (const [width, height] of [[320, 568], [440, 956], [834, 1194], [1440, 900], [956, 440]] as const) {
-  test(`authenticated chat fits ${width}x${height}`, async ({ page }) => {
+  test(`chat fits ${width}x${height}`, async ({ page }) => {
     await mockAuth(page, "user");
     await page.setViewportSize({ width, height });
     await page.goto("/search");

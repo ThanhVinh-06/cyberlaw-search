@@ -8,7 +8,6 @@ import { authApi } from "./lib/auth-api";
 import { Brand } from "./components/Brand";
 import { publicNavigation, historyNavigation } from "./lib/navigation";
 import {
-  useCallback,
   useEffect,
   useLayoutEffect,
   useRef,
@@ -48,7 +47,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ChatPopover } from "@/components/ChatPopover";
+import { AiChat } from "@/components/AiChat";
 import {
   Dialog,
   DialogContent,
@@ -277,57 +276,8 @@ function MobileMenu() {
 }
 
 function Companion() {
-  const [open, setOpen] = useState(false);
-  const [instant, setInstant] = useState(false);
-  const launcherRef = useRef<HTMLButtonElement>(null);
-  const actionRef = useRef<HTMLAnchorElement>(null);
-  const close = useCallback((immediate = false, restoreFocus = true) => {
-    setInstant(immediate);
-    setOpen(false);
-    if (restoreFocus)
-      requestAnimationFrame(() =>
-        launcherRef.current?.focus({ preventScroll: true }),
-      );
-  }, []);
-  useEffect(() => {
-    if (!open) return;
-    actionRef.current?.focus({ preventScroll: true });
-    const escape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") close(true);
-    };
-    window.addEventListener("keydown", escape);
-    return () => window.removeEventListener("keydown", escape);
-  }, [open, close]);
-  return (
-    <ChatPopover
-      className="cl-auth-chat"
-      open={open}
-      instant={instant}
-      articleOpen={false}
-      launcherRef={launcherRef}
-      onOpen={(immediate) => {
-        setInstant(immediate);
-        setOpen(true);
-      }}
-      onClose={close}
-    >
-      <div className="cl-auth-chat-body">
-        <img src="/assets/ai-assistant.png" alt="" width="120" height="120" />
-        <h2>Xin chào, mình là CyberLaw.</h2>
-        <p>Không gian hỏi đáp về Luật An ninh mạng.</p>
-        <p>
-          Tính năng hỏi đáp AI đang được hoàn thiện. Bạn có thể khám phá các
-          điều khoản minh họa trong trang tra cứu ngay lúc này.
-        </p>
-        <Button asChild>
-          <Link to="/search" ref={actionRef}>
-            Khám phá thư viện luật
-            <ArrowRight size={17} />
-          </Link>
-        </Button>
-      </div>
-    </ChatPopover>
-  );
+  // The account pages get the same assistant as the public site (see components/AiChat.tsx).
+  return <AiChat className="cl-auth-chat" />;
 }
 
 function AuthStory() {

@@ -6,7 +6,7 @@ async function openStats(page: Page) {
   await mockAuth(page, "admin");
   await page.goto("/admin/stats");
   await page.evaluate(() => document.fonts.ready);
-  await expect(page.locator(".cl-question-card")).toHaveCount(5);
+  await expect(page.locator(".cl-question-card")).toHaveCount(6);
   await expect(page.locator(".cl-admin-stats-dashboard")).toHaveCSS(
     "transform",
     "none",
@@ -306,3 +306,18 @@ test("period tabs split chart into 4 weeks, 3 bi-months, and 6 bi-months without
   const clientWidth = await page.evaluate(() => document.documentElement.clientWidth);
   expect(scrollWidth).toBeLessThanOrEqual(clientWidth);
 });
+
+test("guest answers are shown as a separate metric and labelled in recent questions", async ({
+  page,
+}) => {
+  await openStats(page);
+  // Guests are not accounts, so their turns are counted apart from the account total.
+  await expect(
+    page.locator(".cl-stat-box").filter({ hasText: "Lượt hỏi đáp AI" }),
+  ).toContainText("lượt từ khách vãng lai");
+  // The guest conversation appears in the recent list under its own label.
+  const guestRow = page.locator(".cl-question-card").filter({ hasText: "Khách vãng lai" });
+  await expect(guestRow).toHaveCount(1);
+  await expect(guestRow).toContainText("Không đăng nhập");
+});
+

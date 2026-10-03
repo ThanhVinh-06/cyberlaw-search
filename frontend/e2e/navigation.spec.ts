@@ -116,7 +116,7 @@ test("library and dictionary keep their labels and icons when leaving the accoun
   }
 });
 
-test("history follows login intent, shows current demo exchanges and clears on logout", async ({
+test("history follows login intent, keeps stored exchanges and hides them from guests", async ({
   page,
 }) => {
   await page.goto("/search");
@@ -140,18 +140,22 @@ test("history follows login intent, shows current demo exchanges and clears on l
   await page.getByLabel("Câu hỏi cho trợ lý AI").fill("An ninh mạng là gì?");
   await page.getByLabel("Câu hỏi cho trợ lý AI").press("Enter");
   await page.keyboard.press("Escape");
-  await expect(page.locator(".cl-history-item")).toContainText(
+  // The exchange is stored server-side, so it shows up in the history list.
+  await expect(page.locator(".cl-history-select")).toContainText(
     "An ninh mạng là gì?",
   );
-  await expect(page.locator(".cl-history-item")).toContainText("Phản hồi mẫu");
+  await page.locator(".cl-history-select").first().click();
+  await expect(page.locator(".cl-history-detail")).toContainText(
+    "Phản hồi mẫu",
+  );
   await page.getByRole("button", { name: "Đăng xuất", exact: true }).click();
   await expect(page).toHaveURL(/\/login\?next=history$/);
   await fillLogin(page, "user");
   await page.getByRole("button", { name: "Đăng nhập", exact: true }).click();
-  await expect(page.locator(".cl-history-item")).toHaveCount(0);
-  await expect(
-    page.getByRole("heading", { name: "Bạn chưa có cuộc hỏi đáp nào" }),
-  ).toBeVisible();
+  // Stored conversations belong to the account, so they are still there after a new login.
+  await expect(page.locator(".cl-history-select")).toContainText(
+    "An ninh mạng là gì?",
+  );
 });
 
 for (const [width, height] of [

@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\NguoiDung;
 use App\Support\PasswordSession;
+use App\Support\PermissionMatrix;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
 use Illuminate\Support\Facades\DB;
@@ -175,8 +176,14 @@ final class AdminUserTest extends TestCase
         $this->login($admin);
         $response = $this->getJson('/api/admin/permission-matrix')->assertOk();
         $response->assertJsonPath('roles', ['khach', 'user', 'admin']);
+        $response->assertJsonPath('version', PermissionMatrix::VERSION);
         $response->assertJsonPath('rules.0.ma_chuc_nang', 'tra_cuu_luat');
         $response->assertJsonPath('rules.5.admin', true);
+        // Guests may chat (their threads are stored with a guest label) but never list history.
+        $response->assertJsonPath('rules.2.ma_chuc_nang', 'chat_ai_cyberlaw');
+        $response->assertJsonPath('rules.2.khach', true);
+        $response->assertJsonPath('rules.3.ma_chuc_nang', 'xem_lich_su_chat');
+        $response->assertJsonPath('rules.3.khach', false);
         $this->assertCount(8, $response->json('rules'));
     }
 }

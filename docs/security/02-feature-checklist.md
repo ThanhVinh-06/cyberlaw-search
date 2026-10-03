@@ -21,13 +21,13 @@ Chọn các hàng liên quan trong [danh mục rủi ro](01-risk-catalog.md), gh
 | Reset | Token sai, sửa email sau xác minh, token đã dùng, hai request đồng thời | Không đổi tài khoản khác; tối đa một lần thành công; mật khẩu đã băm; vô hiệu phiên cũ theo thiết kế |
 | Quản trị | Khách/user gọi trực tiếp route hoặc đổi HTTP method; trường nhạy cảm thừa | Kiểm tra quyền từng API; allowlist trường ghi và trường trả về |
 | Vai trò | Khóa/hạ quyền/xóa admin hoạt động cuối cùng, yêu cầu đồng thời | Không làm mất admin cuối; sự kiện thay quyền có audit |
-| Lịch sử | A lấy/xóa chat B; thay ID message/citation; admin xem chat riêng | Kiểm tra chủ sở hữu xuyên quan hệ; không trả dữ liệu vượt quyền |
+| Lịch sử | A lấy/xóa chat B; thay ID message/citation; admin xem chat riêng; khách gọi `/api/history*` | Kiểm tra chủ sở hữu xuyên quan hệ; không trả dữ liệu vượt quyền; khách 401 dù hội thoại khách vẫn được lưu |
 | Văn bản | Đọc bản nháp qua ID, tải PDF chưa công bố; sửa/xóa nguồn có liên kết | Khách không thấy bản nháp; ràng buộc dữ liệu và phiên bản đúng |
 | SQL/validation | Chuỗi đặc biệt trong search/sort/filter, enum sai, ID âm/quá lớn | Binding và allowlist sort; không thay nghĩa truy vấn, không rò SQL/stack |
 | XSS | HTML/script thử trong tên, văn bản, AI/Markdown; URL giao thức lạ | Hiển thị như dữ liệu; liên kết không chạy script; không chèn raw HTML |
 | Upload | File giả PDF, MIME/đuôi lệch, tên `../`, quá lớn, parser lỗi/quá lâu | Từ chối an toàn; không ghi ngoài storage, không thực thi, không để file dở công khai |
 | URL fetch | Host nội bộ, DNS/redirect đổi sang mạng riêng, URL có thông tin đăng nhập | Chặn trước truy cập; nếu không hỗ trợ fetch thì N/A, không coi lọc href là chống SSRF |
-| AI | Prompt injection trực tiếp/trong PDF, tài liệu sai phiên bản, citation bịa | Không tăng quyền/dùng tools; chỉ kho đã duyệt; kiểm tra nguồn và báo thiếu căn cứ |
+| AI | Prompt injection trực tiếp/trong PDF, tài liệu sai phiên bản, citation bịa; **khách vãng lai** (không tài khoản) | Không tăng quyền/dùng tools; chỉ kho đã duyệt; kiểm tra nguồn và báo thiếu căn cứ. Khách là đối tượng hợp lệ: neo danh tính theo phiên trình duyệt, hạn mức riêng (session + IP), không đọc lịch sử. Hội thoại khách (`ma_nguoi_dung IS NULL`) **được** admin xem theo quyết định sản phẩm — xem `reviews/2026-10-02-khach-vang-lai-chat.md` (ngoại lệ của "admin không mặc nhiên đọc chat riêng", `README.md`); chat của người dùng đã đăng nhập khác vẫn chỉ chủ sở hữu xem |
 | Tài nguyên | Payload lớn, quá nhiều kết quả/token, đồng thời, timeout, request lặp | Giới hạn ở server; không tăng phí/ghi trùng vô hạn; lỗi rõ và phục hồi được |
 | Lỗi | MySQL/email/AI mất kết nối, transaction lỗi giữa chừng | Không lưu trạng thái thành công giả; rollback hợp lý, không trả bí mật |
 | Log | Bí mật lồng JSON/header/exception, ký tự xuống dòng, hết dung lượng | Che bí mật; một JSON/event; rotation/cảnh báo hoạt động; không bỏ qua quyền |
