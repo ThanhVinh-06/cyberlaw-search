@@ -22,7 +22,7 @@ import {
   Sparkles,
   X,
 } from "lucide-react";
-import { danhSachCauHoiGanDay, type CauHoiGanDay } from "@/lib/admin-data";
+import type { CauHoiGanDay } from "@/lib/admin-data";
 import "./recent-questions.css";
 
 // Match the article-card spring already approved on the main search page.
@@ -284,7 +284,15 @@ function QuestionDetail({
   );
 }
 
-export function RecentQuestionsCard({ items = danhSachCauHoiGanDay }: { items?: CauHoiGanDay[] }) {
+const SKELETON_QUESTIONS = [0, 1, 2, 3, 4, 5];
+
+export function RecentQuestionsCard({
+  items = [],
+  loading = false,
+}: {
+  items?: CauHoiGanDay[];
+  loading?: boolean;
+}) {
   const [selected, setSelected] = useState<CauHoiGanDay | null>(null);
   const [instant, setInstant] = useState(false);
   const trigger = useRef<HTMLButtonElement | null>(null);
@@ -315,8 +323,16 @@ export function RecentQuestionsCard({ items = danhSachCauHoiGanDay }: { items?: 
             if (!open) setSelected(null);
           }}
         >
-          <div className="cl-comments-list">
-            {items.length === 0 ? (
+          <div className="cl-comments-list" aria-busy={loading}>
+            {loading ? (
+              SKELETON_QUESTIONS.map((index) => (
+                <span
+                  key={index}
+                  className="cl-skeleton-block cl-skeleton-question"
+                  aria-hidden="true"
+                />
+              ))
+            ) : items.length === 0 ? (
               <div className="cl-question-empty-wrapper">
                 <MessageSquare size={26} className="cl-question-empty-icon" aria-hidden="true" />
                 <p className="cl-question-empty">Chưa có câu hỏi trong khoảng thời gian này.</p>

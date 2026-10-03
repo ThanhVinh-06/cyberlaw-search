@@ -119,49 +119,6 @@ export default function AdminAccessDenied({
           </p>
         </div>
 
-        {reason === "unauthenticated" && (
-          <div
-            style={{
-              width: "100%",
-              backgroundColor: "#faf8f6",
-              border: "1px solid #ebd3d7",
-              borderRadius: "8px",
-              padding: "12px 14px",
-              fontSize: "12.5px",
-              textAlign: "left",
-              color: "#5c4d50",
-            }}
-          >
-            <strong
-              style={{
-                color: "#800020",
-                display: "block",
-                marginBottom: "4px",
-              }}
-            >
-              Tài khoản Quản trị viên mẫu để kiểm tra:
-            </strong>
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                marginBottom: "2px",
-              }}
-            >
-              <span>Email:</span>
-              <code style={{ fontWeight: 600, color: "#21181d" }}>
-                admin@cyberlaw.vn
-              </code>
-            </div>
-            <div style={{ display: "flex", justifyContent: "space-between" }}>
-              <span>Mật khẩu:</span>
-              <code style={{ fontWeight: 600, color: "#21181d" }}>
-                admin12345
-              </code>
-            </div>
-          </div>
-        )}
-
         <div
           style={{
             display: "flex",

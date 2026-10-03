@@ -740,7 +740,15 @@ export default function AdminUsersPage() {
                   <ShieldCheck size={14} color="#800020" />
                   <span>Chính sách quyền tối thiểu</span>
                 </div>
-                <button className="cl-admin-btn-outline" disabled={loading} onClick={() => setReload(value => value + 1)}>Tải lại ma trận</button>
+                <button
+                  className="cl-admin-btn-outline"
+                  disabled={loading}
+                  onClick={() => setReload(value => value + 1)}
+                  title="Tải lại ma trận"
+                >
+                  <RefreshCw size={14} className={loading ? "cl-spin" : ""} aria-hidden="true" />
+                  <span>Tải lại ma trận</span>
+                </button>
                 </div>
               </div>
 

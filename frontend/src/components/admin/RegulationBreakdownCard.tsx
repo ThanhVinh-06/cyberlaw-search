@@ -8,7 +8,7 @@ import {
 } from "react";
 import { motion, useMotionValue } from "motion/react";
 import { Pin, Scale } from "lucide-react";
-import { nhomQuyDinhData, type NhomQuyDinhSparkline } from "@/lib/admin-data";
+import type { NhomQuyDinhSparkline } from "@/lib/admin-data";
 import "./regulation-breakdown.css";
 
 const PLOT = {
@@ -346,7 +346,15 @@ function RegulationSparkline({ group }: { group: NhomQuyDinhSparkline }) {
   );
 }
 
-export function RegulationBreakdownCard({ items = nhomQuyDinhData }: { items?: NhomQuyDinhSparkline[] }) {
+const SKELETON_REGULATIONS = [0, 1, 2, 3];
+
+export function RegulationBreakdownCard({
+  items = [],
+  loading = false,
+}: {
+  items?: NhomQuyDinhSparkline[];
+  loading?: boolean;
+}) {
   const headingId = useId();
   return (
     <section className="cl-reg-card" data-admin-reveal="340" aria-labelledby={headingId}>
@@ -357,13 +365,41 @@ export function RegulationBreakdownCard({ items = nhomQuyDinhData }: { items?: N
         </h3>
         <p>Nhóm quy định trong kho tri thức</p>
       </header>
-      <ul className="cl-reg-list">
-        {items.map((group) => (
-          <RegulationSparkline key={group.ma_loai} group={group} />
-        ))}
-      </ul>
-      <p className="cl-reg-hint">Chạm vào biểu đồ để ghim một mốc.</p>
-      <span className="cl-reg-demo-label">Dữ liệu đã công bố · 7 mốc gần nhất</span>
+      {loading ? (
+        <>
+          <ul className="cl-reg-list" aria-busy="true">
+            {SKELETON_REGULATIONS.map((index) => (
+              <li key={index} className="cl-reg-item" aria-hidden="true">
+                <div className="cl-reg-heading">
+                  <span className="cl-skeleton-block cl-skeleton-line is-reg-name" />
+                  <span className="cl-skeleton-block cl-skeleton-line is-reg-count" />
+                </div>
+                <span className="cl-skeleton-block cl-skeleton-reg-chart" />
+              </li>
+            ))}
+          </ul>
+          <span
+            className="cl-skeleton-block cl-skeleton-line is-reg-hint"
+            aria-hidden="true"
+          />
+          <span
+            className="cl-skeleton-block cl-skeleton-line is-reg-demo"
+            aria-hidden="true"
+          />
+        </>
+      ) : items.length === 0 ? (
+        <div className="cl-reg-empty">Chưa có dữ liệu phân loại quy định.</div>
+      ) : (
+        <>
+          <ul className="cl-reg-list">
+            {items.map((group) => (
+              <RegulationSparkline key={group.ma_loai} group={group} />
+            ))}
+          </ul>
+          <p className="cl-reg-hint">Chạm vào biểu đồ để ghim một mốc.</p>
+          <span className="cl-reg-demo-label">Dữ liệu đã công bố · 7 mốc gần nhất</span>
+        </>
+      )}
     </section>
   );
 }

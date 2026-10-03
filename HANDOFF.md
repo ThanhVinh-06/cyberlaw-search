@@ -1,5 +1,99 @@
 # Bàn giao dự án CyberLaw Search
 
+### Hoàn thiện bảo mật B4, M5 & hiển thị tên quản trị viên thật trên trang Thống kê — 04/10/2026
+
+- **Yêu cầu chủ dự án:** 
+  1. Xác nhận hành vi đúng của B4: Khi API lỗi hoặc chưa có dữ liệu, hiển thị dữ liệu rỗng (ô số `—`, biểu đồ/danh sách rỗng kèm alert lỗi), tuyệt đối không hiển thị số liệu demo (`1.280`, `3.450`, `4.430`).
+  2. Ở box hồ sơ quản trị viên: Chỉ hiển thị họ và tên của quản trị viên đăng nhập thật (ví dụ `Dương Thanh Vinh`), không hiển thị email để giao diện gọn gàng, không bị tràn dòng.
+  3. Giữ nguyên toàn bộ cấu trúc giao diện, hiệu ứng Fade In Up, animation gợn sóng cột biểu đồ (Mazer Liquid Wave) trồi lên lúc chờ load dữ liệu, và hiệu ứng skeleton mờ cho các thẻ chỉ số/danh sách.
+  4. Kiểm tra responsive đa thiết bị tránh vỡ giao diện.
+- **Đã xử lý & chuẩn hóa:**
+  - **M5 & Box hồ sơ quản trị viên (`AdminStatsPage.tsx`, `admin-stats.css`)**:
+    - Tích hợp hook `useAuth()` để lấy `currentUser`.
+    - Avatar tròn hiển thị 2 chữ cái đầu viết hoa từ họ tên của tài khoản đăng nhập hiện tại (`currentUser?.ho_ten`).
+    - Tên hiển thị: `{currentUser?.ho_ten || "Tài khoản Quản trị"}`.
+    - Đã bỏ hoàn toàn hiển thị dòng email/handle, căn chỉnh khoảng cách giữa tên và badge vai trò đạt chuẩn 10px (`.cl-profile-name { margin: 0 0 10px 0; }`).
+    - Badge vai trò: `{currentUser?.vai_tro === "admin" ? "Quản trị viên • Toàn quyền" : "Tài khoản hệ thống"}`.
+    - CSDL: Hiển thị chuẩn 13 bảng theo schema MySQL thực tế (`MySQL 8.0 • 13 bảng`).
+    - Triệt tiêu 100% các chuỗi hardcode: `"admin@cyberlaw.vn"`, `"Super Admin"`, `"Quản trị viên Hệ thống"`.
+  - **B4 & Animation gợn sóng biểu đồ (`AdminStatsPage.tsx`)**:
+    - Khi đang chờ nạp dữ liệu (`statisticsLoading = true`), các cột tháng của kỳ hạn được nạp với animation gợn sóng trồi lên sống động (Mazer Liquid Wave Animation: `key={statistics?.period ?? filterPeriod}`, `delay: 0.08 + index * 0.045`).
+    - Khi API trả về dữ liệu thật: Cột cập nhật mượt mà theo số liệu từ MySQL.
+    - Khi API lỗi (500/503/mạng): `statistics = null`, `statisticsLoading = false`, cột ẩn đi và hiển thị khối rỗng `.cl-stats-empty-notice` (*"Chưa có dữ liệu truy vấn"*) kèm alert lỗi. 4 thẻ chỉ số hiển thị `—`, các card con hiển thị rỗng, không hiển thị bất kỳ số demo nào.
+    - `RecentQuestionsCard` và `RegulationBreakdownCard`: Đổi giá trị mặc định của `items = []`, bỏ import dữ liệu demo.
+  - **Tài liệu & Test chống tái phát**:
+    - Tạo lại tài liệu review bảo mật: `docs/security/reviews/2026-10-03-sua-b3-b4.md`.
+    - `frontend/e2e/admin-stats.spec.ts`: Bổ sung test API lỗi 503 hiển thị trạng thái rỗng + alert, không leak số demo, và phục hồi đúng 6 câu hỏi + 6 cột biểu đồ khi bấm "Tải lại dữ liệu". Bổ sung 5 test responsive trạng thái rỗng (320px, 440px, 834px, 1440px, landscape 956x440) không tràn ngang.
+- **Kiểm thử đã chạy thật**:
+  - `npm run build`: **PASS 100%** (bundle JavaScript sạch sẽ).
+  - Quét Bundle (`dist/assets/index-*.js`): `admin@cyberlaw.vn` **0**, `Super Admin` **0**, `Quản trị viên Hệ thống` **0**, `Lê Hoàng Long` **0**, `admin12345` **0**, `1.280` **0**, `4.430` **0**.
+  - Playwright E2E: `admin-stats.spec.ts` + `admin-access-denied.spec.ts`: **16/16 PASS** (29.8s).
+  - Playwright E2E: `admin-users-reveal.spec.ts`: **3/3 PASS** (14.2s).
+  - Playwright E2E: `admin-responsive.spec.ts`: **9/9 PASS** (21.0s) trên toàn bộ kích thước 320px, 440px, 834px, 900px, 901px, 956px, 1024px, 1440px.
+  - PHPUnit Backend: `C:\xampp\php\php.exe artisan test`: **121/121 PASS (1296 assertions)**.
+
+### Tinh chỉnh hiệu ứng chờ nạp dữ liệu: Giữ nguyên gợn sóng biểu đồ & áp dụng hiệu ứng mờ cho các thẻ dữ liệu — 03/10/2026
+
+- **Yêu cầu chủ dự án:** Khi chưa load được dữ liệu từ database, các phần dữ liệu (chỉ số, câu hỏi gần đây, người dùng, donut, phân loại quy định) có hiệu ứng mờ / skeleton để chờ load dữ liệu; còn phần hiệu ứng chờ load dữ liệu và animation gợn sóng của biểu đồ thì giữ nguyên (không dùng khối xám che biểu đồ, không làm mờ toàn trang).
+- **Đã xử lý & chuẩn hóa:**
+  - **Biểu đồ (Chart)**: Giữ nguyên 100% cấu trúc và hiệu ứng gợn sóng cột (Mazer Liquid Wave Animation). Khi đổi kỳ hạn hoặc chờ dữ liệu mới, áp dụng `is-period-changing` làm mờ nhẹ các cột (`opacity: 0.72`) trong 0.2s, sau đó các cột trồi lên gợn sóng theo `key={statistics.period}`. Tuyệt đối không che biểu đồ bằng khối xám.
+  - **Các thẻ dữ liệu khác (Stat cards, Recent questions, Active users, Donut, Regulation)**:
+    - Khi `statisticsLoading`: Áp dụng hiệu ứng khối mờ shimmer `cl-skeleton-block` cho các vùng giá trị số và danh sách dữ liệu.
+    - Kích thước các khối skeleton được căn chỉnh chuẩn từng pixel theo đúng kiểu chữ và khoảng cách thật, đảm bảo layout cố định tuyệt đối, không co giật hay vỡ giao diện khi dữ liệu database trả về.
+  - **Toàn trang**: Kích hoạt Fade In Up mượt mà tức thì khi vào tab (thông qua `AdminTabReveal` ở `AdminUsersPage.tsx`), tiêu đề và thanh bộ lọc hiển thị rõ ràng, không bị hiệu ứng mờ toàn trang hay độ trễ màn hình.
+  - **Bảo mật giữ lại**: Giữ nguyên việc xóa khối tài khoản mẫu mật khẩu `admin12345` trong `AdminAccessDenied.tsx`.
+- **Kiểm thử đã chạy**:
+  - `npm run build`: **PASS 100%** (`tsc -b && vite build` hoàn tất sạch sẽ).
+  - Playwright E2E: `admin-stats.spec.ts` + `admin-responsive.spec.ts`: **17/17 PASS** (đầy đủ các kích thước 320px, 440px iPhone 16 Pro Max, 834px iPad, 900px, 901px, 956px, 1024px, 1440px desktop và landscape 956x440).
+  - Playwright E2E: `admin-access-denied.spec.ts`: **2/2 PASS**.
+  - PHPUnit: `php artisan test`: **121/121 PASS (1296 assertions)**.
+
+### Sửa B3 và B4 — bỏ credential mẫu và bỏ số demo khi API lỗi — 03/10/2026
+
+- **Yêu cầu chủ dự án:** "sửa b3 và b4 và chạy test kỹ lại". B3 = lộ tài khoản quản trị mẫu ở `/admin` khi chưa đăng nhập, có trong bundle production; B4 = trang Thống kê vẫn vẽ số demo khi API lỗi.
+- **B3 đã sửa:** xoá khối "Tài khoản Quản trị viên mẫu để kiểm tra" (`admin@cyberlaw.vn` / `admin12345`) khỏi `frontend/src/pages/admin/AdminAccessDenied.tsx`. **Sửa kèm M5** — thẻ hồ sơ admin trong `AdminStatsPage.tsx` vốn hardcode `Quản trị viên Hệ thống` / `@admin • admin@cyberlaw.vn` / `Super Admin`; đổi sang `currentUser` từ `useAuth()` (avatar = chữ cái đầu họ tên). Nếu chỉ xoá khối kia thì `admin@cyberlaw.vn` **vẫn còn** trong bundle qua đường này, nên B3 chưa thực sự đóng.
+- **B4 đã sửa:** `AdminStatsPage.tsx` đổi `statistics` sang `AdminStatistics | null`, khởi tạo `null`; `.catch` gọi `setStatistics(null)` (trước chỉ `setStatisticsError`). Mọi ô số đọc qua helper `soLuong`/`soLuongDonVi`/`nhan` → `"—"`. Biểu đồ cột, danh sách người dùng, donut, phân loại quy định, thẻ câu hỏi đều có trạng thái rỗng; `RecentQuestionsCard` và `RegulationBreakdownCard` bỏ giá trị mặc định là dữ liệu demo (mặc định `[]`). Thêm CSS `.cl-stats-empty-notice`, `.cl-stats-empty-inline`, `.cl-reg-empty`.
+- **Bằng chứng bundle (build lại `npm run build`):** `grep -c` trên `dist/assets/index-Dwft0ODx.js` — `admin12345` 0, `admin@cyberlaw.vn` 0, `Quản trị viên Hệ thống` 0, `Super Admin` 0, `cyberlaw.vn` 0, `token_adm_001_sys` 0, `1.280`/`4.430` 0, `Lê Hoàng Long` 0, `Nghị định 15/2020` 0. (`Điều 44` còn 3 lần là nhãn điều luật hợp lệ của Luật 116.)
+- **Test chống tái phát mới:**
+  - `frontend/e2e/admin-access-denied.spec.ts` (mới, 2 test): `/admin` khi chưa đăng nhập và khi là user thường đều không chứa 3 chuỗi mẫu; trang từ chối vẫn nêu đúng tên tài khoản đang đăng nhập.
+  - `frontend/e2e/admin-stats.spec.ts`: test API 503 → alert hiện, dashboard **không** chứa `1.280`/`3.450`/`4.430`, ô số `—`, 0 thẻ câu hỏi, 0 cột biểu đồ; tải lại thành công → 6 thẻ câu hỏi, hết alert. Thêm 5 test viewport rỗng (320/440/834/1440 + ngang 956x440) kiểm tra không tràn ngang và không vẽ demo.
+- **Đã chạy thật:** PHPUnit **121 PASS (1296 assertions)**; Playwright **152 passed (13.5m, exit 0)** — gồm `admin-stats` 14/14, `admin-responsive` 320→1440 + landscape, `admin-users-reveal`, `admin-session-navigation`, `admin-dialog`, `admin-knowledge`, `navigation`, `main-site`; `npx tsc --noEmit` + `npm run typecheck:e2e` sạch; Fade In Up giữ nguyên (`[{opacity:'0',translate:'0 14px'},{opacity:1,translate:'0 0'}]`, duration 1200, delay 300) và không replay khi đổi bộ lọc.
+- **Lưu ý thao tác:** bộ e2e ghi lại 5 ảnh `docs/design/screenshots/*.png` trong lúc chạy; đã khôi phục bằng `git checkout --` để cây làm việc chỉ còn thay đổi có chủ đích.
+- **Review bảo mật:** `docs/security/reviews/2026-10-03-sua-b3-b4.md` (đã cập nhật `2026-10-03-ran-soat-deploy.md` mục B3/B4/M5 + kết luận: **còn 2 chặn deploy B1–B2**, B3/B4 đã đóng). Chưa commit/push.
+
+### Sửa tài liệu: bundle nạp là draft, công bố là bước riêng — 03/10/2026
+
+- **Yêu cầu chủ dự án:** sau khi em đính chính báo cáo phụ (luật **không** còn draft), chủ dự án hỏi "có cần fix gì không" và chốt **chỉ sửa tài liệu**.
+- **Kết luận đã kiểm chứng:** **không có lỗi runtime**. DB thật `van_ban` id 3 = `published` v2, 434 điều khoản; API công khai trả dữ liệu bình thường. Bundle `data/processed/luat-116-2025-v1/du-lieu-nap.json` ghim `trang_thai=draft`, `phien_ban_noi_dung=1` là **cố ý** (lệnh ghi rõ "không ghi đè, không công bố"; `KnowledgeImportTest` còn chủ động chặn ca đổi `"draft"` → `"published"` trong bundle vì phá hash pin).
+- **Hệ quả đã xác nhận:** `php artisan cyberlaw:import-knowledge` (dry-run) dừng với `knowledge_existing_conflict` trên máy đã công bố. Nguyên nhân: `KnowledgeImport::verifyExisting()` → `same()` so **từng trường** của dòng `van_ban` (gồm `trang_thai`, `phien_ban_noi_dung`) nên `published`/v2 ≠ `draft`/1. Đây là **fail-closed đúng thiết kế**, không phải dữ liệu hỏng.
+- **Đã sửa (chỉ tài liệu, không đụng mã):**
+  - `docs/data/01-du-lieu-luat-116.md`: thêm mục runbook **"Nạp xong phải công bố thủ công"** (bundle ghim draft ⇒ sau `--apply` API công khai vẫn rỗng/409 tới khi admin công bố `published`) và mục **"Vì sao lệnh có thể báo `knowledge_existing_conflict`"**; sửa câu mở đầu + hàng bảng `phien_ban_noi_dung, trang_thai` cho khỏi hiểu là draft cố định.
+  - `docs/security/04-deployment.md`: thêm 1 ô checklist — sau `--apply` phải công bố trên trang quản trị, xác nhận `/api/search` `/api/library` `/api/terms` trả Luật 116 trước khi mở; nêu rõ `knowledge_existing_conflict` là đúng thiết kế.
+  - `docs/design/04-co-so-du-lieu.md`: cập nhật đoạn mở đầu 30/09 (trước ghi "đã nạp … ở trạng thái draft") thành đúng trạng thái hiện tại `published`/v2 + lý do lệnh import báo conflict.
+- **Không làm (đã cân nhắc, chủ dự án chọn bỏ):** đổi thông báo CLI / thêm cờ kiểm tra bỏ qua trường công bố (đụng đường ghim hash đã qua review), và xuất lại bundle v2 + đổi `BUNDLE_SHA256` (phải sửa test tamper + review lại, lợi ích chưa tương xứng).
+- **Không chạy test tấn công/không chạy lại e2e:** thay đổi thuần tài liệu (`.md`), không đổi mã, schema hay cấu hình. Đã rà lại `git status` chỉ có các `.md` + file review đợt trước; chưa commit/push.
+
+### Đính chính báo cáo deploy lần 2 — route `/` không phải 500 — 04/10/2026
+
+- **Bối cảnh:** chủ dự án hỏi lại 3 mục B3/B4/B5 của `docs/security/reviews/2026-10-03-ran-soat-deploy.md` có còn đúng không. Em kiểm lại trên mã + chạy thật.
+- **B3 (lộ credential mẫu) — CÒN ĐÚNG.** `frontend/src/pages/admin/AdminAccessDenied.tsx` in `admin@cyberlaw.vn`/`admin12345` trong nhánh `{reason === "unauthenticated" && (…)}`; `grep -c admin12345 frontend/dist/assets/index-BzDR4Rxk.js` → **1** (có trong bundle production). DB thật không có tài khoản này ⇒ rò _mẫu_, chưa phải lộ mật khẩu thật; vẫn phải xoá trước deploy.
+- **B4 (số demo khi API lỗi) — CÒN ĐÚNG.** `AdminStatsPage.tsx:49-59` khởi tạo state bằng `thongKeTongQuanData`/`thongKeTheoThangData`/…; `:71-73` catch chỉ `setStatisticsError`, không reset; `:117` chỉ là dòng `role="alert"` nhỏ ⇒ vẫn vẽ 1.280 người dùng / 4.430 tra cứu.
+- **B5 (route `/` trả 500) — SAI, đã đính chính.** Chạy thật `php -S 127.0.0.1:8099 -t public` + `curl http://127.0.0.1:8099/` → **HTTP 200**, `<title>CyberLaw Search</title>`, 80.658 byte. Vì view có guard `@if (file_exists(public_path('build/manifest.json')) || file_exists(public_path('hot')))` bọc `@vite(...)` (máy này không có `public/build` lẫn `public/hot` → bỏ qua) và `@if (Route::has('login'))` bọc `route('login')`/`route('register')` (route thật tên `auth.login`/`auth.register` → false). Không exception nào bị ném. Mức thực tế **LOW**: trang splash mặc định của Laravel, không thuộc sản phẩm, chỉ lộ dấu framework — nên bỏ route/redirect chứ không phải sự cố.
+- **Đã sửa tài liệu:** `docs/security/reviews/2026-10-03-ran-soat-deploy.md` (viết lại B5 + thêm khối "Đính chính lần 2" ở mục 1).
+- **Bài học lặp lại:** hai lần liên tiếp báo cáo phụ suy luận từ _đọc mã/tệp_ mà không chạy thật đã ra kết luận sai (lần 1: "luật draft"; lần 2: "route `/` 500"). Kết luận về hành vi phải kèm lệnh chạy thật.
+
+### Rà soát tổng thể chuẩn bị deploy — 03/10/2026
+
+- **Yêu cầu chủ dự án:** dừng phần chatbot AI ở mức hiện tại; rà soát/review **toàn bộ project**, tìm phần còn thiếu backend hoặc cần sửa để chuẩn bị deploy; test và báo lại. **Chỉ rà soát, không sửa mã.**
+- **Báo cáo đầy đủ:** `docs/security/reviews/2026-10-03-ran-soat-deploy.md` (phát hiện theo mức độ + file:line).
+- **Đã chạy thật:** PHPUnit **121 PASS (1296 assertions)**; Playwright toàn bộ **149 passed (12.6m, exit 0)** gồm responsive 320→1440 + landscape, reduced motion, bàn phím; `npm run build` PASS (cảnh báo bundle JS 714.87 kB); `npm audit` 0; `composer audit` 0. Smoke HTTP thật trên MySQL dev: `/api/search`, `/api/library`, `/api/terms` trả dữ liệu Luật 116/2025/QH15; `POST /api/answer` (khách) trả `answered` + trích dẫn Điều 8. **Đã xoá** dòng test khỏi `hoi_thoai/tin_nhan/trich_dan/nhat_ky_quan_tri` sau đo.
+- **Đính chính:** một báo cáo phụ suy ra luật còn `draft` (409) từ `data/processed/.../du-lieu-nap.json`; **DB thật đang `published` v2** (`van_ban` id 3, 434 điều khoản) và API trả dữ liệu — kết luận đó sai với môi trường hiện tại.
+- **Chặn deploy (2 sau khi sửa B3/B4 ngày 03/10/2026):** (1) chưa có hạ tầng/web server/backup/CI; (2) `.env.example` mặc định dev (`APP_DEBUG=true`, `MAIL_MAILER=log`, `APP_KEY` rỗng, `LOG_STACK=single`+`LOG_LEVEL=debug`) **và bị gitignore**. ~~(3) credential mẫu `admin@cyberlaw.vn`/`admin12345` hiển thị ở `/admin`~~ **ĐÃ SỬA** — xoá khối credential + đổi thẻ hồ sơ admin sang `currentUser`; bundle build lại không còn chuỗi mẫu (xem mục "Sửa B3 và B4" ở đầu file). ~~(4) trang Thống kê vẫn vẽ số demo khi API lỗi~~ **ĐÃ SỬA** — state `null` + trạng thái rỗng, có test chống tái phát. ~~(5) route `/` → `view('welcome')` gây 500~~ **SAI — chạy thật trả HTTP 200, hạ xuống LOW** (xem mục đính chính lần 2 ở đầu file).
+- **HIGH:** H1 danh tính khách neo vào mảng session không ký/không cắt cap (`LocalAnswer.php:56-62,81`); H2 `bootstrap/app.php:31-36` **tắt ghi log lỗi** cho mọi `api/*`; H3 thiếu CSP/frame-ancestors/Referrer-Policy/HSTS; H4 cấu hình log mẫu không rotation.
+- **MEDIUM:** khoá named MySQL toàn cục cho lượt đọc công khai; chưa `trustProxies`; `SearchStatistics` nuốt mọi exception không log; dữ liệu demo (gồm nội dung luật 2018) trong bundle; hồ sơ admin hardcode; `laravel/tinker` trong `require`; thiếu index `tin_nhan(nguoi_gui,ngay_tao)`/`nhat_ky_quan_tri(ma_yeu_cau)`; nhãn "Độ tin cậy" dễ hiểu sai; `serve=true` disk local; `/api/terms` N+1; chưa có job dọn dữ liệu.
+- **LOW:** tài liệu lệch "12 bảng/111 cột" (`data/README.md:28`, `docs/requirements/02,03`); `database/cyberlaw_search.sql` cũ thiếu `thong_ke_tra_cuu`; `data/sources.json` lộ đường dẫn máy; env Python con kế thừa secret; dead code/dependency thừa; ảnh trùng 1.2 MB; favicon 0 byte.
+- **Kết luận:** chức năng cốt lõi **đã chạy thật**; **vẫn chưa deploy-ready** (còn 2 chặn deploy B1–B2 + 4 HIGH; B3/B4/M5 đã sửa ngày 03/10/2026), chưa có staging/DAST. Cây làm việc sạch ngoài file review mới; chưa commit/push đợt này.
+
 ### Hoàn thiện thống kê lượt tra cứu (số thật, gộp giờ, không PII) — 03/10/2026
 
 - **Đã commit `73bfc41`** (`Them bang dem luot tra cuu gop theo gio va so that trang thong ke`) và **push `origin/main`**; `ls-remote` khớp HEAD (`73bfc415a0c6db03f9d7f4ce212ccd5a4585cccb`), working tree sạch. 17 file (mã nguồn, migration, test, tài liệu, review). Trước push chạy lại: PHPUnit **121 PASS (1296 assertions)**, Playwright `admin-stats`+`admin-responsive` **17/17**, `admin-users-reveal` **2/2**, `npm run build` + `typecheck:e2e` PASS; rà `.gitignore` và quét mẫu secret/khóa/email thật/IP nội bộ trên 17 file (chỉ khớp dữ liệu demo `admin-data.ts` đã có từ HEAD và văn bản tài liệu).
@@ -105,7 +199,7 @@
 - **Backend**:
   - `backend/ai/retriever.py`: mọi nhánh `retrieve()` trả thêm `confidence` (int 0–100) — `no_basis` → 0, khớp cấu trúc điều/khoản/điểm (`exact_reference`) → 95, truy hồi theo độ phủ (`relevant_excerpts`) → `min(88, max(40, round(coverage*100)))`. `status`/`reason`/`ids`/`engine` giữ nguyên.
   - `backend/api/app/Services/LocalRetriever.php`: kiểm tra biên `is_int($confidence) && 0..100`, sai thì 503.
-  - `backend/api/app/Services/LocalAnswer.php`: thêm `composeAnswer(DieuKhoan $row)` ghép câu trả lời **một khối văn bản thuần** (cắt 220 ký tự đầu của `noi_dung`, gộp khoảng trắng, dấu phân cách ` — ` vì bong bóng chat không có `white-space: pre-line`); ghi `do_tin_cay` (chỉ khi `answered`, lấy `confidence`) và `thoi_gian_xu_ly_ms` (`hrtime(true)` từ đầu `answer()`) vào tin nhắn assistant. Hai cột đã có sẵn trong `database/schema.sql` — **không cần migration**.
+  - `backend/api/app/Services/LocalAnswer.php`: thêm `composeAnswer(DieuKhoan $row)` ghép câu trả lời **một khối văn bản thuần** (cắt 220 ký tự đầu của `noi_dung`, gộp khoảng trắng, dấu phân cách `—` vì bong bóng chat không có `white-space: pre-line`); ghi `do_tin_cay` (chỉ khi `answered`, lấy `confidence`) và `thoi_gian_xu_ly_ms` (`hrtime(true)` từ đầu `answer()`) vào tin nhắn assistant. Hai cột đã có sẵn trong `database/schema.sql` — **không cần migration**.
   - Nhánh `no_basis` giữ nguyên câu từ chối. Hội thoại cũ giữ nguyên câu tĩnh đã lưu (lịch sử là snapshot, không viết lại).
 - **Kiểm thử đã chạy**:
   - `python -m unittest test_retriever.py`: **5/5 PASS** (thêm `test_confidence_is_bounded_signal`).
@@ -595,7 +689,7 @@ Luồng kiến trúc đề xuất: `React → Laravel → FastAPI`, Laravel qu�
   - Tab Ma trận phân quyền RBAC: Bảng đối chiếu chi tiết quyền hạn giữa Khách vãng lai, Người dùng và Quản trị viên theo tài liệu `02-tai-khoan-phan-quyen.md`.
   - Tích hợp điều hướng & Bảo mật phân quyền theo vai trò (Cập nhật theo yêu cầu người dùng):
     - Ẩn hoàn toàn trang Quản trị và các liên kết menubar/sidebar đối với khách vãng lai và tài khoản người dùng thường.
-    - Khi đăng nhập đúng email/mật khẩu Admin (`admin@cyberlaw.vn` / `admin12345`): tự động điều hướng sang `/admin`, thanh menubar và sidebar hiển thị mục "Quản trị hệ thống".
+    - Khi đăng nhập đúng email/mật khẩu Admin (`admin@cyberlaw.vn` / `admin12345`): tự động điều hướng sang `/admin`, thanh menubar và sidebar hiển thị mục "Quản trị hệ thống". **(Lịch sử — 03/10/2026: đăng nhập thật đã chuyển sang Laravel session; credential mẫu này chỉ thuộc bản demo UI cũ, đã xoá khỏi mã và bundle. Xem mục "Sửa B3 và B4" ở đầu file.)**
     - Khi đăng nhập đúng email/mật khẩu User (`[email ca nhan da an]` / `user12345`): tự động điều hướng sang trang người dùng (`/search`), sidebar hiển thị hồ sơ cá nhân và KHÔNG CÓ mục Quản trị.
     - Bảo vệ route `/admin` (Guard): Khách vãng lai cố tình vào `/admin` bị yêu cầu đăng nhập; User thường cố tình vào `/admin` bị chặn với màn hình cảnh báo 403 (Từ chối quyền truy cập).
     - Tinh chỉnh menubar quản trị: Bỏ các badge CRUD, RBAC, Sắp tới, DB 9 bảng; cố định chiều cao đồng đều 44px và chiều rộng cho tất cả các box menubar (Người dùng & Phân quyền, Ma trận quyền hạn, Thống kê, Văn bản), đảm bảo thẳng hàng và không bị lệch kích thước.

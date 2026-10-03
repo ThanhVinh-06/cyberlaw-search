@@ -1,6 +1,6 @@
 # Bộ dữ liệu nguyên bản Luật An ninh mạng 116/2025/QH15
 
-Cập nhật 30/09/2026. Bộ nền phục vụ nạp MySQL và chuẩn bị truy hồi AI; trạng thái **draft**. Đã đối chiếu dữ liệu nguyên bản, chưa chứng nhận đây là văn bản hợp nhất hiện hành, chưa đo độ chính xác AI.
+Cập nhật 30/09/2026. Bộ nền phục vụ nạp MySQL và chuẩn bị truy hồi AI; bundle nạp ở trạng thái **draft** (công bố là bước riêng, xem mục 6). Đã đối chiếu dữ liệu nguyên bản, chưa chứng nhận đây là văn bản hợp nhất hiện hành, chưa đo độ chính xác AI.
 
 ## 1. Nguồn và phạm vi
 
@@ -50,7 +50,7 @@ Trong `data/processed/luat-116-2025-v1/`:
 | `ngay_het_hieu_luc` | NULL = chưa ghi nhận; không phải chứng nhận còn hiệu lực toàn bộ |
 | `lien_ket_nguon` | Trang Công báo |
 | `duong_dan_tep` | Đường dẫn tương đối từ gốc dự án tới PDF Công báo; API tải PDF sẽ cần nối sau |
-| `phien_ban_noi_dung`, `trang_thai` | 1, draft |
+| `phien_ban_noi_dung`, `trang_thai` | 1, draft — bundle ghim cứng; công bố là thao tác riêng trên trang quản trị (xem mục 6) |
 | `dieu_khoan.ma_dieu_khoan`, `ma_van_ban` | ID tự tăng và FK của văn bản vừa nạp |
 | `chuong`, `so_dieu`, `so_khoan`, `ky_hieu_diem` | Vị trí đúng bản gốc; điểm rỗng khi là nguyên khoản; phân biệt `d` và `đ` |
 | `tieu_de` | Tên đầy đủ của điều, không bịa tiêu đề cho từng điểm |
@@ -99,6 +99,10 @@ cd backend/api
 
 Lệnh đầu chỉ đối chiếu; `--apply` mới ghi. Chỉ nhận đúng tệp và digest đã rà trong mã; không nhận URL, upload, đường dẫn tùy ý hoặc bảng/cột do người dùng nhập. Đổi dữ liệu cần kiểm tra lại và cập nhật hash được duyệt, không bỏ kiểm tra hash để “chạy cho được”. Tệp JSON dùng LF để digest không đổi giữa Windows/Linux.
 
+**Nạp xong phải công bố thủ công (quan trọng khi triển khai).** Bundle ghim cứng `van_ban.trang_thai = draft` và `phien_ban_noi_dung = 1` (đổi hai trường này trong tệp sẽ hỏng digest và bị `knowledge_bundle_mismatch`; test còn chủ động kiểm tra ca đó). Vì vậy sau `--apply`, mọi API công khai — tra cứu, thư viện, thuật ngữ, hỏi đáp AI — **vẫn trả rỗng/409** cho tới khi quản trị viên vào *Văn bản & Tri thức* công bố văn bản (`published`, tăng `phien_ban_noi_dung`). Đây là bước bắt buộc trong runbook deploy, không phải sự cố.
+
+**Vì sao lệnh có thể báo `knowledge_existing_conflict`.** Trình nạp so **từng trường** của dòng `van_ban` hiện có với bundle (gồm `trang_thai`, `phien_ban_noi_dung`). Trên máy đã công bố, DB là `published`/v2 còn bundle là `draft`/1 nên lệnh dừng với `Khong ghi de du lieu cu` — **đúng thiết kế fail-closed**, không phải dữ liệu hỏng và không ảnh hưởng ứng dụng đang chạy. Muốn khôi phục đúng nghĩa “đối chiếu khớp” thì phải xuất lại bundle từ tri thức đã công bố (kèm cập nhật `BUNDLE_SHA256`, test tamper và review bảo mật); chưa làm ở thời điểm 03/10/2026.
+
 Nạp trong transaction + khóa MySQL; ID được tra theo khóa nguồn, SQL có binding, audit bắt buộc cùng transaction. Lỗi audit hay ghi giữa chừng phải rollback. Nếu tồn tại đúng nội dung thì không ghi; nếu thiếu, thừa hoặc đã sửa thì dừng, không tự xóa/ghi đè/merge. Không nạp luật khác, tài khoản hay lịch sử hội thoại.
 
 ### Sửa lỗi collation thực tế
@@ -107,7 +111,11 @@ Nạp trong transaction + khóa MySQL; ID được tra theo khóa nguồn, SQL c
 
 Đã nạp thành công bản nháp vào MySQL; trình nạp đọc lại và so từng trường. `data/interim/verification/law116/mysql-import.json` ghi số lượng và xác nhận các bảng tài khoản/hội thoại/OTP không đổi trong lần nạp. Không đưa SQL, env, dump hay dữ liệu riêng lên GitHub.
 
+**Trạng thái hiện tại (03/10/2026):** văn bản đã được công bố — `van_ban` id 3 là `published`, `phien_ban_noi_dung = 2`, 434 điều khoản; API công khai trả dữ liệu Luật 116. Bundle ghim vẫn là bản nháp (`draft`/1) nên lệnh `cyberlaw:import-knowledge` báo `knowledge_existing_conflict` như giải thích ở mục 6 — đúng thiết kế, không cần xử lý gấp.
+
 ## 7. Trước khi công bố và làm AI
+
+> Danh sách dưới đây là mốc 30/09/2026. Đến 03/10/2026 đã xong bước 3 (API tra cứu/thư viện/thuật ngữ/hỏi đáp đọc `published` và frontend dùng dữ liệu thật) và bước 4 phần công bố; bước 1–2 và bộ kiểm thử độc lập đo AI vẫn còn mở.
 
 1. Rà lịch sử sửa đổi, xác định dùng nguyên bản theo thời điểm hay văn bản hợp nhất; ghi rõ phạm vi trên UI.
 2. Duyệt nhãn phân loại và bóc tách ngữ nghĩa chi tiết nếu triển khai suy diễn. Dữ liệu nguyên văn đã chuẩn bị cho việc này.

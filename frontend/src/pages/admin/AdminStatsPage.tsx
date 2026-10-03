@@ -25,19 +25,38 @@ import { RecentQuestionsCard } from "@/components/admin/RecentQuestionsCard";
 import { RegulationBreakdownCard } from "@/components/admin/RegulationBreakdownCard";
 import { loadAdminStatistics, type AdminStatistics } from "@/lib/admin-statistics-api";
 import {
-  danhSachCauHoiGanDay,
-  danhSachNguoiDungNoiBat,
-  nhomQuyDinhData,
   thongKeTheoThangData,
-  thongKeTongQuanData,
-  tyLeTrichDanData,
+  thongKeTheo6ThangData,
+  thongKeTheo30NgayData,
 } from "@/lib/admin-data";
+import { useAuth } from "@/lib/auth-context";
 
 interface AdminStatsPageProps {
   onNavigateTab?: (tab: string) => void;
 }
 
+// Khung mờ chờ load dữ liệu từ database cho các phần chỉ số và danh sách,
+// giữ nguyên kích thước để không làm gián đoạn hay vỡ giao diện.
+const SKELETON_USERS = [0, 1, 2, 3];
+const SKELETON_CITATIONS = [0, 1, 2];
+
+function StatValuesSkeleton({ subRows = 1 }: { subRows?: number }) {
+  return (
+    <>
+      <span className="cl-skeleton-block cl-skeleton-line is-stat-value" />
+      {Array.from({ length: subRows }, (_, index) => (
+        <span key={index} className="cl-skeleton-block cl-skeleton-line is-stat-sub" />
+      ))}
+    </>
+  );
+}
+
+const soLuong = (val?: number | null) =>
+  val !== undefined && val !== null ? val.toLocaleString("vi-VN") : "—";
+
 export default function AdminStatsPage({ onNavigateTab }: AdminStatsPageProps) {
+  const { currentUser } = useAuth();
+
   // Period filter state
   const [filterPeriod, setFilterPeriod] = useState<"year" | "6m" | "30d">(
     "year",
@@ -46,18 +65,7 @@ export default function AdminStatsPage({ onNavigateTab }: AdminStatsPageProps) {
   const [selectedDonutSegment, setSelectedDonutSegment] = useState<
     number | null
   >(null);
-  const [statistics, setStatistics] = useState<AdminStatistics>(() => ({
-    period: "year",
-    range: "01/01/2026 – 31/12/2026",
-    year: 2026,
-    search_available: true,
-    overview: thongKeTongQuanData,
-    months: thongKeTheoThangData,
-    regulations: nhomQuyDinhData,
-    recent_questions: danhSachCauHoiGanDay,
-    top_users: danhSachNguoiDungNoiBat,
-    citation_rates: tyLeTrichDanData,
-  }));
+  const [statistics, setStatistics] = useState<AdminStatistics | null>(null);
   const [statisticsError, setStatisticsError] = useState("");
   const [statisticsLoading, setStatisticsLoading] = useState(true);
   const [reload, setReload] = useState(0);
@@ -74,6 +82,7 @@ export default function AdminStatsPage({ onNavigateTab }: AdminStatsPageProps) {
       })
       .catch((error) => {
         if (!controller.signal.aborted) {
+          setStatistics(null);
           setStatisticsError(error instanceof Error ? error.message : "Không thể tải báo cáo.");
         }
       })
@@ -83,10 +92,16 @@ export default function AdminStatsPage({ onNavigateTab }: AdminStatsPageProps) {
     return () => controller.abort();
   }, [filterPeriod, reload]);
 
-  const overview = statistics.overview;
-  const currentMonths = statistics.months;
-  const topUsers = statistics.top_users;
-  const citationRates = statistics.citation_rates;
+  const overview = statistics?.overview;
+  const defaultMonths =
+    filterPeriod === "30d"
+      ? thongKeTheo30NgayData
+      : filterPeriod === "6m"
+        ? thongKeTheo6ThangData
+        : thongKeTheoThangData;
+  const currentMonths = statistics?.months ?? (statisticsLoading ? defaultMonths : []);
+  const topUsers = statistics?.top_users ?? [];
+  const citationRates = statistics?.citation_rates ?? [];
 
   // Filter months data based on active period
   const maxVal = Math.max(
@@ -112,7 +127,9 @@ export default function AdminStatsPage({ onNavigateTab }: AdminStatsPageProps) {
           <RefreshCw size={14} className={statisticsLoading ? "cl-spin" : ""} aria-hidden="true" />
           <span>Tải lại dữ liệu</span>
         </button>
-        <span role="status">{statistics.range}</span>
+        <span role="status">
+          {statistics?.range ?? (filterPeriod === "30d" ? "30 ngày qua" : filterPeriod === "6m" ? "6 tháng gần nhất" : "Năm 2026")}
+        </span>
       </div>
       {statisticsError && <p role="alert" className="cl-stats-load-error">{statisticsError}</p>}
       {/* Header with Title and Filter Tabs */}
@@ -160,13 +177,25 @@ export default function AdminStatsPage({ onNavigateTab }: AdminStatsPageProps) {
           </div>
           <div className="cl-stat-info">
             <span className="cl-stat-info-label">Người dùng hệ thống</span>
-            <span className="cl-stat-info-value">
-              {overview.tong_nguoi_dung.toLocaleString("vi-VN")}
-            </span>
-            <span className="cl-stat-info-sub">
-              <TrendingUp size={13} />
-              {overview.tang_truong_nguoi_dung}
-            </span>
+            {statisticsLoading ? (
+              <StatValuesSkeleton />
+            ) : (
+              <>
+                <span className="cl-stat-info-value">
+                  {statistics ? soLuong(overview?.tong_nguoi_dung) : "—"}
+                </span>
+                <span className="cl-stat-info-sub">
+                  {statistics && overview?.tang_truong_nguoi_dung ? (
+                    <>
+                      <TrendingUp size={13} />
+                      {overview.tang_truong_nguoi_dung}
+                    </>
+                  ) : (
+                    <span className="cl-stats-empty-inline">Chưa có dữ liệu</span>
+                  )}
+                </span>
+              </>
+            )}
           </div>
         </motion.div>
 
@@ -179,13 +208,25 @@ export default function AdminStatsPage({ onNavigateTab }: AdminStatsPageProps) {
           </div>
           <div className="cl-stat-info">
             <span className="cl-stat-info-label">Văn bản & Điều khoản</span>
-            <span className="cl-stat-info-value">
-              {overview.tong_dieu_khoan} điều
-            </span>
-            <span className="cl-stat-info-sub" style={{ color: "#0284c7" }}>
-              <FileText size={13} />
-              {overview.tong_van_ban} văn bản đã công bố
-            </span>
+            {statisticsLoading ? (
+              <StatValuesSkeleton />
+            ) : (
+              <>
+                <span className="cl-stat-info-value">
+                  {statistics ? `${overview?.tong_dieu_khoan ?? 0} điều` : "—"}
+                </span>
+                <span className="cl-stat-info-sub" style={{ color: "#0284c7" }}>
+                  {statistics && overview?.tong_van_ban !== undefined ? (
+                    <>
+                      <FileText size={13} />
+                      {overview.tong_van_ban} văn bản đã công bố
+                    </>
+                  ) : (
+                    <span className="cl-stats-empty-inline">Chưa có dữ liệu</span>
+                  )}
+                </span>
+              </>
+            )}
           </div>
         </motion.div>
 
@@ -198,13 +239,25 @@ export default function AdminStatsPage({ onNavigateTab }: AdminStatsPageProps) {
           </div>
           <div className="cl-stat-info">
             <span className="cl-stat-info-label">Quy định bóc tách</span>
-            <span className="cl-stat-info-value">
-              {overview.tong_quy_dinh} quy định
-            </span>
-            <span className="cl-stat-info-sub">
-              <CheckCircle2 size={13} />
-              {overview.tang_truong_quy_dinh}
-            </span>
+            {statisticsLoading ? (
+              <StatValuesSkeleton />
+            ) : (
+              <>
+                <span className="cl-stat-info-value">
+                  {statistics ? `${overview?.tong_quy_dinh ?? 0} quy định` : "—"}
+                </span>
+                <span className="cl-stat-info-sub">
+                  {statistics && overview?.tang_truong_quy_dinh ? (
+                    <>
+                      <CheckCircle2 size={13} />
+                      {overview.tang_truong_quy_dinh}
+                    </>
+                  ) : (
+                    <span className="cl-stats-empty-inline">Chưa có dữ liệu</span>
+                  )}
+                </span>
+              </>
+            )}
           </div>
         </motion.div>
 
@@ -217,24 +270,37 @@ export default function AdminStatsPage({ onNavigateTab }: AdminStatsPageProps) {
           </div>
           <div className="cl-stat-info">
             <span className="cl-stat-info-label">Lượt hỏi đáp AI</span>
-            <span className="cl-stat-info-value">
-              {overview.tong_cuoc_hoi_dap.toLocaleString("vi-VN")}
-            </span>
-            <span className="cl-stat-info-sub" style={{ color: "#d97706" }}>
-              <Sparkles size={13} />
-              {overview.tang_truong_hoi_dap}
-            </span>
-            {/* Khách vãng lai hỏi đáp như người đã đăng nhập nhưng không có tài khoản,
-                nên số lượt của họ được tách riêng thay vì cộng vào Người dùng hệ thống. */}
-            <span className="cl-stat-info-sub" style={{ color: "#71747e" }}>
-              <Bot size={13} />
-              {(overview.hoi_dap_khach ?? 0).toLocaleString("vi-VN")} lượt từ khách vãng lai
-            </span>
-            {/* Lượt tra cứu pháp luật gộp theo giờ, tách khỏi lượt hỏi đáp AI. */}
-            <span className="cl-stat-info-sub" style={{ color: "#0284c7" }}>
-              <Search size={13} />
-              {(overview.tong_tra_cuu ?? 0).toLocaleString("vi-VN")} lượt tra cứu
-            </span>
+            {statisticsLoading ? (
+              <StatValuesSkeleton subRows={3} />
+            ) : (
+              <>
+                <span className="cl-stat-info-value">
+                  {statistics ? soLuong(overview?.tong_cuoc_hoi_dap) : "—"}
+                </span>
+                {statistics && overview?.tang_truong_hoi_dap ? (
+                  <span className="cl-stat-info-sub" style={{ color: "#d97706" }}>
+                    <Sparkles size={13} />
+                    {overview.tang_truong_hoi_dap}
+                  </span>
+                ) : (
+                  <span className="cl-stat-info-sub">
+                    <span className="cl-stats-empty-inline">Chưa có dữ liệu</span>
+                  </span>
+                )}
+                {statistics && (
+                  <>
+                    <span className="cl-stat-info-sub" style={{ color: "#71747e" }}>
+                      <Bot size={13} />
+                      {soLuong(overview?.hoi_dap_khach ?? 0)} lượt từ khách vãng lai
+                    </span>
+                    <span className="cl-stat-info-sub" style={{ color: "#0284c7" }}>
+                      <Search size={13} />
+                      {soLuong(overview?.tong_tra_cuu ?? 0)} lượt tra cứu
+                    </span>
+                  </>
+                )}
+              </>
+            )}
           </div>
         </motion.div>
       </div>
@@ -300,95 +366,99 @@ export default function AdminStatsPage({ onNavigateTab }: AdminStatsPageProps) {
                   </div>
 
                   {/* Columns of Animated Bars with Wave Effect */}
-                  <div
-                    key={statistics.period}
-                    className={`cl-barchart-columns-wrapper ${statisticsLoading && filterPeriod !== statistics.period ? "is-period-changing" : ""}`}
-                  >
-                    {currentMonths.map((item, index) => {
-                      const isHovered = hoveredBarIndex === index;
-                      const hHoiDap = Math.round((item.hoi_dap / maxVal) * 190);
-                      const hTraCuu = Math.round(((item.tra_cuu ?? 0) / maxVal) * 190);
+                  {!statisticsLoading && currentMonths.length === 0 ? (
+                    <div className="cl-stats-empty-notice">Chưa có dữ liệu truy vấn</div>
+                  ) : (
+                    <div
+                      key={statistics?.period ?? filterPeriod}
+                      className={`cl-barchart-columns-wrapper ${statisticsLoading && filterPeriod !== statistics?.period ? "is-period-changing" : ""}`}
+                    >
+                      {currentMonths.map((item, index) => {
+                        const isHovered = hoveredBarIndex === index;
+                        const hHoiDap = Math.round((item.hoi_dap / maxVal) * 190);
+                        const hTraCuu = Math.round(((item.tra_cuu ?? 0) / maxVal) * 190);
 
-                      return (
-                        <div
-                          key={item.thang}
-                          className="cl-barchart-col"
-                          onMouseEnter={() => setHoveredBarIndex(index)}
-                          onMouseLeave={() => setHoveredBarIndex(null)}
-                        >
-                          {/* Floating Tooltip with Smooth Fade In */}
-                          <AnimatePresence>
-                            {isHovered && (
+                        return (
+                          <div
+                            key={item.thang}
+                            className="cl-barchart-col"
+                            onMouseEnter={() => setHoveredBarIndex(index)}
+                            onMouseLeave={() => setHoveredBarIndex(null)}
+                          >
+                            {/* Floating Tooltip with Smooth Fade In */}
+                            <AnimatePresence>
+                              {isHovered && (
+                                <motion.div
+                                  className="cl-barchart-tooltip"
+                                  initial={{ opacity: 0, y: 8, scale: 0.95 }}
+                                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                                  exit={{ opacity: 0, y: 4, scale: 0.95 }}
+                                  transition={{ duration: 0.16 }}
+                                >
+                                  <strong
+                                    style={{
+                                      display: "block",
+                                      marginBottom: 4,
+                                      fontSize: 12,
+                                    }}
+                                  >
+                                    {item.ten_thang}
+                                  </strong>
+                                  <div style={{ color: "#f87171" }}>
+                                    💬 Hỏi đáp AI: {item.hoi_dap} lượt
+                                  </div>
+                                  <div style={{ color: "#38bdf8" }}>
+                                    📖 Tra cứu: {(item.tra_cuu ?? 0).toLocaleString("vi-VN")} lượt
+                                  </div>
+                                  <div
+                                    style={{
+                                      color: "#4ade80",
+                                      fontSize: 11,
+                                      marginTop: 2,
+                                    }}
+                                  >
+                                    ⚖️ Trích dẫn: {item.trich_dan} căn cứ
+                                  </div>
+                                </motion.div>
+                              )}
+                            </AnimatePresence>
+
+                            {/* Bars with Staggered Liquid Wave Animation */}
+                            <div className="cl-barchart-col-bars">
                               <motion.div
-                                className="cl-barchart-tooltip"
-                                initial={{ opacity: 0, y: 8, scale: 0.95 }}
-                                animate={{ opacity: 1, y: 0, scale: 1 }}
-                                exit={{ opacity: 0, y: 4, scale: 0.95 }}
-                                transition={{ duration: 0.16 }}
-                              >
-                                <strong
-                                  style={{
-                                    display: "block",
-                                    marginBottom: 4,
-                                    fontSize: 12,
-                                  }}
-                                >
-                                  {item.ten_thang}
-                                </strong>
-                                <div style={{ color: "#f87171" }}>
-                                  💬 Hỏi đáp AI: {item.hoi_dap} lượt
-                                </div>
-                                <div style={{ color: "#38bdf8" }}>
-                                  📖 Tra cứu: {(item.tra_cuu ?? 0).toLocaleString("vi-VN")} lượt
-                                </div>
-                                <div
-                                  style={{
-                                    color: "#4ade80",
-                                    fontSize: 11,
-                                    marginTop: 2,
-                                  }}
-                                >
-                                  ⚖️ Trích dẫn: {item.trich_dan} căn cứ
-                                </div>
-                              </motion.div>
-                            )}
-                          </AnimatePresence>
-
-                          {/* Bars with Staggered Liquid Wave Animation */}
-                          <div className="cl-barchart-col-bars">
-                            <motion.div
-                              className="cl-bar-single burgundy"
-                              initial={{ height: 0, opacity: 0 }}
-                              animate={{
-                                height: `${Math.max(hHoiDap, 6)}px`,
-                                opacity: 1,
-                              }}
-                              transition={{
-                                duration: 0.6,
-                                delay: 0.08 + index * 0.045,
-                                ease: [0.34, 1.45, 0.64, 1],
-                              }}
-                              title={`Hỏi đáp: ${item.hoi_dap}`}
-                            />
-                            <motion.div
-                              className="cl-bar-single sky"
-                              initial={{ height: 0, opacity: 0 }}
-                              animate={{
-                                height: `${Math.max(hTraCuu, 6)}px`,
-                                opacity: 1,
-                              }}
-                              transition={{
-                                duration: 0.6,
-                                delay: 0.11 + index * 0.045,
-                                ease: [0.34, 1.45, 0.64, 1],
-                              }}
-                              title={`Tra cứu: ${(item.tra_cuu ?? 0).toLocaleString("vi-VN")}`}
-                            />
+                                className="cl-bar-single burgundy"
+                                initial={{ height: 0, opacity: 0 }}
+                                animate={{
+                                  height: `${Math.max(hHoiDap, 6)}px`,
+                                  opacity: 1,
+                                }}
+                                transition={{
+                                  duration: 0.6,
+                                  delay: 0.08 + index * 0.045,
+                                  ease: [0.34, 1.45, 0.64, 1],
+                                }}
+                                title={`Hỏi đáp: ${item.hoi_dap}`}
+                              />
+                              <motion.div
+                                className="cl-bar-single sky"
+                                initial={{ height: 0, opacity: 0 }}
+                                animate={{
+                                  height: `${Math.max(hTraCuu, 6)}px`,
+                                  opacity: 1,
+                                }}
+                                transition={{
+                                  duration: 0.6,
+                                  delay: 0.11 + index * 0.045,
+                                  ease: [0.34, 1.45, 0.64, 1],
+                                }}
+                                title={`Tra cứu: ${(item.tra_cuu ?? 0).toLocaleString("vi-VN")}`}
+                              />
+                            </div>
                           </div>
-                        </div>
-                      );
-                    })}
-                  </div>
+                        );
+                      })}
+                    </div>
+                  )}
 
                   {/* Month X-Labels below the zero line */}
                   <div className="cl-barchart-x-labels">
@@ -407,7 +477,7 @@ export default function AdminStatsPage({ onNavigateTab }: AdminStatsPageProps) {
           </motion.div>
 
           {/* Bottom Row: 2 Cards (Sparklines & Recent Comments) */}
-          <RecentQuestionsCard items={statistics.recent_questions} />
+          <RecentQuestionsCard items={statistics?.recent_questions ?? []} loading={statisticsLoading} />
         </div>
 
         {/* Right Column (4 cols): Profile Card + Active Users + Donut Chart */}
@@ -417,14 +487,15 @@ export default function AdminStatsPage({ onNavigateTab }: AdminStatsPageProps) {
             className="cl-stats-card cl-profile-card"
             initial={false} data-admin-reveal="220"
           >
-            <div className="cl-profile-avatar-large">AD</div>
-            <h3 className="cl-profile-name">Quản trị viên Hệ thống</h3>
-            <span className="cl-profile-handle">
-              @admin • admin@cyberlaw.vn
-            </span>
+            <div className="cl-profile-avatar-large">
+              {currentUser?.ho_ten
+                ? currentUser.ho_ten.trim().split(/\s+/).slice(-2).map((w: string) => w[0]?.toUpperCase()).join("")
+                : "QT"}
+            </div>
+            <h3 className="cl-profile-name">{currentUser?.ho_ten || "Tài khoản Quản trị"}</h3>
             <div className="cl-profile-role-badge">
               <ShieldCheck size={13} />
-              <span>Super Admin • Toàn quyền</span>
+              <span>{currentUser?.vai_tro === "admin" ? "Quản trị viên • Toàn quyền" : "Tài khoản hệ thống"}</span>
             </div>
 
             <div className="cl-profile-system-status">
@@ -433,7 +504,7 @@ export default function AdminStatsPage({ onNavigateTab }: AdminStatsPageProps) {
                 Hệ thống CSDL
               </span>
               <strong style={{ color: "#211618" }}>
-                MySQL 8.0 • {overview.so_bang ?? 12} bảng
+                MySQL 8.0 • {overview?.so_bang ?? 13} bảng
               </strong>
             </div>
           </motion.div>
@@ -454,25 +525,41 @@ export default function AdminStatsPage({ onNavigateTab }: AdminStatsPageProps) {
             </div>
 
             <div className="cl-active-users-list">
-              {topUsers.map((u) => (
-                <div key={u.ma_nguoi_dung} className="cl-active-user-item">
-                  <div className="cl-active-user-avatar-wrap">
-                    <div className="cl-active-user-avatar">{u.avatar}</div>
-                    <span
-                      className={`cl-active-status-badge ${u.trang_thai}`}
-                    />
+              {statisticsLoading ? (
+                SKELETON_USERS.map((index) => (
+                  <div key={index} className="cl-active-user-item">
+                    <span className="cl-skeleton-block cl-skeleton-avatar-sm" />
+                    <span className="cl-skeleton-stack">
+                      <span className="cl-skeleton-block cl-skeleton-line is-user-name" />
+                      <span className="cl-skeleton-block cl-skeleton-line is-user-handle" />
+                    </span>
                   </div>
-                  <div className="cl-active-user-meta">
-                    <div className="cl-active-user-name">{u.ho_ten}</div>
-                    <div className="cl-active-user-handle">
-                      {u.vai_tro_nhan}
-                    </div>
-                  </div>
-                  <span className="cl-active-user-stat">
-                    {u.so_cuoc_hoi} câu
-                  </span>
+                ))
+              ) : topUsers.length === 0 ? (
+                <div className="cl-stats-empty-notice" style={{ minHeight: "130px" }}>
+                  Chưa có dữ liệu người dùng hoạt động
                 </div>
-              ))}
+              ) : (
+                topUsers.map((u) => (
+                  <div key={u.ma_nguoi_dung} className="cl-active-user-item">
+                    <div className="cl-active-user-avatar-wrap">
+                      <div className="cl-active-user-avatar">{u.avatar}</div>
+                      <span
+                        className={`cl-active-status-badge ${u.trang_thai}`}
+                      />
+                    </div>
+                    <div className="cl-active-user-meta">
+                      <div className="cl-active-user-name">{u.ho_ten}</div>
+                      <div className="cl-active-user-handle">
+                        {u.vai_tro_nhan}
+                      </div>
+                    </div>
+                    <span className="cl-active-user-stat">
+                      {u.so_cuoc_hoi} câu
+                    </span>
+                  </div>
+                ))
+              )}
             </div>
 
             <button
@@ -502,86 +589,106 @@ export default function AdminStatsPage({ onNavigateTab }: AdminStatsPageProps) {
             </div>
 
             <div className="cl-donut-container">
-              {/* SVG Donut */}
-              <div className="cl-donut-svg-wrap">
-                <svg
-                  viewBox="0 0 160 160"
-                  width="160"
-                  height="160"
-                  style={{ transform: "rotate(-90deg)" }}
-                >
-                  {citationRates.map((item, index) => {
-                    const strokeDasharray = `${(item.ti_le / 100) * circumference} ${circumference}`;
-                    const strokeDashoffset = `${-(accumulatedPercent / 100) * circumference}`;
-                    accumulatedPercent += item.ti_le;
+              {statisticsLoading ? (
+                <>
+                  <span className="cl-skeleton-block cl-skeleton-donut" />
+                  <div className="cl-donut-legend-list">
+                    {SKELETON_CITATIONS.map((index) => (
+                      <span
+                        key={index}
+                        className="cl-skeleton-block cl-skeleton-legend-bar"
+                      />
+                    ))}
+                  </div>
+                </>
+              ) : citationRates.length === 0 ? (
+                <div className="cl-stats-empty-notice" style={{ minHeight: "160px" }}>
+                  Chưa có dữ liệu trích dẫn
+                </div>
+              ) : (
+                <>
+                  {/* SVG Donut */}
+                  <div className="cl-donut-svg-wrap">
+                    <svg
+                      viewBox="0 0 160 160"
+                      width="160"
+                      height="160"
+                      style={{ transform: "rotate(-90deg)" }}
+                    >
+                      {citationRates.map((item, index) => {
+                        const strokeDasharray = `${(item.ti_le / 100) * circumference} ${circumference}`;
+                        const strokeDashoffset = `${-(accumulatedPercent / 100) * circumference}`;
+                        accumulatedPercent += item.ti_le;
 
-                    const isSelected = selectedDonutSegment === index;
+                        const isSelected = selectedDonutSegment === index;
 
-                    return (
-                      <circle
+                        return (
+                          <circle
+                            key={item.nhom}
+                            cx="80"
+                            cy="80"
+                            r={donutRadius}
+                            fill="transparent"
+                            stroke={item.mau_sac}
+                            strokeWidth={isSelected ? 18 : 14}
+                            strokeDasharray={strokeDasharray}
+                            strokeDashoffset={strokeDashoffset}
+                            style={{
+                              transition: "all 0.3s ease",
+                              cursor: "pointer",
+                            }}
+                            onMouseEnter={() => setSelectedDonutSegment(index)}
+                            onMouseLeave={() => setSelectedDonutSegment(null)}
+                          />
+                        );
+                      })}
+                    </svg>
+
+                    <div className="cl-donut-center-label">
+                      <div className="cl-donut-center-pct">
+                        {selectedDonutSegment !== null
+                          ? `${citationRates[selectedDonutSegment].ti_le}%`
+                          : citationRates[0] ? `${citationRates[0].ti_le}%` : "—"}
+                      </div>
+                      <div className="cl-donut-center-text">
+                        {selectedDonutSegment !== null ? "Phần trăm" : "Tin cậy"}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Legend List */}
+                  <div className="cl-donut-legend-list">
+                    {citationRates.map((item, index) => (
+                      <div
                         key={item.nhom}
-                        cx="80"
-                        cy="80"
-                        r={donutRadius}
-                        fill="transparent"
-                        stroke={item.mau_sac}
-                        strokeWidth={isSelected ? 18 : 14}
-                        strokeDasharray={strokeDasharray}
-                        strokeDashoffset={strokeDashoffset}
-                        style={{
-                          transition: "all 0.3s ease",
-                          cursor: "pointer",
-                        }}
+                        className="cl-donut-legend-item"
                         onMouseEnter={() => setSelectedDonutSegment(index)}
                         onMouseLeave={() => setSelectedDonutSegment(null)}
-                      />
-                    );
-                  })}
-                </svg>
-
-                <div className="cl-donut-center-label">
-                  <div className="cl-donut-center-pct">
-                    {selectedDonutSegment !== null
-                      ? `${citationRates[selectedDonutSegment].ti_le}%`
-                      : citationRates[0] ? `${citationRates[0].ti_le}%` : "—"}
+                        style={{
+                          opacity:
+                            selectedDonutSegment === null ||
+                            selectedDonutSegment === index
+                              ? 1
+                              : 0.5,
+                          cursor: "pointer",
+                        }}
+                      >
+                        <div className="cl-donut-legend-label-wrap">
+                          <span
+                            className="cl-donut-legend-color-dot"
+                            style={{ background: item.mau_sac }}
+                          />
+                          <span>{item.nhom}</span>
+                        </div>
+                        <span className="cl-donut-legend-pct">{item.ti_le}%</span>
+                      </div>
+                    ))}
                   </div>
-                  <div className="cl-donut-center-text">
-                    {selectedDonutSegment !== null ? "Phần trăm" : "Tin cậy"}
-                  </div>
-                </div>
-              </div>
-
-              {/* Legend List */}
-              <div className="cl-donut-legend-list">
-                {citationRates.map((item, index) => (
-                  <div
-                    key={item.nhom}
-                    className="cl-donut-legend-item"
-                    onMouseEnter={() => setSelectedDonutSegment(index)}
-                    onMouseLeave={() => setSelectedDonutSegment(null)}
-                    style={{
-                      opacity:
-                        selectedDonutSegment === null ||
-                        selectedDonutSegment === index
-                          ? 1
-                          : 0.5,
-                      cursor: "pointer",
-                    }}
-                  >
-                    <div className="cl-donut-legend-label-wrap">
-                      <span
-                        className="cl-donut-legend-color-dot"
-                        style={{ background: item.mau_sac }}
-                      />
-                      <span>{item.nhom}</span>
-                    </div>
-                    <span className="cl-donut-legend-pct">{item.ti_le}%</span>
-                  </div>
-                ))}
-              </div>
+                </>
+              )}
             </div>
           </motion.div>
-          <RegulationBreakdownCard items={statistics.regulations} />
+          <RegulationBreakdownCard items={statistics?.regulations ?? []} loading={statisticsLoading} />
         </div>
       </div>
     </div>

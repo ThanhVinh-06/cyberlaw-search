@@ -13,6 +13,7 @@
 - [ ] Log theo [đặc tả](03-logging.md), không ghi dữ liệu cấm; audit bền vững, rotation/quota/retention đúng, cảnh báo đã nhận được và có người xử lý.
 - [ ] Backup DB và nguồn cần thiết được bảo vệ; phục hồi thử vào DB riêng thành công. Migration có kế hoạch rollback/phục hồi; không chạy `migrate:fresh` trên dữ liệu đang dùng.
 - [ ] Luật 2025/citation/chỉ mục cùng phiên bản; phản hồi AI không tạo quyền hoặc nội dung thực thi; thiếu căn cứ có trạng thái rõ ràng. Không đưa dữ liệu mẫu 2018/giả vào production.
+- [ ] Sau `cyberlaw:import-knowledge --apply`, **công bố văn bản trên trang quản trị** (bundle ghim `draft`/v1 nên API công khai vẫn rỗng/409 tới khi `published`). Xác nhận `/api/search`, `/api/library`, `/api/terms` trả đúng Luật 116/2025/QH15 trước khi mở. Nếu `cyberlaw:import-knowledge` báo `knowledge_existing_conflict` trên DB đã công bố thì đó là fail-closed đúng thiết kế, không phải sự cố — chi tiết ở [tài liệu dữ liệu](../data/01-du-lieu-luat-116.md) mục 6.
 - [ ] Dependency audit, secret scan worktree/lịch sử, review/SAST và test API đạt trong phạm vi. DAST trên staging có quyền thực hiện, bao phủ vai trò liên quan. Kết quả NOT RUN hoặc phát hiện chưa xử lý được ghi rõ.
 - [ ] UI kết nối API được test responsive, bàn phím, loading/error, expiry và rate-limit; không log body nhạy cảm từ frontend analytics.
 - [ ] Không còn High/Critical đã xác nhận. Vấn đề còn lại có người chịu trách nhiệm/kế hoạch. Ghi commit, config, thời điểm và bằng chứng release. Không dùng câu “không có lỗ hổng” làm kết luận thay cho phạm vi kiểm tra.

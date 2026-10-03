@@ -327,3 +327,77 @@ test("guest answers are shown as a separate metric and labelled in recent questi
   await expect(guestRow).toContainText("Không đăng nhập");
 });
 
+test("API 503 failure displays empty state and alert, resets properly without leaking demo figures", async ({
+  page,
+}) => {
+  await mockAuth(page, "admin");
+  let shouldFail = true;
+  await page.route("**/api/admin/statistics**", async (route) => {
+    if (shouldFail) {
+      await route.fulfill({
+        status: 503,
+        contentType: "application/json",
+        body: JSON.stringify({ message: "Dịch vụ thống kê tạm thời gián đoạn." }),
+      });
+    } else {
+      await route.fallback();
+    }
+  });
+
+  await page.goto("/admin/stats");
+  await expect(page.getByRole("alert")).toContainText("Dịch vụ thống kê tạm thời gián đoạn.");
+
+  // Không leak các con số demo cũ
+  const dashboardText = await page.locator(".cl-admin-stats-dashboard").innerText();
+  expect(dashboardText).not.toContain("1.280");
+  expect(dashboardText).not.toContain("3.450");
+  expect(dashboardText).not.toContain("4.430");
+
+  // Các thẻ chỉ số hiển thị "—"
+  await expect(page.locator(".cl-stat-info-value").first()).toHaveText("—");
+
+  // Danh sách câu hỏi và cột biểu đồ rỗng
+  await expect(page.locator(".cl-question-card")).toHaveCount(0);
+  await expect(page.locator(".cl-barchart-col")).toHaveCount(0);
+  await expect(page.getByText("Chưa có dữ liệu truy vấn")).toBeVisible();
+
+  // Chuyển cờ sang thành công và bấm tải lại khi API hồi phục
+  shouldFail = false;
+  await page.getByRole("button", { name: "Tải lại dữ liệu" }).click();
+  await expect(page.getByRole("alert")).toHaveCount(0);
+  await expect(page.locator(".cl-question-card")).toHaveCount(6);
+  await expect(page.locator(".cl-barchart-col")).toHaveCount(6);
+});
+
+const EMPTY_VIEWPORTS = [
+  { name: "320px small mobile", width: 320, height: 568 },
+  { name: "440px iPhone 16 Pro Max", width: 440, height: 956 },
+  { name: "834px iPad tablet", width: 834, height: 1194 },
+  { name: "1440px desktop", width: 1440, height: 900 },
+  { name: "956x440 landscape mobile", width: 956, height: 440 },
+];
+
+for (const vp of EMPTY_VIEWPORTS) {
+  test(`empty state does not overflow or leak demo data at ${vp.name}`, async ({ page }) => {
+    await page.setViewportSize({ width: vp.width, height: vp.height });
+    await mockAuth(page, "admin");
+    await page.route("**/api/admin/statistics*", (route) =>
+      route.fulfill({
+        status: 500,
+        contentType: "application/json",
+        body: JSON.stringify({ message: "Lỗi máy chủ nội bộ." }),
+      }),
+    );
+    await page.goto("/admin/stats");
+    await expect(page.getByRole("alert")).toBeVisible();
+    const text = await page.locator(".cl-admin-stats-dashboard").innerText();
+    expect(text).not.toContain("1.280");
+    expect(text).not.toContain("3.450");
+    expect(text).not.toContain("4.430");
+
+    const scrollWidth = await page.evaluate(() => document.documentElement.scrollWidth);
+    const clientWidth = await page.evaluate(() => document.documentElement.clientWidth);
+    expect(scrollWidth).toBeLessThanOrEqual(clientWidth);
+  });
+}
+

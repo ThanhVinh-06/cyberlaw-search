@@ -30,6 +30,43 @@
   font-size: 13px;
 }
 
+.cl-stats-empty-notice {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 180px;
+  width: 100%;
+  color: #76686a;
+  font-size: 13.5px;
+  font-weight: 500;
+  border: 1px dashed #e8dedb;
+  border-radius: 14px;
+  background: #faf8f6;
+  padding: 24px;
+  text-align: center;
+}
+
+.cl-stats-empty-inline {
+  color: #9a8c8e;
+  font-size: 12.5px;
+  font-style: italic;
+}
+
+.cl-reg-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 140px;
+  color: #76686a;
+  font-size: 13px;
+  border: 1px dashed #e8dedb;
+  border-radius: 12px;
+  background: #faf8f6;
+  padding: 16px;
+  margin-bottom: 12px;
+  text-align: center;
+}
+
 .cl-question-empty-wrapper {
   min-height: 260px;
   display: flex;
@@ -1076,7 +1113,7 @@
   font-size: 16.5px;
   font-weight: 700;
   color: #211618;
-  margin: 0 0 2px 0;
+  margin: 0 0 10px 0;
 }
 
 .cl-profile-handle {
@@ -1319,4 +1356,126 @@
   font-weight: 700;
   color: #211618;
   font-feature-settings: "tnum";
+}
+
+/* ==========================================================================
+   Khối mờ chờ load dữ liệu từ database (ngoại trừ biểu đồ giữ nguyên wave)
+   Chỉ thay đúng vùng số liệu và danh sách nội dung; tiêu đề, nhãn và thẻ vẫn là
+   markup thật nên bố cục lúc chờ trùng khít dữ liệu thật, không làm vỡ giao diện.
+   ========================================================================== */
+.cl-skeleton-block {
+  display: block;
+  border-radius: 6px;
+  background-color: #f2ede9;
+  background-image: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.85) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  background-repeat: no-repeat;
+  background-size: 180px 100%;
+  background-position: -180px 0;
+  animation: statsSkeletonWave 1.3s linear infinite;
+}
+
+@keyframes statsSkeletonWave {
+  to {
+    background-position: calc(100% + 180px) 0;
+  }
+}
+
+.cl-skeleton-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  flex: 1;
+}
+
+.cl-skeleton-line {
+  height: 11.5px;
+}
+
+.cl-skeleton-line.is-stat-value {
+  height: 29.89px;
+  width: 130px;
+}
+
+.cl-skeleton-line.is-stat-sub {
+  height: 17.25px;
+  width: 150px;
+  margin-top: 4px;
+}
+
+.cl-skeleton-line.is-user-name {
+  height: 17px;
+  width: 130px;
+}
+
+.cl-skeleton-line.is-user-handle {
+  height: 15px;
+  width: 96px;
+}
+
+.cl-skeleton-line.is-reg-name {
+  height: 18px;
+  width: 150px;
+}
+
+.cl-skeleton-line.is-reg-count {
+  height: 25.5px;
+  width: 42px;
+  flex: none;
+}
+
+.cl-skeleton-question {
+  width: 100%;
+  height: 175px;
+  border-radius: 20px;
+  flex: none;
+}
+
+.cl-skeleton-avatar-sm {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  flex: none;
+}
+
+.cl-skeleton-donut {
+  width: 160px;
+  height: 160px;
+  border-radius: 50%;
+  margin-bottom: 18px;
+}
+
+.cl-skeleton-legend-bar {
+  width: 100%;
+  height: 18.75px;
+}
+
+.cl-skeleton-reg-chart {
+  width: 100%;
+  height: 88px;
+  margin-top: 4px;
+}
+
+.cl-skeleton-line.is-reg-hint {
+  height: 16.5px;
+  width: 190px;
+  margin: 17px 0 6px;
+}
+
+.cl-skeleton-line.is-reg-demo {
+  height: 15px;
+  width: 170px;
+  display: inline-block;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cl-skeleton-block {
+    animation: none;
+    background-image: none;
+  }
 }

@@ -831,6 +831,30 @@
   border-color: #c9c0ba;
 }
 
+.cl-admin-btn-outline:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+@keyframes cl-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.cl-spin {
+  animation: cl-spin 0.8s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cl-spin {
+    animation: none;
+  }
+}
+
 /* Permission Matrix Table */
 .cl-admin-matrix-card {
   background: #ffffff;

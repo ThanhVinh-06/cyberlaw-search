@@ -92,3 +92,28 @@ test('reload and internal user-tab entries use a single slower synchronized entr
     await check();
   }
 });
+
+test('reload matrix button has RefreshCw icon and spins during loading', async ({page}) => {
+  await mockAuth(page, 'admin');
+  await page.goto('/admin');
+  const sidebar = page.locator('aside.cl-admin-sidebar');
+  await sidebar.getByRole('button', {name:'Ma trận quyền hạn',exact:true}).click();
+  const reloadBtn = page.getByRole('button', {name:'Tải lại ma trận'});
+  await expect(reloadBtn).toBeVisible();
+  const icon = reloadBtn.locator('svg');
+  await expect(icon).toBeVisible();
+
+  let finishReload!: () => void;
+  const reloadPending = new Promise<void>(resolve => { finishReload = resolve; });
+  await page.route('**/api/admin/permission-matrix**', async route => {
+    await reloadPending;
+    await route.fallback();
+  });
+
+  await reloadBtn.click();
+  await expect(reloadBtn).toBeDisabled();
+  await expect(icon).toHaveClass(/cl-spin/);
+  finishReload();
+  await expect(reloadBtn).toBeEnabled();
+  await expect(icon).not.toHaveClass(/cl-spin/);
+});
