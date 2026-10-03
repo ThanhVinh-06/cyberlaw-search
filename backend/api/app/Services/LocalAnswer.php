@@ -56,9 +56,21 @@ class LocalAnswer
         if ($this->actor($request) !== null) {
             return [];
         }
-        $ids = $request->session()->get(self::SESSION_KEY, []);
+        $grant = $request->session()->get(self::SESSION_KEY, []);
+        if (!is_array($grant) || !is_array($grant['ids'] ?? null)
+            || count($grant['ids']) > self::SESSION_CAP || !is_string($grant['mac'] ?? null)) {
+            return [];
+        }
+        $ids = $grant['ids'];
+        foreach ($ids as $id) {
+            if (!is_string($id) || !preg_match('/^[1-9][0-9]{0,17}$/D', $id)) return [];
+        }
+        return hash_equals($this->guestSignature($request, $ids), $grant['mac']) ? array_values($ids) : [];
+    }
 
-        return is_array($ids) ? array_values(array_filter($ids, 'is_string')) : [];
+    private function guestSignature(Request $request, array $ids): string
+    {
+        return hash_hmac('sha256', json_encode(['guest-threads-v1', $request->session()->getId(), $ids], JSON_THROW_ON_ERROR), (string) config('app.key'));
     }
 
     private function rememberGuestThread(Request $request, int $id): void
@@ -69,7 +81,8 @@ class LocalAnswer
         $ids = array_values(array_diff($this->guestThreadIds($request), [(string) $id]));
         array_unshift($ids, (string) $id);
         // Keep only the most recent threads; older ones degrade to a 404 on continue.
-        $request->session()->put(self::SESSION_KEY, array_slice($ids, 0, self::SESSION_CAP));
+        $ids = array_slice($ids, 0, self::SESSION_CAP);
+        $request->session()->put(self::SESSION_KEY, ['ids' => $ids, 'mac' => $this->guestSignature($request, $ids)]);
     }
 
     /** A guest may only open a thread with no owner that this very session created. */

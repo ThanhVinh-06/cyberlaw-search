@@ -1,5 +1,21 @@
 # Bàn giao dự án CyberLaw Search
 
+### Lộ trình deploy và sửa H1–H4 bảo mật — 04/10/2026
+
+- **Bối cảnh:** web local đã chạy ổn; chốt **hoàn thành báo cáo đồ án trước — deploy sau**. Lộ trình dưới đây để khi quay lại deploy chỉ cần đọc và tiếp tục.
+- **`docs/deploy/00-lo-trinh-deploy.md` (mới, chưa track):** lộ trình deploy đầy đủ. Gồm bảng trạng thái hiện tại (chưa deploy, chưa có hạ tầng/CI/backup), việc cần xử lý chia 5 nhóm: **A** hạ tầng (A1–A6: máy chủ, miền, Nginx/PHP-FPM/MySQL/Python, extension, tài khoản DB riêng, HTTPS), **B** bảo mật (đã xong H1–H4/B3/B4/B5/M5; còn M2 trustProxies, M6 tinker vào require-dev, M9 filesystems serve=false, M1 GET_LOCK toàn cục, M3 SearchStatistics nuốt exception, M11 job dọn dữ liệu, M7 index, M4 dữ liệu demo trong `admin-data.ts`), **C** cấu hình production (C1–C10), **D** dữ liệu/vận hành (D1–D8), **E** kiểm thử trước khi mở (E1–E6). Kèm 2 cái bẫy đã phát hiện và thứ tự thực hiện đề xuất (~2–3 tuần).
+- **Hai cái bẫy deploy đã kiểm chứng thật:**
+  1. `backend/api/config/ai.php:5` dùng `env('CYBERLAW_AI_PYTHON', 'python')` — Ubuntu thường chỉ có `python3`, thiếu biến này thì **tính năng hỏi đáp AI chết** trên máy chủ. Phải thêm `CYBERLAW_AI_PYTHON=python3`.
+  2. `SESSION_DRIVER=database` trong mẫu production cũ nhưng schema **không có bảng `sessions`** — đã sửa thành `file` ở cả 3 tầng (mẫu env, `config/session.php` mặc định, `deploy/README.md`). Nếu chạy nhiều máy chủ phải dùng Redis/shared store đã kiểm thử, không đổi lại `database` khi chưa tạo bảng.
+
+### Sửa H1–H4 bảo mật trước deploy — 04/10/2026
+
+- Guest AI thread grant trong `LocalAnswer` nay lưu `{ids, mac}`; MAC là HMAC-SHA256 của phiên + danh sách ID với `app.key`, có kiểm tra định dạng, giới hạn 20 và fail closed khi đổi session/khóa.
+- API exception không còn bị bỏ qua im lặng: bootstrap ghi event lỗi đã lọc qua `SafeLog` (request ID, route, status, mã lỗi, loại exception, vị trí), không ghi message/SQL binding/body; vẫn chặn report thô trùng lặp.
+- Mặc định logging dùng `application,security,audit` và `info`; các channel daily có rotation và quyền 0600. Mẫu production đặt tại `deploy/README.md`.
+- Thêm mẫu HTTPS/Nginx headers tại `deploy/nginx/`; gồm CSP, frame-ancestors/X-Frame-Options, Referrer-Policy, HSTS và giới hạn webroot/API. Chưa có staging Nginx/HTTPS nên H3 chỉ được ghi nhận là cấu hình đã soạn, runtime NOT RUN.
+- Rà soát: `docs/security/reviews/2026-10-04-sua-h1-h4.md`. PHPUnit toàn bộ **123/123, 1323 assertions**; không đổi UI nên responsive N/A.
+
 ### Khắc phục triệt để hiện tượng giật nhẹ (Layout Shift) khi tải lại hoặc chuyển tab trên trang Thống kê — 04/10/2026
 
 - **Yêu cầu chủ dự án:** Khi ấn "Tải lại dữ liệu" hoặc chuyển tab bộ lọc kỳ hạn ("Năm 2026", "6 tháng gần nhất", "30 ngày qua"), trong lúc hiệu ứng mờ đang chờ load dữ liệu và khi load xong hiển thị lên làm giao diện bị giật nhẹ hình như do kích thước không khớp; kiểm tra, sửa lỗi và test kỹ lại để tránh vỡ giao diện.
@@ -869,3 +885,16 @@ Chỉ đưa mã nguồn, SQL tạo cấu trúc và tài liệu dự án lên Git
 - Dashboard giữ nguyên toàn bộ Fade In Up, hover, tooltip, biểu đồ và popup; `AdminStatsPage` tải dữ liệu qua `admin-statistics-api.ts`, hiển thị trạng thái tải/lỗi rõ ràng. `RecentQuestionsCard` và `RegulationBreakdownCard` nhận dữ liệu backend mà không đổi layout.
 - `tra_cuu` theo tháng hiện là `null` vì database chưa có bảng/event nhật ký tra cứu riêng; không dựng số liệu giả. Cần làm event thống kê tra cứu sau nếu muốn biểu đồ này có số thật.
 - Kiểm thử: `AdminStatisticsTest` 3/3 (14 assertions), Playwright thống kê + responsive 15/15, frontend build/typecheck PASS. Rà soát: `docs/security/reviews/2026-10-02-admin-statistics.md`.
+
+### Đính chính session production — 04/10/2026
+
+- Phát hiện mẫu `deploy/production.env.example` đặt `SESSION_DRIVER=database` trong khi schema hiện không có bảng `sessions`.
+- Đã sửa mẫu thành `SESSION_DRIVER=file`, bổ sung hướng dẫn vào `deploy/README.md` và giữ nguyên schema 13 bảng. Chỉ dùng database/Redis khi bổ sung session store dùng chung và kiểm thử riêng.
+- Đổi luôn mặc định trong `backend/api/config/session.php` sang `file` để không rơi lại vào bẫy `database` khi thiếu env. Kiểm chứng thật: `DatabaseSessionHandler` ném `QueryException ... Table 'cyberlaw_search.sessions' doesn't exist`; sau khi sửa, mọi nơi chỉ còn `SESSION_DRIVER=file`.
+- Trong lúc sửa, `deploy/README.md` bị ghi sai bảng mã (10/37 dòng mojibake, `ẩ` bị mã hoá hai lần) và hai file `deploy/*` dính BOM UTF-8. Đã khôi phục nguyên nội dung gốc và gỡ BOM; quét lại toàn bộ file thay đổi: UTF-8 sạch, không BOM. PHPUnit **123 passed, 1323 assertions**.
+
+### Thêm favicon từ logo CyberLaw — 04/10/2026
+
+- Thêm `frontend/public/favicon.svg` dùng biểu tượng khiên CyberLaw cùng màu nhận diện.
+- Khai báo favicon trong `frontend/index.html`; Vite đã sao chép thành `dist/favicon.svg`.
+- Build production PASS; thay đổi chỉ metadata/icon, responsive layout N/A.

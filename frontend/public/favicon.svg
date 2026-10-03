@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title">
+  <title>CyberLaw</title>
+  <rect width="64" height="64" rx="16" fill="#752536"/>
+  <path d="M32 10 49 16v13c0 11-7.3 20.8-17 25-9.7-4.2-17-14-17-25V16l17-6Z" fill="none" stroke="#fffaf7" stroke-width="4" stroke-linejoin="round"/>
+  <path d="m24 31 5.2 5.2L40.5 25" fill="none" stroke="#fffaf7" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

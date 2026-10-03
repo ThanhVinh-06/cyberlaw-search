@@ -29,8 +29,17 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->dontFlash(['password', 'password_confirmation', 'mat_khau', 'code']);
         $exceptions->report(function (Throwable $exception) {
-            // API request summary is logged by ApiContext, never SQL bindings or raw exception context.
+            // Record actionable diagnostics without exception messages, SQL bindings or trace arguments.
             if (request()->is('api/*')) {
+                \App\Support\SafeLog::write('application', 'api.exception', 'failure', [
+                    'request_id' => request()->attributes->get('request_id'),
+                    'route' => request()->route()?->getName() ?? 'api.unmatched',
+                    'status' => $exception instanceof HttpExceptionInterface ? $exception->getStatusCode() : 500,
+                    'error_code' => $exception instanceof QueryException ? 'database_error' : 'internal_error',
+                    'exception_type' => get_class($exception),
+                    'error_location' => basename($exception->getFile()).':'.$exception->getLine(),
+                ], 'error');
+                // Stop only the raw framework duplicate, which can contain credentials/bindings.
                 return false;
             }
         });

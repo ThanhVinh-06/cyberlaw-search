@@ -1,7 +1,6 @@
 # Local agent tools
 .agent/*
 !.agent/cyberlaw-security/
-.kilo/
 
 # Local secrets
 .env

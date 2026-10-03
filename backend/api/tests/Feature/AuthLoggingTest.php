@@ -17,7 +17,7 @@ class AuthLoggingTest extends TestCase
     {
         $directory = storage_path('framework/testing/log-test-'.bin2hex(random_bytes(6)));
         mkdir($directory, 0700, true);
-        foreach (['application', 'security'] as $channel) {
+        foreach (['application', 'security', 'audit'] as $channel) {
             $this->assertSame($channel === 'application' ? 14 : 90, config("logging.channels.$channel.days"));
             foreach (['2010-01-01', '2010-01-02', '2010-01-03'] as $date) {
                 file_put_contents("$directory/$channel-$date.log", "old test record\n");

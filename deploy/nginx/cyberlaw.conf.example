@@ -1,0 +1,32 @@
+# Replace example.invalid, certificate paths, app paths and PHP socket before nginx -t.
+server {
+    listen 80;
+    server_name example.invalid;
+    return 301 https://example.invalid$request_uri;
+}
+server {
+    listen 443 ssl;
+    server_name example.invalid;
+    ssl_certificate /etc/letsencrypt/live/example.invalid/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/example.invalid/privkey.pem;
+    ssl_protocols TLSv1.2 TLSv1.3;
+    server_tokens off;
+    root /srv/cyberlaw/frontend/dist;
+    index index.html;
+    include /etc/nginx/snippets/cyberlaw-security-headers.conf;
+    client_max_body_size 21m;
+    # No raw URL/query/IP access logs until a redacted format is configured.
+    access_log off;
+    location ~ /\. { deny all; }
+    location ~ \.php$ { return 404; }
+    location ~ ^/api(?:/|$) {
+        include fastcgi_params;
+        fastcgi_param SCRIPT_FILENAME /srv/cyberlaw/backend/api/public/index.php;
+        fastcgi_param SCRIPT_NAME /index.php;
+        fastcgi_param DOCUMENT_ROOT /srv/cyberlaw/backend/api/public;
+        fastcgi_param HTTPS on;
+        fastcgi_pass unix:/run/php/php8.2-fpm.sock;
+        fastcgi_read_timeout 30s;
+    }
+    location / { try_files $uri $uri/ /index.html; }
+}
