@@ -1,5 +1,13 @@
 # Bàn giao dự án CyberLaw Search
 
+### Đã push đợt khách vãng lai + gom chat dùng chung — 03/10/2026
+
+- **Commit `856914a`** (`Cho khach vang lai dung tro ly AI va gom chat dung chung`), đã push `origin/main`; `ls-remote` khớp HEAD (`856914a36520cdd0cb819ff1788ce08e37602ac7`). Working tree sạch sau push.
+- **42 file**: backend (`LocalAnswer`, `AppServiceProvider`, `ActiveAccount`, `PermissionMatrix`, `routes/web.php`, `AdminStatisticsController` + 4 file test), frontend (`AiChat.tsx` mới, `article-dialog.css` mới, `ChatPopover.css`, `MainSite.tsx`, `App.tsx`, `HistoryView.tsx`, `ArticleDialog.tsx`, `admin-data.ts`, `AdminStatsPage.tsx`, `main-site.css` + 6 file e2e), migration `20261002_hoi_thoai_khach_vang_lai.sql`, tài liệu + 4 ảnh screenshot.
+- **Rà soát trước push (đã chạy thật)**: `.gitignore` chặn `.env`/`*.sql` (trừ schema+migrations)/`config/database.php`/vendor/logs; không file nhạy cảm nào trong staged; quét mẫu secret/khóa/email thật/IP nội bộ trên 42 file chỉ ra văn bản tài liệu ("không chứa secret") và email demo `@example.test`/`admin-data.ts` (đã có từ HEAD); `schema.sql` chỉ cấu trúc, 0 `INSERT`/`DROP`; migration thuần `ALTER ... MODIFY` không có dữ liệu; CSS không có `url()`/`javascript:`/`@import` lạ; các dòng backend bị xóa đều được thay bằng logic tương đương (không mất bảo vệ).
+- **Kiểm thử trước push**: PHPUnit **116 PASS (1272 assertions)**; `guest-chat.spec.ts` **15/15 PASS**; `npm run build` PASS (cảnh báo chunk >500 kB có sẵn từ trước).
+- **Lưu ý còn nguyên**: migration **đã** áp trên MySQL 03/10/2026 (không chạy lại). Bộ e2e chat vẫn chạy **mock** (`auth-fixtures.ts`), chưa có spec HTTP thật cho `/api/answer`; tầng API thật do PHPUnit phủ. Chưa có job dọn hội thoại khách cũ; chưa nối LLM/FastAPI.
+
 ### Khách vãng lai dùng trợ lý AI như đã đăng nhập — 02–03/10/2026
 
 - **Mục tiêu (yêu cầu chủ dự án)**: khách chưa đăng nhập hỏi đáp AI **y hệt** người đã đăng nhập; hội thoại **vẫn lưu MySQL** với nhãn "Khách vãng lai"; hiện **đầy đủ** trong trang thống kê quản trị; khách **không xem lại được** lịch sử chat của mình; chatbot ở trang tài khoản chạy thật; animation mở điều luật giống hệt giữa khách và người đã đăng nhập.
