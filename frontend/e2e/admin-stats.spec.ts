@@ -315,6 +315,12 @@ test("guest answers are shown as a separate metric and labelled in recent questi
   await expect(
     page.locator(".cl-stat-box").filter({ hasText: "Lượt hỏi đáp AI" }),
   ).toContainText("lượt từ khách vãng lai");
+  // Lượt tra cứu pháp luật là số thật, hiển thị cùng thẻ.
+  await expect(
+    page.locator(".cl-stat-box").filter({ hasText: "Lượt hỏi đáp AI" }),
+  ).toContainText("lượt tra cứu");
+  // Legend không còn nhãn "chưa thu thập".
+  await expect(page.locator(".cl-barchart-legend")).not.toContainText("chưa thu thập");
   // The guest conversation appears in the recent list under its own label.
   const guestRow = page.locator(".cl-question-card").filter({ hasText: "Khách vãng lai" });
   await expect(guestRow).toHaveCount(1);

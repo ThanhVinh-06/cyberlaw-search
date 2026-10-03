@@ -105,4 +105,26 @@ final class AdminStatisticsTest extends TestCase
 
         $this->getJson('/api/admin/statistics?period=invalid')->assertStatus(422);
     }
+
+    public function test_search_counts_come_from_the_hourly_counter(): void
+    {
+        $hour = \Carbon\CarbonImmutable::now('UTC')->startOfHour();
+        DB::table('thong_ke_tra_cuu')->insert([
+            ['gio' => $hour, 'so_luot' => 7, 'ngay_tao' => $hour, 'ngay_cap_nhat' => $hour],
+            // Ngoài kỳ hiện tại: không được cộng vào tổng năm.
+            ['gio' => $hour->subYears(5), 'so_luot' => 99, 'ngay_tao' => $hour, 'ngay_cap_nhat' => $hour],
+        ]);
+        $startMonth = intdiv($hour->month - 1, 2) * 2 + 1;
+        $label = sprintf('T%02d-%02d', $startMonth, $startMonth + 1);
+
+        $response = $this->getJson('/api/admin/statistics?period=year')->assertOk()
+            ->assertJsonPath('search_available', true)
+            ->assertJsonPath('overview.tong_tra_cuu', 7);
+        $months = collect($response->json('months'));
+        // Mọi kỳ đều trả số (không còn null "chưa thu thập").
+        $this->assertTrue($months->every(fn ($m) => is_int($m['tra_cuu'])));
+        // Chỉ kỳ chứa giờ hiện tại có lượt; các kỳ khác bằng 0.
+        $this->assertSame(7, $months->firstWhere('thang', $label)['tra_cuu']);
+        $this->assertSame(7, $months->sum(fn ($m) => $m['tra_cuu']));
+    }
 }

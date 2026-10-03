@@ -17,6 +17,7 @@ import {
   AlertCircle,
   ExternalLink,
   Bot,
+  Search,
   RefreshCw,
 } from "lucide-react";
 import "@/admin-stats.css";
@@ -229,6 +230,11 @@ export default function AdminStatsPage({ onNavigateTab }: AdminStatsPageProps) {
               <Bot size={13} />
               {(overview.hoi_dap_khach ?? 0).toLocaleString("vi-VN")} lượt từ khách vãng lai
             </span>
+            {/* Lượt tra cứu pháp luật gộp theo giờ, tách khỏi lượt hỏi đáp AI. */}
+            <span className="cl-stat-info-sub" style={{ color: "#0284c7" }}>
+              <Search size={13} />
+              {(overview.tong_tra_cuu ?? 0).toLocaleString("vi-VN")} lượt tra cứu
+            </span>
           </div>
         </motion.div>
       </div>
@@ -265,7 +271,7 @@ export default function AdminStatsPage({ onNavigateTab }: AdminStatsPageProps) {
                 </div>
                 <div className="cl-legend-item">
                   <span className="cl-legend-dot sky" />
-                  <span>{statistics?.search_available ? "Tra cứu Điều khoản" : "Tra cứu Điều khoản (chưa thu thập)"}</span>
+                  <span>Tra cứu Điều khoản</span>
                 </div>
               </div>
             </div>
@@ -301,7 +307,7 @@ export default function AdminStatsPage({ onNavigateTab }: AdminStatsPageProps) {
                     {currentMonths.map((item, index) => {
                       const isHovered = hoveredBarIndex === index;
                       const hHoiDap = Math.round((item.hoi_dap / maxVal) * 190);
-                      const hTraCuu = item.tra_cuu === null ? 0 : Math.round((item.tra_cuu / maxVal) * 190);
+                      const hTraCuu = Math.round(((item.tra_cuu ?? 0) / maxVal) * 190);
 
                       return (
                         <div
@@ -333,7 +339,7 @@ export default function AdminStatsPage({ onNavigateTab }: AdminStatsPageProps) {
                                   💬 Hỏi đáp AI: {item.hoi_dap} lượt
                                 </div>
                                 <div style={{ color: "#38bdf8" }}>
-                                  📖 Tra cứu: {item.tra_cuu === null ? "Chưa thu thập" : `${item.tra_cuu} lượt`}
+                                  📖 Tra cứu: {(item.tra_cuu ?? 0).toLocaleString("vi-VN")} lượt
                                 </div>
                                 <div
                                   style={{
@@ -376,7 +382,7 @@ export default function AdminStatsPage({ onNavigateTab }: AdminStatsPageProps) {
                                 delay: 0.11 + index * 0.045,
                                 ease: [0.34, 1.45, 0.64, 1],
                               }}
-                              title={item.tra_cuu === null ? "Tra cứu: chưa thu thập" : `Tra cứu: ${item.tra_cuu}`}
+                              title={`Tra cứu: ${(item.tra_cuu ?? 0).toLocaleString("vi-VN")}`}
                             />
                           </div>
                         </div>

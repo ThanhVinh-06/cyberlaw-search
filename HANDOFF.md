@@ -1,5 +1,27 @@
 # Bàn giao dự án CyberLaw Search
 
+### Hoàn thiện thống kê lượt tra cứu (số thật, gộp giờ, không PII) — 03/10/2026
+
+- **Mục tiêu (yêu cầu chủ dự án):** biến metric "Tra cứu Điều khoản" ở trang Thống kê từ dữ liệu giả (`tra_cuu = null`, nhãn "(chưa thu thập)") thành **số thật**; giữ nguyên animation frontend; test kỹ theo skill bảo mật + frontend; ghi lại cho agent khác. Phần AI **tạm dừng** theo yêu cầu.
+- **Bốn quyết định đã chốt với chủ dự án:** (1) UI = vẽ cột tra cứu thật trên biểu đồ **và** thêm dòng phụ "N lượt tra cứu" trong thẻ "Lượt hỏi đáp AI"; (2) chỉ đếm `GET /api/search`; (3) lưu **gộp theo giờ**, không PII; (4) mỗi request danh sách thành công +1.
+- **Backend:**
+  - Bảng mới `thong_ke_tra_cuu` (5 cột: `ma_thong_ke`, `gio` UNIQUE, `so_luot`, `ngay_tao`, `ngay_cap_nhat`); **không** có cột IP/phiên/tài khoản/từ khóa. Migration `database/migrations/20261003_thong_ke_luot_tra_cuu.sql` + mirror `database/schema.sql` (13 bảng, 116 cột).
+  - `App\Services\SearchStatistics` (mới): `record()` cộng 1 lượt cho giờ hiện tại (UTC, `startOfHour`) bằng `insertOrIgnore` + `increment` (an toàn đồng thời, chạy cả MySQL/SQLite); `sumBetween($start,$end)` trả tổng trong khoảng. **Fail-open**: lỗi ghi/thiếu bảng không làm hỏng tìm kiếm, `sumBetween` trả 0.
+  - `PublicKnowledgeSearch::search()` gọi `record()` ngay cạnh `public.search.completed` — chỉ route danh sách; `detail()` không đụng nên `/api/search/{id}`, `/api/library`, `/api/terms` không đếm.
+  - `AdminStatisticsController::overview()` nhận `SearchStatistics`; thay `tra_cuu => null` ở cả 3 nhánh (30d/6m/year) bằng tổng theo bucket; `search_available => true`; thêm `overview.tong_tra_cuu`.
+- **Frontend:** `admin-data.ts` thêm `tong_tra_cuu?` + giá trị demo; `AdminStatsPage.tsx` bỏ nhánh "(chưa thu thập)" ở legend/tooltip/bar, thêm dòng phụ "lượt tra cứu" (icon `Search`, màu `#0284c7`) trong thẻ "Lượt hỏi đáp AI". **Không đổi** `data-admin-reveal`/keyframes/duration/`motion`.
+- **Kiểm thử đã chạy thật:**
+  - Backend: `php artisan test` **121 PASS (1296 assertions)** (thêm `SearchStatisticsTest` 4 test + `AdminStatisticsTest::test_search_counts_come_from_the_hourly_counter`). Bảng đếm được thêm vào `tests/Support/KnowledgeSchema.php` để mọi feature test có schema.
+  - Frontend: `npm run build` PASS; `npm run typecheck:e2e` sạch.
+  - **Animation trước/sau:** `admin-stats.spec.ts` + `admin-users-reveal.spec.ts` **10/10 trước** và **10/10 sau** (frames `[{opacity:'0',translate:'0 14px'},{opacity:1,translate:'0 0'}]`, duration 1200, recent delay 300) → giống nhau.
+  - Responsive: `admin-responsive.spec.ts` **9/9** (320/440/834/900/901/956/1024/1440 + ngang 956×440). Kiểm tra giả lập, chưa test máy thật.
+- **Bảo mật:** `docs/security/reviews/2026-10-03-thong-ke-luot-tra-cuu.md` — không lưu PII/từ khóa (canary), chỉ đếm danh sách, fail-open, không injection, rate limit `public-search` vẫn áp, chỉ admin đọc thống kê.
+- **Tài liệu đã cập nhật:** `database/README.md` (13 bảng/116 cột), `docs/design/04-co-so-du-lieu.md`, `docs/technology-decisions.md`, `docs/backend/07-tra-cuu-phap-luat.md` (mục "Đếm lượt tra cứu").
+- **Đồng bộ số bảng khi commit (03/10/2026):** `admin-data.ts` sửa dữ liệu demo `so_bang: 12 → 13` (API trả số thật; demo cho khớp schema 13 bảng) và `docs/design/04-co-so-du-lieu.md` sửa "12 bảng/111 cột" (mốc 30/09) → "13 bảng/116 cột". Không đổi hành vi, `npm run build` PASS sau sửa.
+- **Giới hạn / việc còn lại:**
+  - **Migration `20261003_thong_ke_luot_tra_cuu.sql` ĐÃ ĐƯỢC CHỦ DỰ ÁN ÁP trên MySQL ngày 03/10/2026** — đã kiểm tra cấu trúc thật (5 cột, `gio` UNIQUE `duy_nhat_thong_ke_tra_cuu_gio`, `so_luot` default 0) và ghi đồng thời thật (8 tiến trình × 5 lượt song song cùng giờ ⇒ +40 đúng, 1 dòng/giờ, không mất lượt); dòng test đã xoá, bảng về 0. Không chạy lại.
+  - Chưa có job dọn/lưu trữ bảng đếm theo thời hạn (biên tự nhiên ~24 dòng/ngày). Phần AI vẫn tạm dừng.
+
 ### Đã push đợt khách vãng lai + gom chat dùng chung — 03/10/2026
 
 - **Commit `856914a`** (`Cho khach vang lai dung tro ly AI va gom chat dung chung`), đã push `origin/main`; `ls-remote` khớp HEAD (`856914a36520cdd0cb819ff1788ce08e37602ac7`). Working tree sạch sau push.

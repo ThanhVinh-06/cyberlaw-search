@@ -236,6 +236,8 @@ export interface ThongKeTongQuan {
   tang_truong_hoi_dap: string;
   /** Số lượt trợ lý AI đã trả lời cho hội thoại không thuộc tài khoản nào (khách vãng lai). */
   hoi_dap_khach?: number;
+  /** Tổng lượt tra cứu pháp luật trong kỳ đang xem (gộp theo giờ, không PII). */
+  tong_tra_cuu?: number;
   so_bang?: number;
 }
 
@@ -249,7 +251,8 @@ export const thongKeTongQuanData: ThongKeTongQuan = {
   tong_cuoc_hoi_dap: 3450,
   tang_truong_hoi_dap: "+28.6% lượt truy vấn",
   hoi_dap_khach: 412,
-  so_bang: 12,
+  tong_tra_cuu: 4430,
+  so_bang: 13,
 };
 
 export interface DuLieuThang {

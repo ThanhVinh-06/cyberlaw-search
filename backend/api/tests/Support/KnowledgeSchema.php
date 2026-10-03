@@ -73,5 +73,13 @@ final class KnowledgeSchema
             $t->dateTime('ngay_tao');
             $t->dateTime('ngay_cap_nhat');
         });
+        // Bang dem luot tra cuu gop theo gio (khong PII); mirror 20261003 migration.
+        Schema::create('thong_ke_tra_cuu', function (Blueprint $t) {
+            $t->id('ma_thong_ke');
+            $t->dateTime('gio')->unique();
+            $t->unsignedInteger('so_luot')->default(0);
+            $t->dateTime('ngay_tao');
+            $t->dateTime('ngay_cap_nhat');
+        });
     }
 }

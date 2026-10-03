@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\SearchStatistics;
 use App\Support\SafeLog;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\Request;
@@ -11,7 +12,7 @@ use Illuminate\Validation\Rule;
 
 final class AdminStatisticsController extends Controller
 {
-    public function overview(Request $request)
+    public function overview(Request $request, SearchStatistics $searchStats)
     {
         $period = $request->validate(['period' => ['sometimes', Rule::in(['year', '6m', '30d'])]])['period'] ?? 'year';
         $today = CarbonImmutable::now(config('app.timezone'))->startOfDay();
@@ -50,7 +51,7 @@ final class AdminStatisticsController extends Controller
                     'thang' => $span['label'],
                     'ten_thang' => "{$span['label']} ({$dStart} – {$dEnd})",
                     'hoi_dap' => $bucket->count(),
-                    'tra_cuu' => null,
+                    'tra_cuu' => $searchStats->sumBetween($wStart, $wStop),
                     'trich_dan' => DB::table('trich_dan')->whereIn('ma_tin_nhan', (clone $bucket)->select('ma_tin_nhan'))->count(),
                 ];
             }
@@ -66,7 +67,7 @@ final class AdminStatisticsController extends Controller
                     'thang' => sprintf('T%02d-%02d', $m1, $m2),
                     'ten_thang' => sprintf('Tháng %02d – %02d/%d', $m1, $m2, $y),
                     'hoi_dap' => $bucket->count(),
-                    'tra_cuu' => null,
+                    'tra_cuu' => $searchStats->sumBetween($pStart, $pStop),
                     'trich_dan' => DB::table('trich_dan')->whereIn('ma_tin_nhan', (clone $bucket)->select('ma_tin_nhan'))->count(),
                 ];
             }
@@ -83,7 +84,7 @@ final class AdminStatisticsController extends Controller
                     'thang' => sprintf('T%02d-%02d', $m1, $m2),
                     'ten_thang' => sprintf('Tháng %02d – %02d/%d', $m1, $m2, $y),
                     'hoi_dap' => $bucket ? $bucket->count() : 0,
-                    'tra_cuu' => null,
+                    'tra_cuu' => $pStart->gte($end) ? 0 : $searchStats->sumBetween($pStart, $stop),
                     'trich_dan' => $bucket ? DB::table('trich_dan')->whereIn('ma_tin_nhan', (clone $bucket)->select('ma_tin_nhan'))->count() : 0,
                 ];
             }
@@ -119,13 +120,14 @@ final class AdminStatisticsController extends Controller
                 'trang_thai' => 'offline'])->all();
         $result = [
             'period' => $period, 'year' => $today->year, 'range' => $start->format('d/m/Y').' – '.$today->format('d/m/Y'),
-            'search_available' => false, 'regulation_dates' => array_map(fn ($date) => $date->format('d/m'), $dates),
+            'search_available' => true, 'regulation_dates' => array_map(fn ($date) => $date->format('d/m'), $dates),
             'overview' => [
                 'tong_nguoi_dung' => DB::table('nguoi_dung')->count(), 'tang_truong_nguoi_dung' => 'Tổng tài khoản hiện có',
                 'tong_dieu_khoan' => (clone $clauses)->count(), 'tong_van_ban' => (clone $docs)->count(),
                 'tong_quy_dinh' => (clone $rules)->count(), 'tang_truong_quy_dinh' => 'Luật 116/2025/QH15 đã công bố',
                 'tong_cuoc_hoi_dap' => $total, 'tang_truong_hoi_dap' => 'Phản hồi đã lưu trong kỳ',
                 'hoi_dap_khach' => $guestAnswers,
+                'tong_tra_cuu' => $searchStats->sumBetween($start, $end),
                 'so_bang' => count(Schema::getTableListing()),
             ],
             'months' => $buckets, 'regulations' => $groups, 'top_users' => $top,

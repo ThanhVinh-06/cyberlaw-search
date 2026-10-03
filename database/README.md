@@ -1,8 +1,8 @@
 # Cơ sở dữ liệu CyberLaw Search
 
-Database `cyberlaw_search` trên MySQL 8.0.44 của máy phát triển hiện có **10 bảng, 89 cột**. Ngày 29/09/2026 đã thêm bảng yêu cầu đặt lại mật khẩu, không thay đổi dữ liệu tài khoản hiện có.
+Database `cyberlaw_search` trên MySQL 8.0.44 của máy phát triển hiện có **13 bảng, 116 cột**. Ngày 29/09/2026 đã thêm bảng yêu cầu đặt lại mật khẩu, không thay đổi dữ liệu tài khoản hiện có. Ngày 03/10/2026 thêm bảng đếm lượt tra cứu gộp theo giờ.
 
-Tên bảng và tên cột dùng tiếng Việt không dấu, ví dụ `nguoi_dung.ho_ten`, `van_ban.so_hieu`, `tin_nhan.noi_dung`. Mười bảng là `nguoi_dung`, `yeu_cau_dat_lai_mat_khau`, `van_ban`, `dieu_khoan`, `tu_khoa`, `dieu_khoan_tu_khoa`, `quy_dinh`, `hoi_thoai`, `tin_nhan`, `trich_dan`. Các giá trị ENUM như `user`/`admin` vẫn giữ nguyên.
+Tên bảng và tên cột dùng tiếng Việt không dấu, ví dụ `nguoi_dung.ho_ten`, `van_ban.so_hieu`, `tin_nhan.noi_dung`. Mười ba bảng là `nguoi_dung`, `yeu_cau_dat_lai_mat_khau`, `van_ban`, `dieu_khoan`, `tu_khoa`, `dieu_khoan_tu_khoa`, `quy_dinh`, `hoi_thoai`, `tin_nhan`, `trich_dan`, `yeu_cau_xac_minh_email`, `nhat_ky_quan_tri`, `thong_ke_tra_cuu`. Các giá trị ENUM như `user`/`admin` vẫn giữ nguyên.
 
 ## Các tệp
 
@@ -11,7 +11,8 @@ Tên bảng và tên cột dùng tiếng Việt không dấu, ví dụ `nguoi_du
 - [verification.json](verification.json): kết quả kiểm tra 9 bảng ban đầu.
 - [reset-password-verification.json](reset-password-verification.json): kiểm tra bảng mới bằng transaction và rollback; không giữ tài khoản thử.
 - [Migration đặt lại mật khẩu](migrations/20260929_them_dat_lai_mat_khau.sql): chạy **một lần** trên database cũ có 9 bảng; máy phát triển hiện tại đã áp dụng. Máy mới dùng `schema.sql` thì không chạy thêm migration này.
-- [Thiết kế và sơ đồ quan hệ](../docs/design/04-co-so-du-lieu.md): giải thích 10 bảng và quy ước sử dụng.
+- [Migration đếm lượt tra cứu](migrations/20261003_thong_ke_luot_tra_cuu.sql): thêm bảng `thong_ke_tra_cuu` (gộp theo giờ, không lưu IP/phiên/tài khoản/từ khóa). **Đã áp trên MySQL phát triển ngày 03/10/2026** (đã kiểm tra cấu trúc + ghi đồng thời thật); không chạy lại. Máy mới dùng `schema.sql` thì không chạy thêm.
+- [Thiết kế và sơ đồ quan hệ](../docs/design/04-co-so-du-lieu.md): giải thích 13 bảng và quy ước sử dụng.
 
 Luồng `/forgot-password` hiện chỉ là giao diện dùng thử, hiển thị mã minh họa trên form, không gửi email hay cập nhật mật khẩu. Bảng mới chuẩn bị cho PHP triển khai xác thực mã ở server. Không dùng logic xác nhận trong trình duyệt làm cơ chế bảo mật thật.
 

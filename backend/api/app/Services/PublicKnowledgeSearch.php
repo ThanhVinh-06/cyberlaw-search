@@ -6,7 +6,6 @@ use App\Models\DieuKhoan;
 use App\Support\SafeLog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
-
 /** Read-only, published knowledge surface for the public search UI. */
 final class PublicKnowledgeSearch
 {
@@ -62,6 +61,8 @@ final class PublicKnowledgeSearch
 
         $total = $rows->count();
         $items = $rows->slice(($page - 1) * $perPage, $perPage)->map(fn (DieuKhoan $clause) => $this->toDto($clause))->values()->all();
+        // Mỗi lượt gọi danh sách thành công tính là một lượt tra cứu (gộp theo giờ, không PII).
+        app(SearchStatistics::class)->record();
         SafeLog::write('application', 'public.search.completed', 'success', [
             'request_id' => $request->attributes->get('request_id'),
             'route' => $request->route()?->getName(),

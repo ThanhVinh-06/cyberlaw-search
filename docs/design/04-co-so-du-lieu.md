@@ -1,6 +1,6 @@
 # Thiết kế MySQL cho đồ án CyberLaw
 
-**Cập nhật 30/09/2026 — dữ liệu luật:** đã nạp bộ nguyên bản 116/2025 vào 5 bảng tri thức ở trạng thái draft. Mapping và số lượng trong [tài liệu dữ liệu](../data/01-du-lieu-luat-116.md). Schema hiện 12 bảng, 111 cột; không thêm cột trong lần nạp này. Cột `dieu_khoan.ky_hieu_diem` đổi sang `utf8mb4_0900_as_ci` để UNIQUE phân biệt điểm `d` và `đ`; migration `20260930_phan_biet_diem_d_va_dd.sql` đã được chủ dự án áp dụng và kiểm tra thật. Không chạy lại trên máy hiện tại. Các dòng mô tả chưa triển khai dưới đây thuộc lịch sử thiết kế; trạng thái backend mới nhất ở HANDOFF.
+**Cập nhật 30/09/2026 — dữ liệu luật:** đã nạp bộ nguyên bản 116/2025 vào 5 bảng tri thức ở trạng thái draft. Mapping và số lượng trong [tài liệu dữ liệu](../data/01-du-lieu-luat-116.md). Schema hiện 13 bảng, 116 cột (03/10/2026 thêm bảng `thong_ke_tra_cuu` đếm lượt tra cứu gộp theo giờ); không thêm cột trong lần nạp này. Cột `dieu_khoan.ky_hieu_diem` đổi sang `utf8mb4_0900_as_ci` để UNIQUE phân biệt điểm `d` và `đ`; migration `20260930_phan_biet_diem_d_va_dd.sql` đã được chủ dự án áp dụng và kiểm tra thật. Không chạy lại trên máy hiện tại. Các dòng mô tả chưa triển khai dưới đây thuộc lịch sử thiết kế; trạng thái backend mới nhất ở HANDOFF.
 
 Ngày thiết kế: 27/09/2026; cập nhật đặt lại mật khẩu ngày 29/09/2026. Phạm vi: thiết kế và xuất cấu trúc cơ sở dữ liệu; chưa tích hợp Laravel, Python hoặc đăng nhập thật.
 
@@ -30,6 +30,7 @@ Chọn trường `vai_tro` cho phân quyền; không thêm bộ bảng quyền n
 | `hoi_thoai` | Hội thoại của một người dùng, hoặc của khách vãng lai (`ma_nguoi_dung` NULL) | ma_hoi_thoai, ma_nguoi_dung, tieu_de, ngay_tao, ngay_cap_nhat |
 | `tin_nhan` | Câu hỏi và trả lời trong hội thoại | ma_tin_nhan, ma_hoi_thoai, nguoi_gui, noi_dung |
 | `trich_dan` | Căn cứ của câu trả lời | ma_trich_dan, ma_tin_nhan, ma_dieu_khoan, so_hieu, phien_ban_noi_dung, vị trí điều khoản, noi_dung_trich_dan |
+| `thong_ke_tra_cuu` | Đếm lượt tra cứu pháp luật gộp theo giờ | ma_thong_ke, gio (duy nhất, UTC đã cắt phút/giây), so_luot; **không** lưu IP/phiên/tài khoản/từ khóa |
 
 ### Vì sao giữ bảng quy_dinh?
 
@@ -119,6 +120,7 @@ erDiagram
 - Embedding/chỉ mục: Python quản lý ở `data/indexes/`.
 - PDF: lưu dưới dạng tệp; database giữ đường dẫn và URL nguồn.
 - Nhật ký quản trị: đã thêm `nhat_ky_quan_tri` ngày 30/09/2026 (mục 9); service ghi cùng transaction và xuất log chưa triển khai.
+- Lượt tra cứu: bảng `thong_ke_tra_cuu` (03/10/2026) chỉ đếm gộp theo giờ, không PII. Có biên tự nhiên (~24 dòng/ngày) nên chưa cần job dọn; xem lại chính sách lưu giữ trước khi vận hành dài hạn.
 
 ## 7. Tệp bàn giao và cách nhập
 
@@ -164,7 +166,7 @@ Chưa có nguồn dữ liệu, giữ là dữ liệu mẫu UI (không lưu DB): 
 
 ## 10. Xác minh email (30/09/2026)
 
-`database/migrations/20260930_xac_minh_email.sql` đã được chủ dự án chạy trong Workbench, sau đó đối chiếu chỉ đọc. Schema hiện có **12 bảng, 111 cột**; `schema.sql` đã đồng bộ cho database mới. Không chạy lại migration trên máy này. Dump cục bộ/Desktop cũ chưa được xuất lại, không dùng làm baseline mới nhất.
+`database/migrations/20260930_xac_minh_email.sql` đã được chủ dự án chạy trong Workbench, sau đó đối chiếu chỉ đọc. Schema hiện có **13 bảng, 116 cột**; `schema.sql` đã đồng bộ cho database mới. Không chạy lại migration trên máy này. Dump cục bộ/Desktop cũ chưa được xuất lại, không dùng làm baseline mới nhất.
 
 | Bảng / cột | Ý nghĩa |
 |---|---|

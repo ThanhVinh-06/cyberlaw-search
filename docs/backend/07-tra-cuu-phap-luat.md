@@ -28,4 +28,12 @@ Popup chỉ mount sau khi API chi tiết trả về: đo kích thước nguyên 
 - `public-search.spec.ts`: fixture UI kiểm tra phân trang, lỗi API không fallback, chi tiết bị thu hồi, phản hồi đến trễ.
 - Test animation/responsive hiện có giữ nguyên kỳ vọng 950ms. Không kết luận đã thử trên điện thoại vật lý.
 
-Log ứng dụng có `public.search.completed` và `http.completed` với request ID; không lưu từ khóa. Khi deploy, cấu hình access log proxy/web server bỏ query string và không bật debug query bindings. Không thêm SQL migration, không sửa dữ liệu MySQL trong đợt này.
+Log ứng dụng có `public.search.completed` và `http.completed` với request ID; không lưu từ khóa. Khi deploy, cấu hình access log proxy/web server bỏ query string và không bật debug query bindings.
+
+## Đếm lượt tra cứu (03/10/2026)
+
+- Mỗi lần gọi `GET /api/search` thành công cộng thêm **một lượt** vào bảng `thong_ke_tra_cuu`, gộp theo giờ UTC (`gio` duy nhất, cột `so_luot`). Không đếm `/api/search/{id}`, `/api/library`, `/api/terms`.
+- Bảng **không lưu** IP, phiên, tài khoản hay từ khóa; chỉ có mốc giờ và số đếm. Ghi bằng `App\Services\SearchStatistics` với hai bước `insertOrIgnore` + `increment` (an toàn đồng thời, chạy cả MySQL lẫn SQLite).
+- Ghi đếm **fail-open**: nếu bảng chưa được migrate hoặc DB lỗi, tìm kiếm vẫn trả kết quả bình thường (không đếm được thì bỏ qua).
+- Trang thống kê admin đọc lại số này theo từng kỳ (`tra_cuu` trong `months`, `overview.tong_tra_cuu`) và đặt `search_available = true`. Request bị chặn 429 không tới được `search()` nên không đếm.
+- **Đã áp** `database/migrations/20261003_thong_ke_luot_tra_cuu.sql` trên MySQL ngày 03/10/2026 (đã kiểm tra cấu trúc thật và ghi đồng thời 8 tiến trình × 5 lượt cùng giờ ⇒ không mất lượt, 1 dòng/giờ); không chạy lại. Máy mới dùng `schema.sql` thì không chạy thêm.

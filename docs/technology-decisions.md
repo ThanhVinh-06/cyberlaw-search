@@ -74,7 +74,7 @@ Chưa di chuyển `backend/app/`; đó vẫn là khung Python cũ. Việc đổi
 
 ## 5. Database và tài khoản
 
-- Database `cyberlaw_search` trên MySQL 8.0.44 hiện có 12 bảng, 111 cột (bao gồm xác thực: xác minh email, đặt lại mật khẩu, audit quản trị); tên bảng/cột bằng tiếng Việt không dấu. [Thiết kế dữ liệu](design/04-co-so-du-lieu.md) và [SQL dump cục bộ](../database/cyberlaw_search.sql) là cơ sở để triển khai backend.
+- Database `cyberlaw_search` trên MySQL 8.0.44 hiện có 13 bảng, 116 cột (bao gồm xác thực: xác minh email, đặt lại mật khẩu, audit quản trị, đếm lượt tra cứu); tên bảng/cột bằng tiếng Việt không dấu. [Thiết kế dữ liệu](design/04-co-so-du-lieu.md) và [SQL dump cục bộ](../database/cyberlaw_search.sql) là cơ sở để triển khai backend.
 - MySQL lưu tài khoản, văn bản, điều khoản, quan hệ keyphrase và dữ liệu nghiệp vụ được triển khai.
 - Laravel quản lý migration và quyền truy cập dữ liệu. Các model cần ánh xạ tên bảng, khóa, cột thời gian và trường auth theo schema tiếng Việt; không dùng nguyên quy ước tên mặc định của Laravel. Python nhận bản tri thức đã duyệt theo phiên bản để xử lý AI; không cần quyền truy cập bảng mật khẩu, session hoặc toàn bộ lịch sử người dùng.
 - Chỉ mục tìm kiếm ngữ nghĩa do Python tạo và quản lý riêng trong giai đoạn đầu. Chọn MySQL cho dữ liệu nghiệp vụ không yêu cầu đưa toàn bộ tính toán vector vào MySQL.
