@@ -2,6 +2,7 @@
 
 ### Hoàn thiện thống kê lượt tra cứu (số thật, gộp giờ, không PII) — 03/10/2026
 
+- **Đã commit `73bfc41`** (`Them bang dem luot tra cuu gop theo gio va so that trang thong ke`) và **push `origin/main`**; `ls-remote` khớp HEAD (`73bfc415a0c6db03f9d7f4ce212ccd5a4585cccb`), working tree sạch. 17 file (mã nguồn, migration, test, tài liệu, review). Trước push chạy lại: PHPUnit **121 PASS (1296 assertions)**, Playwright `admin-stats`+`admin-responsive` **17/17**, `admin-users-reveal` **2/2**, `npm run build` + `typecheck:e2e` PASS; rà `.gitignore` và quét mẫu secret/khóa/email thật/IP nội bộ trên 17 file (chỉ khớp dữ liệu demo `admin-data.ts` đã có từ HEAD và văn bản tài liệu).
 - **Mục tiêu (yêu cầu chủ dự án):** biến metric "Tra cứu Điều khoản" ở trang Thống kê từ dữ liệu giả (`tra_cuu = null`, nhãn "(chưa thu thập)") thành **số thật**; giữ nguyên animation frontend; test kỹ theo skill bảo mật + frontend; ghi lại cho agent khác. Phần AI **tạm dừng** theo yêu cầu.
 - **Bốn quyết định đã chốt với chủ dự án:** (1) UI = vẽ cột tra cứu thật trên biểu đồ **và** thêm dòng phụ "N lượt tra cứu" trong thẻ "Lượt hỏi đáp AI"; (2) chỉ đếm `GET /api/search`; (3) lưu **gộp theo giờ**, không PII; (4) mỗi request danh sách thành công +1.
 - **Backend:**
