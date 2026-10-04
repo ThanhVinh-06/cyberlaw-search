@@ -43,6 +43,17 @@ final class AdminStatisticsTest extends TestCase
         $this->assertGreaterThanOrEqual(1, $response->json('overview.so_bang'));
     }
 
+    public function test_recent_question_time_is_displayed_in_vietnam_without_changing_storage(): void
+    {
+        foreach (['11:22:55', '18:22:55'] as $time) {
+            $utc = \Carbon\CarbonImmutable::now('UTC')->startOfDay()->setTimeFromTimeString($time);
+            DB::table('tin_nhan')->where('nguoi_gui', 'assistant')->update(['ngay_tao' => $utc]);
+            $this->getJson('/api/admin/statistics')->assertOk()
+                ->assertJsonPath('recent_questions.0.thoi_gian', $utc->addHours(7)->format('d/m/Y H:i:s'));
+            $this->assertSame($utc->format('Y-m-d H:i:s'), DB::table('tin_nhan')->where('nguoi_gui', 'assistant')->value('ngay_tao'));
+        }
+    }
+
     public function test_recent_questions_expose_stored_confidence_and_duration(): void
     {
         $this->getJson('/api/admin/statistics')->assertOk()
@@ -86,6 +97,44 @@ final class AdminStatisticsTest extends TestCase
     public function test_non_admin_cannot_read_statistics(): void
     {
         auth()->logout(); $this->getJson('/api/admin/statistics')->assertUnauthorized();
+    }
+
+    public function test_reload_returns_newly_saved_answers_first_without_private_user_messages(): void
+    {
+        $this->getJson('/api/admin/statistics')->assertOk()->assertJsonCount(1, 'recent_questions');
+        $thread = DB::table('hoi_thoai')->value('ma_hoi_thoai');
+        $now = now();
+        DB::table('tin_nhan')->insert(['ma_hoi_thoai' => $thread, 'nguoi_gui' => 'user', 'noi_dung' => 'New question fixture', 'ngay_tao' => $now, 'ngay_cap_nhat' => $now]);
+        $id = DB::table('tin_nhan')->insertGetId(['ma_hoi_thoai' => $thread, 'nguoi_gui' => 'assistant', 'noi_dung' => 'New answer fixture', 'ngay_tao' => $now, 'ngay_cap_nhat' => $now]);
+        $other = new NguoiDung(['ho_ten' => 'Other', 'thu_dien_tu' => 'other-stats@example.test', 'mat_khau' => 'Password!123']);
+        $other->vai_tro = 'user'; $other->trang_thai = 'active'; $other->save();
+        $private = DB::table('hoi_thoai')->insertGetId(['ma_nguoi_dung' => $other->getKey(), 'tieu_de' => 'Private fixture', 'ngay_tao' => $now, 'ngay_cap_nhat' => $now]);
+        DB::table('tin_nhan')->insert(['ma_hoi_thoai' => $private, 'nguoi_gui' => 'assistant', 'noi_dung' => 'PRIVATE_CANARY', 'ngay_tao' => $now, 'ngay_cap_nhat' => $now]);
+        foreach (['year', '6m', '30d'] as $period) {
+            $response = $this->getJson('/api/admin/statistics?period='.$period)->assertOk()
+                ->assertJsonPath('recent_questions.0.ma_tin_nhan', $id)
+                ->assertJsonPath('recent_questions.0.cau_hoi', 'New question fixture');
+            $this->assertStringNotContainsString('PRIVATE_CANARY', $response->getContent());
+        }
+    }
+
+    public function test_recent_questions_returns_at_most_ten_latest_answers(): void
+    {
+        $thread = DB::table('hoi_thoai')->value('ma_hoi_thoai');
+        $now = now();
+        $ids = [];
+        for ($i = 1; $i <= 12; $i++) {
+            DB::table('tin_nhan')->insert(['ma_hoi_thoai' => $thread, 'nguoi_gui' => 'user', 'noi_dung' => 'Question '.$i, 'ngay_tao' => $now, 'ngay_cap_nhat' => $now]);
+            $ids[] = DB::table('tin_nhan')->insertGetId(['ma_hoi_thoai' => $thread, 'nguoi_gui' => 'assistant', 'noi_dung' => 'Answer '.$i, 'ngay_tao' => $now, 'ngay_cap_nhat' => $now]);
+        }
+        foreach (['year', '6m', '30d'] as $period) {
+            $response = $this->getJson('/api/admin/statistics?period='.$period)->assertOk()
+                ->assertJsonCount(10, 'recent_questions')
+                ->assertJsonPath('overview.tong_cuoc_hoi_dap', 13)
+                ->assertJsonPath('recent_questions.0.cau_hoi', 'Question 12')
+                ->assertJsonPath('recent_questions.9.cau_hoi', 'Question 3');
+            $this->assertSame(array_slice(array_reverse($ids), 0, 10), array_column($response->json('recent_questions'), 'ma_tin_nhan'));
+        }
     }
 
     public function test_period_is_validated_and_draft_knowledge_is_excluded(): void

@@ -81,12 +81,17 @@ export default function AdminStatsPage({ onNavigateTab }: AdminStatsPageProps) {
 
   useEffect(() => {
     const controller = new AbortController();
+    let pending = false;
     setStatisticsLoading(true);
     setStatisticsError("");
-    loadAdminStatistics(filterPeriod, controller.signal)
+    const refresh = (foreground: boolean) => {
+      if (pending || controller.signal.aborted) return;
+      pending = true;
+      loadAdminStatistics(filterPeriod, controller.signal)
       .then(data => {
         if (!controller.signal.aborted) {
           setStatistics(data);
+          setStatisticsError("");
         }
       })
       .catch((error) => {
@@ -96,9 +101,23 @@ export default function AdminStatsPage({ onNavigateTab }: AdminStatsPageProps) {
         }
       })
       .finally(() => {
-        if (!controller.signal.aborted) setStatisticsLoading(false);
+        pending = false;
+        if (foreground && !controller.signal.aborted) setStatisticsLoading(false);
       });
-    return () => controller.abort();
+    };
+    // Returning from another browser tab must read newly saved answers. Keep the
+    // current cards mounted while refreshing, without replaying entrance/skeletons.
+    const resume = () => {
+      if (document.visibilityState === "visible") refresh(false);
+    };
+    refresh(true);
+    window.addEventListener("focus", resume);
+    document.addEventListener("visibilitychange", resume);
+    return () => {
+      controller.abort();
+      window.removeEventListener("focus", resume);
+      document.removeEventListener("visibilitychange", resume);
+    };
   }, [filterPeriod, reload]);
 
   const overview = statistics?.overview;

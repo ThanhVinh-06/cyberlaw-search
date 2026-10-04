@@ -151,7 +151,7 @@ final class AdminStatisticsController extends Controller
             ->where(fn ($w) => $w->where('h.ma_nguoi_dung', $request->user()->getKey())->orWhereNull('h.ma_nguoi_dung'))
             ->where('a.nguoi_gui', 'assistant')
             ->where('a.ngay_tao', '>=', $start)->where('a.ngay_tao', '<', $end)
-            ->orderByDesc('a.ma_tin_nhan')->limit(5)
+            ->orderByDesc('a.ma_tin_nhan')->limit(10)
             ->select('a.ma_tin_nhan','a.ma_hoi_thoai','a.ngay_tao','a.do_tin_cay','a.thoi_gian_xu_ly_ms','h.ma_nguoi_dung')
             ->selectRaw('SUBSTR(a.noi_dung, 1, 16000) AS noi_dung')->get();
         return $messages->map(function ($a) use ($request) {
@@ -167,7 +167,9 @@ final class AdminStatisticsController extends Controller
                 'cau_hoi' => $question->text ?? 'Không còn câu hỏi gốc', 'tra_loi_ai' => $a->noi_dung,
                 'dieu_khoan_trich_dan' => $citations->map($label)->join('; ') ?: 'Chưa có trích dẫn',
                 'trich_doan_luat' => $citations->map(fn ($c) => $label($c).' · Phiên bản '.$c->phien_ban_noi_dung.' · Trang '.($c->trang_nguon ?? '—')."\n".$c->text)->join("\n\n") ?: 'Phản hồi này không có căn cứ được lưu.',
-                'thoi_gian' => $a->ngay_tao, 'vai_tro' => $isGuest ? 'Không đăng nhập' : 'Của bạn',
+                // Message timestamps are stored in UTC; this field is a display label.
+                'thoi_gian' => CarbonImmutable::parse($a->ngay_tao, 'UTC')->setTimezone('Asia/Ho_Chi_Minh')->format('d/m/Y H:i:s'),
+                'vai_tro' => $isGuest ? 'Không đăng nhập' : 'Của bạn',
                 'do_tin_cay' => $this->confidenceLabel($a->do_tin_cay),
                 'thoi_gian_xu_ly' => $this->durationLabel($a->thoi_gian_xu_ly_ms),
                 'confidence_note' => 'Điểm bằng chứng truy hồi, không phải độ chính xác pháp lý',

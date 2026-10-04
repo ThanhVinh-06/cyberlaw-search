@@ -1,5 +1,22 @@
 # Bàn giao dự án CyberLaw Search
 
+### Tạm dừng phát triển để chuẩn bị báo cáo — 04/10/2026
+
+- Người dùng chốt tạm dừng phát triển, lưu các thay đổi cuối lên GitHub rồi chuyển sang hỗ trợ viết báo cáo; chưa triển khai production.
+- Khi viết báo cáo, mô tả AI theo mã thực tế: Laravel gọi Python cục bộ, tìm kiếm từ vựng `lexical-v1`, trả tối đa 4 căn cứ từ Luật 116/2025/QH15 đã công bố; lời đáp ghép theo mẫu và trích đoạn. Chưa có FastAPI riêng, embedding/tìm kiếm ngữ nghĩa hoặc LLM sinh diễn giải. Chưa đưa các lượt chat trước vào truy hồi để hiểu câu hỏi nối tiếp; điểm bằng chứng không phải độ chính xác pháp lý.
+- Thay đổi cuối: danh sách thống kê tối đa 10 lượt gần nhất, giờ hiển thị Việt Nam, refresh nền khi focus/visible; dữ liệu lưu vẫn UTC. Không đưa env, dump/database hoặc dữ liệu riêng vào commit này.
+
+### Giờ hiển thị hỏi đáp gần đây — 04/10/2026
+
+- Xác nhận runtime PHP/Laravel dùng UTC và tin nhắn lưu UTC. `2026-10-04 11:22:55` tương ứng `18:22:55` Việt Nam, không phải dữ liệu lưu sai.
+- `AdminStatisticsController` chuyển nhãn `thoi_gian` sang `Asia/Ho_Chi_Minh`, định dạng `d/m/Y H:i:s`; card và dialog dùng chung tooltip “Giờ Việt Nam (UTC+7)”. Giữ nguyên dữ liệu DB, múi giờ ứng dụng, bộ lọc kỳ và animation.
+- Test backend 10/10 (85 assertions), gồm chuyển giờ qua ngày mới và bảo toàn giờ UTC trong DB. Chi tiết trong review `docs/security/reviews/2026-10-04-recent-questions-refresh.md`.
+
+### Kiểm tra box hỏi đáp gần đây — 04/10/2026
+
+- Người dùng đã làm rõ: tổng 15 lượt đã cập nhật, nhưng danh sách chỉ hiện 5 box do API giới hạn 5. Đã tăng `recentQuestions()` lên tối đa 10 phản hồi gần nhất theo ID giảm dần, trong kỳ và phạm vi quyền hiện có; không gom theo hội thoại, không thay tổng số lượt. Giữ nguyên UI/CSS/animation. Test backend giới hạn/thứ tự/cả 3 kỳ và bảo vệ chat riêng PASS.
+- Bổ sung refresh nền khi browser focus/visible trong AdminStatsPage, giữ thiết kế/animation và không replay skeleton. Test mới frontend focus update + backend reload mới nhất/không lộ chat riêng đều PASS. Review: `docs/security/reviews/2026-10-04-recent-questions-refresh.md`.
+
 ### Lộ trình deploy và sửa H1–H4 bảo mật — 04/10/2026
 
 - **Bối cảnh:** web local đã chạy ổn; chốt **hoàn thành báo cáo đồ án trước — deploy sau**. Lộ trình dưới đây để khi quay lại deploy chỉ cần đọc và tiếp tục.

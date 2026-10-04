@@ -61,7 +61,7 @@ function QuestionSummary({
       <span className="cl-question-summary-text">
         <span className="cl-question-byline">
           <span className="cl-comment-author">{item.nguoi_gui}</span>
-          <span className="cl-comment-time">{item.thoi_gian}</span>
+          <span className="cl-comment-time" title="Giờ Việt Nam (UTC+7)">{item.thoi_gian}</span>
         </span>
         <span className="cl-comment-role">{item.vai_tro}</span>
         <span className={`cl-question-title ${detail ? "is-detail" : ""}`}>

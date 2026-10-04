@@ -1,6 +1,78 @@
 import { mockAuth } from "./auth-fixtures";
 import { test, expect, type Page } from "./auth-fixtures";
 
+test('reload from the admin tab replaces old answers with the latest response', async ({ page }) => {
+  await mockAuth(page, 'admin');
+  await page.goto('http://localhost:5173/admin');
+  const initial = page.waitForResponse(r => r.url().includes('/api/admin/statistics') && r.status() === 200);
+  await page.getByRole('button', { name: 'Thống kê & Báo cáo', exact: true }).click();
+  const data = await (await initial).json();
+  await expect(page.locator('.cl-admin-stats-dashboard')).toHaveAttribute('aria-busy', 'false');
+  await page.route('**/api/admin/statistics**', route => route.fulfill({ json: {
+    ...data,
+    recent_questions: [{ ...data.recent_questions[0], ma_tin_nhan: 9998, cau_hoi: 'Câu hỏi mới sau khi tải lại dữ liệu' }, ...data.recent_questions.slice(0, 4)],
+  } }));
+  await page.getByRole('button', { name: 'Tải lại dữ liệu', exact: true }).click();
+  await expect(page.locator('.cl-question-card').first()).toContainText('Câu hỏi mới sau khi tải lại dữ liệu');
+  await expect(page.locator('.cl-question-card')).toHaveCount(5);
+  await expect(page).toHaveURL('http://localhost:5173/admin');
+});
+
+test('returning to statistics loads new answers without replaying skeleton or entrance', async ({ page }) => {
+  const response = page.waitForResponse(r => r.url().includes('/api/admin/statistics') && r.status() === 200);
+  await openStats(page);
+  const data = await (await response).json();
+  let release: () => void = () => {};
+  const gate = new Promise<void>(resolve => { release = resolve; });
+  let requested = false;
+  await page.route('**/api/admin/statistics**', async route => {
+    requested = true;
+    await gate;
+    await route.fulfill({ json: { ...data, recent_questions: [
+      { ...data.recent_questions[0], ma_tin_nhan: 9999, cau_hoi: 'Câu hỏi vừa lưu từ tab AI' },
+      ...data.recent_questions.slice(0, 4),
+    ] } });
+  });
+  await page.evaluate(() => window.dispatchEvent(new Event('focus')));
+  await expect.poll(() => requested).toBe(true);
+  await expect(page.locator('.cl-comments-list')).toHaveAttribute('aria-busy', 'false');
+  await expect(page.locator('.cl-question-card.is-skeleton')).toHaveCount(0);
+  release();
+  await expect(page.locator('.cl-question-card').first()).toContainText('Câu hỏi vừa lưu từ tab AI');
+  expect(await page.locator('.cl-recent-questions').evaluate(el => el.getAnimations().filter(a => a.playState === 'running').length)).toBe(0);
+});
+
+for (const size of [{ width: 320, height: 740 }, { width: 440, height: 956 }, { width: 834, height: 1112 }, { width: 1440, height: 1000 }, { width: 956, height: 440 }]) {
+  test(`ten recent answers fit and last detail opens at ${size.width}x${size.height}`, async ({ page }) => {
+    await page.setViewportSize(size);
+    const initial = page.waitForResponse(r => r.url().includes('/api/admin/statistics') && r.status() === 200);
+    await openStats(page);
+    const data = await (await initial).json();
+    await page.route('**/api/admin/statistics**', route => route.fulfill({ json: {
+      ...data, recent_questions: Array.from({ length: 10 }, (_, i) => ({
+        ...data.recent_questions[i % data.recent_questions.length], ma_tin_nhan: 10000 - i, thoi_gian: '04/10/2026 18:22:55',
+      })),
+    } }));
+    await page.getByRole('button', { name: 'Tải lại dữ liệu', exact: true }).click();
+    await expect(page.locator('.cl-question-card')).toHaveCount(10);
+    await expect(page.locator('.cl-question-card').first().getByTitle('Giờ Việt Nam (UTC+7)')).toHaveText('04/10/2026 18:22:55');
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(size.width);
+    const last = page.locator('.cl-question-card').last();
+    await last.scrollIntoViewIfNeeded();
+    await last.click();
+    const dialog = page.getByRole('dialog');
+    await expect(dialog).toBeVisible();
+    await expect(dialog).toHaveCSS('transform', 'none');
+    const box = await dialog.boundingBox();
+    expect(box!.x).toBeGreaterThanOrEqual(0);
+    expect(box!.x + box!.width).toBeLessThanOrEqual(size.width);
+    expect(box!.height).toBeLessThanOrEqual(size.height);
+    await page.keyboard.press('Escape');
+    await expect(dialog).toHaveCount(0);
+    await expect(last).toBeFocused();
+  });
+}
+
 async function openStats(page: Page) {
   // Mock API responses for dashboard layout tests; server auth is tested separately.
   await mockAuth(page, "admin");
